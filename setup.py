@@ -19,7 +19,7 @@ with open("README.md", 'r', encoding='utf-8') as f:
 
 setuptools.setup(
     name="supcon_highway_sdk",
-    version="0.1.0",
+    version="Beta_v1.0.0",
     auther="He YinYu",
     description="Python SDK for Highway commonly used mechanical and electrical device and intelligent device.",
     long_description=long_description,

@@ -12,8 +12,7 @@
 :Department: 公路机电工程技术中心
 :Copyright: ©1993-2023 浙江中控信息产业股份有限公司
 """
-import logging_ex.config
-from pathlib import Path
+import logging.config
 from typing import Any
 
 LOGGING_CONFIG: dict[str, Any] = {
