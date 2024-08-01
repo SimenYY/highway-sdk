@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-:FileName: logging.py
+:FileName: logging_ex.py
 :Project:
 :Brand:
 :Version:
