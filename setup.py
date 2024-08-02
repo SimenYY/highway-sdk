@@ -11,9 +11,9 @@ with open("requirements.txt", 'r', encoding='utf-8') as f:
 
 # 所有支持的分类列表 https://pypi.org/pypi?%3Aaction=list_classifiers
 setuptools.setup(
-    name="supcon_highway_sdk",
+    name="highway_sdk",
     version="0.1.0",
-    auther="He YinYu",
+    auther="AdzLovelace",
     description="Python SDK for Highway commonly used mechanical and electrical device and intelligent device.",
     long_description=long_description,
     long_description_content_type="text/markdown",
