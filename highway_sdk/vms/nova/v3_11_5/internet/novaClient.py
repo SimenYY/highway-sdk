@@ -8,7 +8,7 @@ from .utils.crc import CrcUtils
 from .utils.escape import NovaEscape
 from .utils.exceptions import *
 from .utils.structs import NovaPacket
-from config import get_logger
+from highway_sdk.config import get_logger
 
 logger = get_logger()
 

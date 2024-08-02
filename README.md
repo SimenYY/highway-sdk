@@ -1,4 +1,4 @@
-# supcon_highway_sdk
+# highway_device_sdk
 # 介绍
 本项目主要作用是作为公路交通领域，机电设备、智能设备等设备协议SDK封装，方便开发者统一用Python快速建立起对设备的交互
 # SDK使用说明

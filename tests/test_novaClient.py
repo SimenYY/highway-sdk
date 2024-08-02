@@ -3,8 +3,8 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
-from vms.nova.v3_11_5.internet.novaClient import NovaClient
-from vms.nova.v3_11_5.internet.utils.constants import NovaOkRsp
+from highway_sdk.vms.nova.v3_11_5.internet import NovaClient
+from highway_sdk.vms.nova.v3_11_5.internet import NovaOkRsp
 
 
 @pytest.fixture

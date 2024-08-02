@@ -12,15 +12,14 @@ with open("requirements.txt", 'r', encoding='utf-8') as f:
 # 所有支持的分类列表 https://pypi.org/pypi?%3Aaction=list_classifiers
 setuptools.setup(
     name="highway_sdk",
-    version="0.1.0",
+    version="0.1.1",
     auther="AdzLovelace",
     description="Python SDK for Highway commonly used mechanical and electrical device and intelligent device.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://gitee.com/AdvLoveLace/supcon_highway_sdk.git',
     license='BSD-2-Clause',
     python_requires='>=3.6',
-    packages=setuptools.find_packages(exclude=['tests', 'tests.*', 'dist', 'dist.*']),
+    packages=setuptools.find_packages(),
     install_requires=install_requires,
     classifiers=[
         "Programming Language :: Python :: 3",
