@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-:FileName: novaTraffic.py
+:FileName: novaClient.py
 :Project:
 :Brand:
 :Version:
@@ -19,12 +19,12 @@ from .utils.crc import CrcUtils
 from .utils.escape import NovaEscape
 from .utils.exceptions import *
 from .utils.structs import NovaPacket
-from .....config import get_logger
+from config import get_logger
 
 logger = get_logger()
 
 
-class NovaTraffic:
+class NovaClient:
     nova_rsp_timeout: int = 3
 
     def __init__(self, ip: str, port: int = 5000):

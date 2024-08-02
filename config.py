@@ -20,9 +20,9 @@ LOGGING_CONFIG: dict[str, Any] = {
     'disable_existing_loggers': False,
     'formatters': {
         'default': {
-            '()': 'supcon_highway_sdk.logging.DefaultFormatter',
+            '()': 'logging_ex.DefaultFormatter',
             'fmt': '%(asctime)s - %(name)s - %(level_prefix)s %(module)s - %(funcName)s - %(lineno)d - %(message)s',
-            'use_colors': True
+            'use_colors': None
         },
     },
     'handlers': {
@@ -49,11 +49,6 @@ LOGGING_CONFIG: dict[str, Any] = {
         }
     },
     'loggers': {
-        # 'nova': {
-        #     'handlers': ['console'],
-        #     'level': 'INFO',
-        #     'propagate': False,
-        # },
         'supcon_highway_sdk': {
             'handlers': ['console', 'error_file'],
             'propagate': False

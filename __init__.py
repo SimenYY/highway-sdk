@@ -12,5 +12,3 @@
 :Department: 公路机电工程技术中心
 :Copyright: ©1993-2023 浙江中控信息产业股份有限公司
 """
-
-__version__ = 'Bata_v1.0.0'

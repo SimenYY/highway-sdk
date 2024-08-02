@@ -22,9 +22,9 @@ class PlayBuilder:
     def __init__(self):
         # 播放节目集合
         self.item_list: List[Item] = []
-        # 播放节目对应的直接指令
+        # 播放节目对应的直接指令, 暂时没用到
         self._push_protocol: str = ''
-        # 节目id
+        # 节目id，一般不指定，默认1
         self._play_id: int = 1
 
     def add_item_builder(self, builder: ItemBuilder) -> 'PlayBuilder':
