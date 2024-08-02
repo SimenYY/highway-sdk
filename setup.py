@@ -1,22 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-:FileName: setup.py
-:Project:
-:Brand:
-:Version:
-:Description: 
-:Author: He YinYu
-:Link:
-:Time: 2024/8/1 19:54
-:Department: 公路机电工程技术中心
-:Copyright: ©1993-2023 浙江中控信息产业股份有限公司
-"""
 import setuptools
+from pkg_resources import parse_requirements
 
 with open("README.md", 'r', encoding='utf-8') as f:
     long_description = f.read()
 
+with open("requirements.txt", 'r', encoding='utf-8') as f:
+    install_requires = [str(requirement) for requirement in parse_requirements(f.read())]
+
+# 所有支持的分类列表 https://pypi.org/pypi?%3Aaction=list_classifiers
 setuptools.setup(
     name="supcon_highway_sdk",
     version="0.1.0",
@@ -24,12 +17,16 @@ setuptools.setup(
     description="Python SDK for Highway commonly used mechanical and electrical device and intelligent device.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='',
-    python_requires='>=3.10',
-    packages=setuptools.find_packages(),
+    url='https://gitee.com/AdvLoveLace/supcon_highway_sdk.git',
+    license='BSD-2-Clause',
+    python_requires='>=3.6',
+    packages=setuptools.find_packages(exclude=['tests', 'tests.*', 'dist', 'dist.*']),
+    install_requires=install_requires,
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU GENERAL PUBLIC LICENSE",
+        'Development Status :: 1 - Planning',
+        'Intended Audience :: Developers',
+        "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
 )

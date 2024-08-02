@@ -1,16 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-:FileName: crc.py
-:Project:
-:Brand：
-:Version:
-:Description: crc校验码的计算方式在这里进行设置
-:Author: He YinYu
-:Time: 2023/12/26 15:03
-:Department: 公路机电工程技术中心
-:Copyright: ©1993-2023 浙江中控信息产业股份有限公司
-"""
+
 from typing import Union
 
 nova_fcstab = [

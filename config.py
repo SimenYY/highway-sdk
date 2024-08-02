@@ -1,17 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-:FileName: config.py
-:Project:
-:Brand:
-:Version:
-:Description: 
-:Author: He YinYu
-:Link:
-:Time: 2024/8/1 15:34
-:Department: 公路机电工程技术中心
-:Copyright: ©1993-2023 浙江中控信息产业股份有限公司
-"""
 import logging.config
 from typing import Any
 
@@ -49,7 +37,7 @@ LOGGING_CONFIG: dict[str, Any] = {
         }
     },
     'loggers': {
-        'supcon_highway_sdk': {
+        'highway_sdk': {
             'handlers': ['console', 'error_file'],
             'propagate': False
         }
@@ -58,7 +46,7 @@ LOGGING_CONFIG: dict[str, Any] = {
 
 logging.config.dictConfig(LOGGING_CONFIG)
 
-logger = logging.getLogger('supcon_highway_sdk')
+logger = logging.getLogger('highway_sdk')
 
 
 def get_logger():
