@@ -17,15 +17,15 @@ setuptools.setup(
     description="Python SDK for Highway commonly used mechanical and electrical device and intelligent device.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    license='BSD-2-Clause',
-    python_requires='>=3.6',
+    license=' GPL-3.0',
+    python_requires='>=3.6',  # 没有验证
     packages=setuptools.find_packages(),
     install_requires=install_requires,
     classifiers=[
         "Programming Language :: Python :: 3",
         'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
-        "License :: OSI Approved :: BSD License",
+        "License :: OSI Approved :: GNU Free Documentation License (FDL)",
         "Operating System :: OS Independent",
     ],
 )

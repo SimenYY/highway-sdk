@@ -1,4 +1,4 @@
-# highway_device_sdk
+# highway_sdk
 # 介绍
 本项目主要作用是作为公路交通领域，机电设备、智能设备等设备协议SDK封装，方便开发者统一用Python快速建立起对设备的交互
 # SDK使用说明
@@ -31,7 +31,7 @@ item_br.add_media_builder(text_br)
 play_br.set_play_id(1).add_item_builder(item_br)
 
 # 创建播放管理器
-pm = PlayManager(play_builder=play_br, nova_traffic=cli)
+pm = PlayManager(play_builder=play_br, nova_client=cli)
 
 # 一键播放
 pm.play()
