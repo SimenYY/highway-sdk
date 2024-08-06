@@ -44,3 +44,9 @@ pm.play()
 ```bash
 python setup.py sdist bdist_wheel
 ```
+## 本地安装
+```bash
+pip install highway_sdk -i http://127.0.0.1:8080/pypi/simple/ --trusted-host 127.0.0.1
+```
+## 在线安装
+pip install highway_sdk

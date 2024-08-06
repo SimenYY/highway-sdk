@@ -17,8 +17,9 @@ setuptools.setup(
     description="Python SDK for Highway commonly used mechanical and electrical device and intelligent device.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    license=' GPL-3.0',
+    license='GPL-3.0',
     python_requires='>=3.6',  # 没有验证
+    url='https://gitee.com/AdvLoveLace/highway_sdk.git',
     packages=setuptools.find_packages(),
     install_requires=install_requires,
     classifiers=[
