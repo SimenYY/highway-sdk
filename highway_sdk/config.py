@@ -9,7 +9,7 @@ LOGGING_CONFIG: dict[str, Any] = {
     'formatters': {
         'default': {
             '()': 'logging_ex.DefaultFormatter',
-            'fmt': '%(asctime)s - %(name)s - %(level_prefix)s %(module)s - %(funcName)s - %(lineno)d - %(message)s',
+            'fmt': '%(asctime)s | %(name)s | %(level_prefix)s %(module)s - %(funcName)s - %(lineno)d - %(message)s',
             'use_colors': None
         },
     },
