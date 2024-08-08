@@ -11,7 +11,7 @@ class WebMedia(BaseMedia):
         self.url: str = builder.url
         self.refresh_time: int = builder.refresh_time
 
-    def create_protocol(self) -> str:
+    def __str__(self) -> str:
         protocol = (f'webview{self.index}='
                     f'{self.x},'
                     f'{self.y},'

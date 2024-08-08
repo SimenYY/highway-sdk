@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
-
 class NovaEscape:
     """
     对发送报文，接受报文进行转移
     """
+
     @staticmethod
     def send(data: bytes) -> bytes:
         data.replace(b'\xAA', b'\xEE\x0A')
@@ -20,4 +20,3 @@ class NovaEscape:
         data.replace(b'\xEE\x0C', b'\xCC')
         data.replace(b'\xEE\x0E', b'\xEE')
         return data
-

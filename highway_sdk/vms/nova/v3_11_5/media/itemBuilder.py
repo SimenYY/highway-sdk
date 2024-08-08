@@ -39,7 +39,7 @@ class ItemBuilder:
         """
         media_builder.index = self._auto_increase_index
         media_builder.duration = self.duration
-        media: BaseMedia = media_builder.build()
+        media = media_builder.build()
 
         self.media_list.append(media)
         self._auto_increase_index += 1

@@ -15,5 +15,5 @@ class BaseMedia(ABC):
         self.duration: int = builder.duration
 
     @abstractmethod
-    def create_protocol(self) -> str:
+    def __str__(self):
         pass

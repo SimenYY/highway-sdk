@@ -20,7 +20,7 @@ class TextMedia(BaseMedia):
         self.world_space = builder.world_space
         self.alignment_direction = builder.alignment_direction
 
-    def create_protocol(self) -> str:
+    def __str__(self) -> str:
         protocol_1: str = (f'txt{self.index}='
                            f'{self.x},'
                            f'{self.y},'

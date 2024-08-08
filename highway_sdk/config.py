@@ -7,7 +7,7 @@ LOGGING_CONFIG: dict[str, Any] = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'default': {
+        'default': {  # exact format is not important, this is the minimum information
             '()': 'logging_ex.DefaultFormatter',
             'fmt': '%(asctime)s | %(name)s | %(level_prefix)s %(module)s - %(funcName)s - %(lineno)d - %(message)s',
             'use_colors': None
@@ -47,7 +47,3 @@ LOGGING_CONFIG: dict[str, Any] = {
 logging.config.dictConfig(LOGGING_CONFIG)
 
 logger = logging.getLogger('highway_sdk')
-
-
-def get_logger():
-    return logger

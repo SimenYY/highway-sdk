@@ -7,17 +7,17 @@ from .item import Item
 
 
 class Play:
-
+    """
+    表示每一个完整的play文件内容
+    """
     def __init__(self, builder):
         self.item_list: List[Item] = builder.item_list
         self.push_protocol: str = builder.push_protocol
         self.play_id: int = builder.play_id
 
-    def create_protocol(self) -> str:
+    def __str__(self) -> str:
         """
-        当前默认按照全部更新，后续如果需要，则修改
-
-        :return:
+        play播放文件字符串
         """
         if not self.item_list:
             raise ValueError('item_list is empty')
@@ -26,6 +26,6 @@ class Play:
         for i, item in enumerate(self.item_list):
             protocol.append(f'[item{i}]')
             protocol.append('\n')
-            protocol.append(item.create_protocol())
+            protocol.append(item.__str__())
             protocol.append('\n')
         return ''.join(protocol[:-1])  # 去掉最后一个换行符

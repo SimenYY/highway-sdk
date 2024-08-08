@@ -8,20 +8,27 @@ from .internet.novaClient import NovaClient
 
 
 class PlayManager:
+
     def __init__(self, play_builder: PlayBuilder, nova_client: NovaClient):
+        if not isinstance(nova_client, NovaClient):
+            raise TypeError("nova_client must be of type NovaClient")
+
+        if not isinstance(play_builder, PlayBuilder):
+            raise TypeError("play_builder must be of type PlayBuilder")
+
         # 上传文件集合, 暂时不用
         self.play_list: List[str] = []
         # 节目build对象
         self._play_builder: PlayBuilder = play_builder
         # nova 通信对象
-        self._nova_traffic: NovaClient = nova_client
+        self._nova_client = nova_client
 
     def get_play_id(self) -> int:
         return self._play_builder.build().play_id
 
     def play(self) -> int:
-        content = self._play_builder.build().create_protocol()
+        content = self._play_builder.build().__str__()
         play_id = self.get_play_id()
-        ret = self._nova_traffic.send_play_list(content, play_id)
+        ret = self._nova_client.send_play_list(content, play_id)
 
         return ret
