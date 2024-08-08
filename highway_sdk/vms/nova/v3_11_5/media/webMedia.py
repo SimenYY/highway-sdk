@@ -6,12 +6,10 @@ from .baseMedia import BaseMedia
 
 class WebMedia(BaseMedia):
 
-    def __init__(self, builder):
-        super().__init__(builder)
-        self.url: str = builder.url
-        self.refresh_time: int = builder.refresh_time
+    url: str
+    refresh_time: int
 
-    def __str__(self) -> str:
+    def create_msg(self) -> str:
         protocol = (f'webview{self.index}='
                     f'{self.x},'
                     f'{self.y},'

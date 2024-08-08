@@ -7,20 +7,17 @@ from .baseMedia import BaseMedia
 
 class TextMedia(BaseMedia):
 
-    def __init__(self, builder):
-        super().__init__(builder)
+    font: str
+    text_size: int
+    text_color: str
+    background_color: str
+    text: str
+    flash: str
+    font_style: int
+    world_space: int
+    alignment_direction: int
 
-        self.font = builder.font
-        self.text_size = builder.text_size
-        self.text_color = builder.text_color
-        self.background_color = builder.background_color
-        self.text = builder.text
-        self.flash = builder.flash
-        self.font_style = builder.font_style
-        self.world_space = builder.world_space
-        self.alignment_direction = builder.alignment_direction
-
-    def __str__(self) -> str:
+    def create_msg(self) -> str:
         protocol_1: str = (f'txt{self.index}='
                            f'{self.x},'
                            f'{self.y},'

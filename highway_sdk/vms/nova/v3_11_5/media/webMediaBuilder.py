@@ -3,7 +3,7 @@
 
 from .baseMedia import BaseMedia
 from .baseMediaBuilder import BaseMediaBuilder
-
+from .webMedia import WebMedia
 
 class WebMediaBuilder(BaseMediaBuilder):
 
@@ -14,7 +14,7 @@ class WebMediaBuilder(BaseMediaBuilder):
         self._refresh_time: int = 0
 
     def build(self) -> BaseMedia:
-        pass
+        return WebMedia(**self.__dict__)
 
     @property
     def url(self) -> str:

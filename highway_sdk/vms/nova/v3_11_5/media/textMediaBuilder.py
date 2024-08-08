@@ -31,7 +31,7 @@ class TextMediaBuilder(BaseMediaBuilder):
         self._alignment_direction: int = 0
 
     def build(self) -> BaseMedia:
-        return TextMedia(self)
+        return TextMedia(**self.__dict__)
 
     @property
     def font(self) -> str:

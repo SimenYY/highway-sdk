@@ -1,23 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class Item:
+from pydantic import BaseModel, NonNegativeInt
+from typing import List
+from .baseMedia import BaseMedia
+
+class Item(BaseModel):
     """
     表示每一个页面（播放项）
     """
+    media_list: List[BaseMedia]
+    duration: NonNegativeInt
+    index: NonNegativeInt
+    screen_in: str
+    screen_out: str
+    screen_speed: str
+    flash_speed: str
+    flash_count: str
+    play_count: str
 
-    def __init__(self, builder):
-        self.media_list = builder.media_list
-        self.duration = builder.duration
-        self.index = builder.index
-        self.screen_in = builder.screen_in
-        self.screen_out = builder.screen_out
-        self.screen_speed = builder.screen_speed
-        self.flash_speed = builder.flash_speed
-        self.flash_count = builder.flash_count
-        self.play_count = builder.play_count
-
-    def __str__(self) -> str:
+    def create_msg(self) -> str:
         param = (f"param={self.duration},"
                  f"{self.screen_in},"
                  f"{self.screen_out},"
@@ -29,8 +31,7 @@ class Item:
         protocol = [param, '\n']
 
         for media in self.media_list:
-            protocol.append(media.__str__())
+            protocol.append(media.create_msg())
             protocol.append('\n')
 
         return ''.join(protocol[:-1])  # 删除最后一个'\n'
-

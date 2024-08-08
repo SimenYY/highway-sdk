@@ -47,7 +47,7 @@ class ItemBuilder:
         return self
 
     def build(self):
-        return Item(self)
+        return Item(**self.__dict__)
 
     @property
     def duration(self) -> int:

@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 
 from typing import List
-
+from pydantic import BaseModel, NonNegativeInt
 from .item import Item
 
 
-class Play:
+class Play(BaseModel):
     """
     表示每一个完整的play文件内容
     """
-    def __init__(self, builder):
-        self.item_list: List[Item] = builder.item_list
-        self.push_protocol: str = builder.push_protocol
-        self.play_id: int = builder.play_id
 
-    def __str__(self) -> str:
+    item_list: List[Item]
+    push_protocol: str
+    play_id: NonNegativeInt
+
+    def create_msg(self) -> str:
         """
         play播放文件字符串
         """
@@ -26,6 +26,6 @@ class Play:
         for i, item in enumerate(self.item_list):
             protocol.append(f'[item{i}]')
             protocol.append('\n')
-            protocol.append(item.__str__())
+            protocol.append(item.create_msg())
             protocol.append('\n')
         return ''.join(protocol[:-1])  # 去掉最后一个换行符

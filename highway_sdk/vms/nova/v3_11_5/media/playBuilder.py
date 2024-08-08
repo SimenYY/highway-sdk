@@ -23,7 +23,7 @@ class PlayBuilder:
         return self
 
     def build(self) -> Play:
-        return Play(self)
+        return Play(**self.__dict__)
 
     @property
     def push_protocol(self) -> str:

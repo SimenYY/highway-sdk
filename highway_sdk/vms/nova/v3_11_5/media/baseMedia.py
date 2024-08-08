@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from pydantic import BaseModel, NonNegativeInt
 
 
-class BaseMedia(ABC):
-
-    def __init__(self, builder):
-        self.index: int = builder.index
-        self.x: int = builder.x
-        self.y: int = builder.y
-        self.width: int = builder.width
-        self.height: int = builder.height
-        self.duration: int = builder.duration
+class BaseMedia(BaseModel):
+    index: NonNegativeInt
+    x: NonNegativeInt
+    y: NonNegativeInt
+    width: NonNegativeInt
+    height: NonNegativeInt
+    duration: NonNegativeInt
 
     @abstractmethod
-    def __str__(self):
+    def create_msg(self):
         pass
+
