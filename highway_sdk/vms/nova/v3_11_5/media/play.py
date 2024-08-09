@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from typing import List
-from pydantic import BaseModel, NonNegativeInt
+from pydantic import BaseModel, Field
 from .item import Item
 
 
@@ -13,7 +13,8 @@ class Play(BaseModel):
 
     item_list: List[Item]
     push_protocol: str
-    play_id: NonNegativeInt
+    # 支持播放列表1-100
+    play_id: int = Field(..., gt=0, le=100)
 
     def create_msg(self) -> str:
         """

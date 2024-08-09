@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from .baseMedia import BaseMedia
+from pydantic import HttpUrl
 
 
 class WebMedia(BaseMedia):
 
-    url: str
+    url: HttpUrl
     refresh_time: int
 
     def create_msg(self) -> str:

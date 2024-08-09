@@ -5,6 +5,7 @@ from .baseMedia import BaseMedia
 from .baseMediaBuilder import BaseMediaBuilder
 from .webMedia import WebMedia
 
+
 class WebMediaBuilder(BaseMediaBuilder):
 
     def __init__(self):

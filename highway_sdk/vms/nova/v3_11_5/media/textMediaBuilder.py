@@ -4,6 +4,12 @@
 from .baseMedia import BaseMedia
 from .baseMediaBuilder import BaseMediaBuilder
 from .textMedia import TextMedia
+from .enums import (
+    FontEnum,
+    FontStyleEnum,
+    ColorEnum,
+    AlignEnum
+)
 
 
 class TextMediaBuilder(BaseMediaBuilder):
@@ -12,23 +18,23 @@ class TextMediaBuilder(BaseMediaBuilder):
         super().__init__()
 
         # 字体
-        self._font: str = '1'
+        self._font: str = FontEnum.HEI_TI.value
         # 字体大小
         self._text_size: int = 1616
         # 字体颜色
-        self._text_color: str = '1'
+        self._text_color: str = ColorEnum.RED.value
         # 背景颜色
-        self._background_color: str = '8'
+        self._background_color: str = ColorEnum.BLACK.value
         # 文本内容
         self._text: str = ''
         # 闪烁
         self._flash: str = '0'
         # 字体风格
-        self._font_style: int = 0
+        self._font_style: int = FontStyleEnum.NORMAL.value
         # 字符间距
         self._world_space: int = 0
         # 字符排列方向
-        self._alignment_direction: int = 0
+        self._alignment_direction: int = AlignEnum.HORIZONTAL.value
 
     def build(self) -> BaseMedia:
         return TextMedia(**self.__dict__)
@@ -65,7 +71,8 @@ class TextMediaBuilder(BaseMediaBuilder):
         :param text_size:
         :return:
         """
-        self._text_size = text_size
+        size_str = str(text_size)
+        self._text_size = int(f'{size_str}{size_str}')
 
     @property
     def text_color(self) -> str:
