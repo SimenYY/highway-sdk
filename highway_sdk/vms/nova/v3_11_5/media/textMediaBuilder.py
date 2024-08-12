@@ -37,7 +37,7 @@ class TextMediaBuilder(BaseMediaBuilder):
         self._alignment_direction: int = AlignEnum.HORIZONTAL.value
 
     def build(self) -> BaseMedia:
-        return TextMedia(**self.__dict__)
+        return TextMedia(**self.to_dict())
 
     @property
     def font(self) -> str:

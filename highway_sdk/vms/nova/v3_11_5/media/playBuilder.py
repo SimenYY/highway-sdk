@@ -5,9 +5,10 @@ from typing import List
 
 from .itemBuilder import Item, ItemBuilder
 from .play import Play
+from .baseBuilder import BaseBuilder
 
 
-class PlayBuilder:
+class PlayBuilder(BaseBuilder):
     def __init__(self):
         # 播放节目集合
         self.item_list: List[Item] = []
@@ -23,7 +24,7 @@ class PlayBuilder:
         return self
 
     def build(self) -> Play:
-        return Play(**self.__dict__)
+        return Play(**self.to_dict())
 
     @property
     def push_protocol(self) -> str:

@@ -24,13 +24,13 @@ class TextMedia(BaseMedia):
     def validate_text_size(cls, value: int):
         value_str = str(value)
         length = len(value_str)
+        half_len = int(length / 2)
         if length % 2 != 0:
             raise ValueError('Text size 格式不正确，e.g. 1616， 2424')
-        elif value_str[: length / 2] != value_str[length / 2:]:
+        elif value_str[:half_len] != value_str[half_len:]:
             raise ValueError('Text size 格式不正确，e.g. 1616， 2424')
-
-
-
+        else:
+            return value
     def create_msg(self) -> str:
         protocol_1: str = (f'txt{self.index}='
                            f'{self.x},'

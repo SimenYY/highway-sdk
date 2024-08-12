@@ -66,4 +66,34 @@ class VerticalAlignmentEnum(str, Enum):
 
 
 class PlayEffectEnum(str, Enum):
+    """
+    需要再增加
+    """
     NONE = '0'
+    NORMAL = '1'
+
+
+class EffectSpeedEnum(str, Enum):
+    SLOWEST = '0'
+    SLOWER = '1'
+    NORMAL = '2'
+    FASTER = '3'
+    FASTEST = '4'
+
+
+class IsPlayTextVoiceEnum(str, Enum):
+    YES = '1'
+    NO = '0'
+
+
+class IsSyncPlayEnum(str, Enum):
+    YES = '1'
+    NO = '0'
+
+
+class VoiceSoundEnum(str, Enum):
+    COMMON_FEMALE_VOICE = '0'
+    COMMON_MALE_VOICE = '1'
+    SPECIAL_MALE_VOICE = '2'
+    EMOTIONAL_MALE_VOICE = '3'
+    EMOTIONAL_CHILDREN_VOICE = '4'

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-:FileName: protocol.py
+:FileName: novaProtocol.py
 :Project:
 :Brand:
 :Version:
@@ -12,5 +12,5 @@
 """
 
 
-class Protocol:
+class NovaProtocol:
     pass

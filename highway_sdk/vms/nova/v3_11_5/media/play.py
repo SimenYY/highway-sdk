@@ -24,8 +24,8 @@ class Play(BaseModel):
             raise ValueError('item_list is empty')
 
         protocol = ['[all]', '\n', f'items={len(self.item_list)}', '\n']
-        for i, item in enumerate(self.item_list):
-            protocol.append(f'[item{i}]')
+        for item in self.item_list:
+            protocol.append(f'[item{item.index}]')
             protocol.append('\n')
             protocol.append(item.create_msg())
             protocol.append('\n')

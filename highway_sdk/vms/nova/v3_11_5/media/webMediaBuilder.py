@@ -15,7 +15,7 @@ class WebMediaBuilder(BaseMediaBuilder):
         self._refresh_time: int = 0
 
     def build(self) -> BaseMedia:
-        return WebMedia(**self.__dict__)
+        return WebMedia(**self.to_dict())
 
     @property
     def url(self) -> str:

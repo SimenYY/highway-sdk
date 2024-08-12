@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from abc import ABC, abstractmethod
 from .baseMedia import BaseMedia
+from .baseBuilder import BaseBuilder
 
 
-class BaseMediaBuilder(ABC):
+class BaseMediaBuilder(BaseBuilder):
 
     def __init__(self):
+        # 从 1 开始
         self._index: int = 0
         # x坐标
         self._x: int = 0
@@ -20,7 +21,6 @@ class BaseMediaBuilder(ABC):
         # 停留时间
         self._duration: int = 0
 
-    @abstractmethod
     def build(self) -> BaseMedia:
         pass
 

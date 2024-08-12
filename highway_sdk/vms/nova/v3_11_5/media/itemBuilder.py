@@ -5,15 +5,17 @@ from typing import List
 
 from .baseMediaBuilder import BaseMedia, BaseMediaBuilder
 from .item import Item
+from .baseBuilder import BaseBuilder
+import copy
 
 
-class ItemBuilder:
+class ItemBuilder(BaseBuilder):
 
     def __init__(self):
         self.media_list: List[BaseMedia] = []
 
         # item序号，默认从0开始，自动累加，不应该被修改
-        self._auto_increase_index: int = 0
+        self._index: int = 0
 
         # 停留时间， 默认单位是100ms
         self._duration: int = 100
@@ -37,17 +39,16 @@ class ItemBuilder:
         :param media_builder:
         :return:
         """
-        media_builder.index = self._auto_increase_index
+        self._index += 1
+        media_builder.index = self._index
         media_builder.duration = self.duration
         media = media_builder.build()
-
         self.media_list.append(media)
-        self._auto_increase_index += 1
 
         return self
 
     def build(self):
-        return Item(**self.__dict__)
+        return Item(**self.to_dict())
 
     @property
     def duration(self) -> int:
@@ -59,11 +60,11 @@ class ItemBuilder:
 
     @property
     def index(self) -> int:
-        return self._auto_increase_index
+        return self._index
 
     @index.setter
     def index(self, index: int):
-        self._auto_increase_index = index
+        self._index = index
 
     @property
     def screen_in(self) -> str:
