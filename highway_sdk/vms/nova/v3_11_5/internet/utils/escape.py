@@ -8,14 +8,14 @@ class NovaEscape:
     """
 
     @staticmethod
-    def send(data: bytes) -> bytes:
+    def byte_to_short(data: bytes) -> bytes:
         data.replace(b'\xAA', b'\xEE\x0A')
         data.replace(b'\xCC', b'\xEE\x0C')
         data.replace(b'\xEE', b'\xEE\x0E')
         return data
 
     @staticmethod
-    def recv(data: bytes) -> bytes:
+    def short_to_byte(data: bytes) -> bytes:
         data.replace(b'\xEE\x0A', b'\xAA')
         data.replace(b'\xEE\x0C', b'\xCC')
         data.replace(b'\xEE\x0E', b'\xEE')

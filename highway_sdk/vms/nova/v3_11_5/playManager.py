@@ -23,12 +23,12 @@ class PlayManager:
         # nova 通信对象
         self._nova_client = nova_client
 
-    def get_play_id(self) -> int:
+    def __get_play_id(self) -> int:
         return self._play_builder.build().play_id
 
     def play(self) -> int:
         content = self._play_builder.build().__str__()
-        play_id = self.get_play_id()
-        ret = self._nova_client.send_play_list(content, play_id)
+        play_id = self.__get_play_id()
+        ret = self._nova_client.send_play_list_combined(content, play_id)
 
         return ret

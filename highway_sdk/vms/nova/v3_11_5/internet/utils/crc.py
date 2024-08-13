@@ -70,6 +70,9 @@ ys_table = [
 
 
 class Bytes16:
+    """
+    针对两字节数据处理类
+    """
     def __init__(self, fcs: Union[int, bytes]):
         if type(fcs) == bytes:
             if len(fcs) != 2:
@@ -81,8 +84,20 @@ class Bytes16:
             self.h = (fcs >> 8).to_bytes(1, byteorder='big')
             self.l = (fcs & 0xFF).to_bytes(1, byteorder='big')
 
-    def getBytes(self):
+    def get_bytes(self) -> bytes:
+        """
+        高字节在前，低字节在后
+        """
         return bytes().join([self.h, self.l])
+
+    def get_reverse_bytes(self) -> bytes:
+        """
+        低字节在前，高字节在后
+        """
+        return bytes().join([self.l, self.h])
+
+    def reverse_bytes_to_int(self):
+        return int.from_bytes(self.get_reverse_bytes(), byteorder='big')
 
 
 class CrcUtils:

@@ -3,7 +3,8 @@
 
 
 from dataclasses import dataclass
-from typing import Optional
+from .escape import NovaEscape
+from .crc import CrcUtils, Bytes16
 
 
 @dataclass
@@ -14,9 +15,62 @@ class NovaPacket:
     1. 校验码为校验前面全部，包括起始符和结束符
     2. 设备地址默认为0xFFFF
     """
-    START: bytes = b'\xAA'
-    address: Optional[bytes] = b'\xFF\xFF'
-    what: Optional[bytes] = None
-    data: Optional[bytes] = None
-    END: bytes = b'\xCC'
-    crc: Optional[bytes] = None
+    what: bytes
+    data: bytes
+    crc: bytes
+    address: bytes = b'\xFF\xFF'
+    start: bytes = b'\xAA'
+    end: bytes = b'\xCC'
+
+    @classmethod
+    def pack(cls, what: bytes, data: bytes, **kwargs) -> bytes:
+        """
+        打包函数
+        """
+        if 'address' in kwargs:
+            cls.address = kwargs['address']
+
+        to_check = cls.start
+        to_check += cls.address
+        to_check += what
+        to_check += NovaEscape.byte_to_short(data)
+        to_check += cls.end
+
+        crc_16 = CrcUtils.nova_crc_16_table(to_check)
+
+        out_buffer = to_check
+        out_buffer += crc_16.l
+        out_buffer += crc_16.h
+
+        return out_buffer
+
+    @classmethod
+    def unpack(cls, message: bytes) -> 'NovaPacket':
+        """
+        解包函数
+        """
+        address_what_and_data = message[1:-3]
+
+        start = message[:1]
+        end = message[-3:-2]
+        crc = message[-2:]
+
+        to_check = start
+        to_check += address_what_and_data
+        to_check += end
+
+        crc_16 = CrcUtils.nova_crc_16_table(to_check)
+        if crc_16.get_reverse_bytes() != crc:
+            raise ValueError('校验失败')
+        else:
+            address_what_and_data = NovaEscape.short_to_byte(address_what_and_data)
+            address = address_what_and_data[:2]
+            what = address_what_and_data[2:3]
+            data = address_what_and_data[3:]
+
+        return NovaPacket(start=start,
+                          address=address,
+                          what=what,
+                          data=data,
+                          end=end,
+                          crc=crc)

@@ -2,19 +2,18 @@
 # -*- coding: utf-8 -*-
 
 import socket
+from contextlib import contextmanager
 
-from .utils.constants import NovaWhat, NovaOkRsp
-from .utils.crc import CrcUtils
-from .utils.escape import NovaEscape
-from .utils.structs import NovaPacket
+from loguru import logger
+
+from highway_sdk.core.exceptions import ResponseError
 from highway_sdk.core.validators import (
     validate_ipv4_address,
     validate_port,
 )
-from highway_sdk.core.exceptions import ResponseError
-import logging
-
-logger = logging.getLogger(__name__)
+from .utils.constants import NovaWhat, NovaOkRsp
+from .utils.structs import NovaPacket
+from .utils.crc import Bytes16
 
 
 class NovaClient:
@@ -30,31 +29,30 @@ class NovaClient:
 
         self.ip: str = ip
         self.port: int = port
+        self.sock = None
 
-    @classmethod
-    def __make_send_packet(cls, what: bytes, data: bytes, **kwargs) -> bytes:
+    @contextmanager
+    def connect(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.sock:
+            try:
+                self.sock.settimeout(self.nova_rsp_timeout)
+                self.sock.connect((self.ip, self.port))
+            except ConnectionRefusedError as e:
+                logger.error(f'{self.get_log_prefix()} {e}')
+            except TimeoutError as e:
+                logger.error(f'{self.get_log_prefix()} {e}')
+            except Exception as e:
+                logger.error(f'{self.get_log_prefix()} {e}')
+            finally:
+                yield self
+                self.sock = None
 
-        to_check = NovaPacket.START
-        to_check += NovaPacket.address
-        to_check += what
-        to_check += NovaEscape.send(data)
-        to_check += NovaPacket.END
-
-        crc_16 = CrcUtils.nova_crc_16_table(to_check)
-
-        out_buffer = to_check
-        out_buffer += crc_16.l
-        out_buffer += crc_16.h
-
-        return out_buffer
-
-    def __send_file_name(self, sock: socket.socket, file_name: str) -> None:
+    def __send_file_name(self, file_name: str) -> None:
         """
         发送文件名
 
         :raise TimeoutError
-        :raise NovaFileNameError
-        :param sock:
+        :raise ResponseError
         :param file_name:
         :return: None
         """
@@ -63,11 +61,11 @@ class NovaClient:
         data = BLOCK_SIZE.to_bytes(2, 'little')
         data += file_name.encode('utf-8')
 
-        send_buffer = self.__make_send_packet(what=NovaWhat.FILE_NAME_REQ,
-                                              data=data)
-        sock.send(send_buffer)
+        send_buffer = NovaPacket.pack(what=NovaWhat.FILE_NAME_REQ,
+                                      data=data)
+        self.sock.send(send_buffer)
         try:
-            recv_buffer = sock.recv(1024)
+            recv_buffer = self.sock.recv(1024)
         except TimeoutError as e:
             raise TimeoutError(f'__send_file_name {e}')
 
@@ -77,13 +75,12 @@ class NovaClient:
         else:
             raise ResponseError(f'发送文件名响应失败')
 
-    def __send_file_content(self, sock: socket.socket, content: str) -> None:
+    def __send_file_content(self, content: str) -> None:
         """
         发送文件内容
 
         :raise TimeoutError
-        :raise NovaFileContentError
-        :param sock:
+        :raise ResponseError
         :param content:
         :return: None
         """
@@ -92,11 +89,11 @@ class NovaClient:
         data = BLOCK_NUM.to_bytes(1, 'little')
         data += content.encode('utf-8')
 
-        send_buffer = self.__make_send_packet(what=NovaWhat.FILE_CONTENT_REQ,
-                                              data=data)
-        sock.send(send_buffer)
+        send_buffer = NovaPacket.pack(what=NovaWhat.FILE_CONTENT_REQ,
+                                      data=data)
+        self.sock.send(send_buffer)
         try:
-            recv_buffer = sock.recv(1024)
+            recv_buffer = self.sock.recv(1024)
         except TimeoutError as e:
             raise TimeoutError(f'__send_file_content {e}')
 
@@ -106,22 +103,21 @@ class NovaClient:
         else:
             raise ResponseError('发送文件内容响应失败')
 
-    def __play_list(self, sock: socket.socket, play_id: int) -> None:
+    def __play_list_by_id(self, play_id: int) -> None:
         """
         指定播放
 
         :raise TimeoutError
-        :raise NovaPlayListError
-        :param sock:
+        :raise ResponseError
         :param play_id:
         :return: None
         """
         data = play_id.to_bytes(2, 'little')
-        send_buffer = self.__make_send_packet(what=NovaWhat.PLAY_LIST_REQ,
-                                              data=data)
-        sock.send(send_buffer)
+        send_buffer = NovaPacket.pack(what=NovaWhat.PLAY_LIST_REQ,
+                                      data=data)
+        self.sock.send(send_buffer)
         try:
-            recv_buffer = sock.recv(1024)
+            recv_buffer = self.sock.recv(1024)
         except TimeoutError as e:
             raise TimeoutError(f'__play_list {e}')
 
@@ -131,45 +127,53 @@ class NovaClient:
         else:
             raise ResponseError('指定播放响应失败')
 
-    def send_play_list(self, content: str, play_id: int = 1) -> bool:
+    def send_play_list_combined(self, content: str, play_id: int = 1) -> bool:
         """
-        发送节目，并播放
+        组合指令，发送文件名，发送文件内容，指定播放
 
         :param content:
         :param play_id:
         :return: bool
         """
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            try:
-                # 设置超时时间
-                sock.settimeout(self.nova_rsp_timeout)
-                sock.connect((self.ip, self.port))
-                # 发送文件名
-                file_name = f'play{play_id:03d}.lst'
-                self.__send_file_name(sock, file_name)
-                # 发送文件内容
-                self.__send_file_content(sock, content)
-                # 指定播放
-                self.__play_list(sock, play_id)
-
-            except ConnectionRefusedError as e:
-                err_msg = f'{self.ip}:{self.port} {e}'
-                logger.error(err_msg)
-                return False
-            except TimeoutError as e:
-                err_msg = f'{self.ip}:{self.port} {e}'
-                logger.error(err_msg)
-                return False
-            except ResponseError as e:
-                err_msg = f'{self.ip}:{self.port} {e}'
-                logger.error(err_msg)
-                return False
+        try:
+            # 发送文件名
+            file_name = f'play{play_id:03d}.lst'
+            self.__send_file_name(file_name)
+            # 发送文件内容
+            self.__send_file_content(content)
+            # 指定播放
+            self.__play_list_by_id(play_id)
+        except TimeoutError as e:
+            logger.error(f'{self.get_log_prefix()} {e}')
+            return False
+        except ResponseError as e:
+            logger.error(f'{self.get_log_prefix()} {e}')
+            return False
 
         return True
 
     def get_log_prefix(self) -> str:
         return f'{self.ip}:{self.port}'
 
-
-
+    def get_device_size(self):
+        """
+        获取屏幕点阵大小
+        """
+        data = bytes()
+        send_buffer = NovaPacket.pack(what=NovaWhat.SCREEN_WIDTH_HEIGHT_REQ,
+                                      data=data)
+        self.sock.send(send_buffer)
+        try:
+            recv_buffer = self.sock.recv(1024)
+            packet = NovaPacket.unpack(recv_buffer)
+        except TimeoutError as e:
+            raise TimeoutError(e)
+        except ValueError as e:
+            raise ValueError(e)
+        else:
+            if packet.what == NovaWhat.SCREEN_WIDTH_HEIGHT_RSP:
+                width = Bytes16(packet.data[:2]).reverse_bytes_to_int()
+                height = Bytes16(packet.data[2:4]).reverse_bytes_to_int()
+                return width, height
+            else:
+                return None
