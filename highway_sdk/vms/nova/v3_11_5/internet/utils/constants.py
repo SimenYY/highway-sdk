@@ -5,16 +5,6 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class NovaOkRsp:
-    # 发送文件名
-    FILE_NAME_OK_RSP = b'\xAA\xFF\xFF\x12\x01\xCC\xA1\xB4'
-    # 发送文件内容
-    FILE_CONTENT_OK_RSP = b'\xAA\xFF\xFF\x14\x01\x00\x01\xCC\x91\xC4'
-    # 指定播放
-    PLAY_LIST_OK_RSP = b'\xAA\xFF\xFF\x1C\x01\xCC\xBA\xA4'
-
-
-@dataclass(frozen=True)
 class NovaWhat:
     """
     指令码
@@ -48,3 +38,47 @@ class NovaWhat:
     # 获取屏幕高宽
     SCREEN_WIDTH_HEIGHT_REQ = b'\x82'
     SCREEN_WIDTH_HEIGHT_RSP = b'\x83'
+
+
+def get_success_rsp(rsp_what: bytes) -> bytes | None:
+    """
+    成功响应，响应固定
+    :param rsp_what:
+    :return: bytes
+    """
+    match rsp_what:
+        case NovaWhat.FILE_NAME_RSP:
+            return b'\xAA\xFF\xFF\x12\x01\xCC\xA1\xB4'
+        case NovaWhat.FILE_CONTENT_RSP:
+            return b'\xAA\xFF\xFF\x14\x01\x00\x01\xCC\x91\xC4'
+        case NovaWhat.PLAY_LIST_RSP:
+            return b'\xAA\xFF\xFF\x1C\x01\xCC\xBA\xA4'
+        case _:
+            return None
+
+
+def get_success_rsp_len(rsp_what: bytes) -> int | None:
+    """
+    成功响应，长度固定
+    :param rsp_what:
+    :return: int
+    """
+    match rsp_what:
+        case NovaWhat.SCREEN_WIDTH_HEIGHT_RSP:
+            return 10
+        case NovaWhat.FILE_NAME_RSP:
+            return len(get_success_rsp(NovaWhat.FILE_NAME_RSP))
+        case NovaWhat.FILE_CONTENT_RSP:
+            return len(get_success_rsp(NovaWhat.FILE_CONTENT_RSP))
+        case NovaWhat.PLAY_LIST_RSP:
+            return len(get_success_rsp(NovaWhat.PLAY_LIST_RSP))
+        case _:
+            return None
+
+
+@dataclass(frozen=True)
+class NovaReturnCode:
+    SUCCESS = 0
+    SOCKET_ERROR = -1
+    HOST_RESPONSE_TIMEOUT = -2
+    HOST_RESPONSE_ERROR = -3

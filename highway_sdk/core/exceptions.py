@@ -30,3 +30,33 @@ class ResponseError(Exception):
     def __init__(self, message: str):
         super().__init__(message)
         self.message = message
+
+
+class CrcError(Exception):
+    """
+    校验异常
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class HostResponseTimeoutError(Exception):
+    """
+    主机响应超时
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class InvalidSocketError(Exception):
+    """
+    无效的socket
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message

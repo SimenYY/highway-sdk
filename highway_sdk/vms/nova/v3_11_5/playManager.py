@@ -29,6 +29,6 @@ class PlayManager:
     def play(self) -> int:
         content = self._play_builder.build().__str__()
         play_id = self.__get_play_id()
-        ret = self._nova_client.send_play_list_combined(content, play_id)
+        ret = self._nova_client.set_play_list(content, play_id)
 
         return ret

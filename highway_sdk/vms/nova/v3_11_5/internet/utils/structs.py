@@ -3,8 +3,10 @@
 
 
 from dataclasses import dataclass
+
+from .crc import CrcUtils
 from .escape import NovaEscape
-from .crc import CrcUtils, Bytes16
+from highway_sdk.core.exceptions import CrcError
 
 
 @dataclass
@@ -26,6 +28,10 @@ class NovaPacket:
     def pack(cls, what: bytes, data: bytes, **kwargs) -> bytes:
         """
         打包函数
+        :param what:
+        :param data:
+        :param kwargs:
+        :return: bytes
         """
         if 'address' in kwargs:
             cls.address = kwargs['address']
@@ -48,6 +54,9 @@ class NovaPacket:
     def unpack(cls, message: bytes) -> 'NovaPacket':
         """
         解包函数
+        :raise CrcError
+        :param message:
+        :return: NovaPacket
         """
         address_what_and_data = message[1:-3]
 
@@ -61,7 +70,7 @@ class NovaPacket:
 
         crc_16 = CrcUtils.nova_crc_16_table(to_check)
         if crc_16.get_reverse_bytes() != crc:
-            raise ValueError('校验失败')
+            raise CrcError('校验失败')
         else:
             address_what_and_data = NovaEscape.short_to_byte(address_what_and_data)
             address = address_what_and_data[:2]
