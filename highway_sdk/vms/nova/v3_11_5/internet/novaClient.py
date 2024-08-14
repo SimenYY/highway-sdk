@@ -3,7 +3,7 @@
 
 import socket
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Generator
 
 from loguru import logger
 
@@ -42,41 +42,24 @@ class NovaClient:
         self.port: int = port
         self.sock: Optional[socket.socket] = None
 
-    def __enter__(self):
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.settimeout(self.nova_rsp_timeout)
-            self.sock.connect((self.ip, self.port))
-        except ConnectionRefusedError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
-        except TimeoutError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
-        except Exception as e:
-            logger.error(f'{self.__log_prefix()} {e}')
-        finally:
-            return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.sock.__exit__()
-        self.sock = None
-        if exc_type:
-            logger.error(f'{self.__log_prefix()} {exc_val}')
-
-    # @contextmanager
-    # def connect(self):
-    #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.sock:
-    #         try:
-    #             self.sock.settimeout(self.nova_rsp_timeout)
-    #             self.sock.connect((self.ip, self.port))
-    #         except ConnectionRefusedError as e:
-    #             logger.error(f'{self.__log_prefix()} {e}')
-    #         except TimeoutError as e:
-    #             logger.error(f'{self.__log_prefix()} {e}')
-    #         except Exception as e:
-    #             logger.error(f'{self.__log_prefix()} {e}')
-    #         finally:
-    #             yield self
-    #             self.sock = None
+    @contextmanager
+    def connect(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.sock:
+            try:
+                self.sock.settimeout(self.nova_rsp_timeout)
+                self.sock.connect((self.ip, self.port))
+                yield self
+            except ConnectionRefusedError as e:
+                logger.error(f'{self.__log_prefix()} {e}')
+                yield None
+            except TimeoutError as e:
+                logger.error(f'{self.__log_prefix()} {e}')
+                yield None
+            except Exception as e:
+                logger.error(f'{self.__log_prefix()} {e}')
+                yield None
+            finally:
+                self.sock = None
 
     def __send_file_name(self, file_name: str) -> None:
         """
