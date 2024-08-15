@@ -13,11 +13,11 @@ class NovaWhat:
     """
 
     # 获取当前内容
-    GET_PLAYING_ITEM_REQ = b'\x2D'
-    GET_PLAYING_ITEM_RSP = b'\x2E'
+    GET_NOW_PLAY_CONTENT_REQ = b'\x2D'
+    GET_NOW_PLAY_CONTENT_RSP = b'\x2E'
     # 获取当前列表
-    GET_PLAYING_ALL_REQ = b'\x3A'
-    GET_PLAYING_ALL_RSP = b'\x3B'
+    GET_NOW_PLAY_ALL_CONTENT_REQ = b'\x3A'
+    GET_NOW_PLAY_ALL_CONTENT_RSP = b'\x3B'
 
     # 发送文件名
     FILE_NAME_REQ = b'\x11'
@@ -36,8 +36,8 @@ class NovaWhat:
     SCREENSHOT_RSP = b'\x81'
 
     # 获取屏幕高宽
-    SCREEN_WIDTH_HEIGHT_REQ = b'\x82'
-    SCREEN_WIDTH_HEIGHT_RSP = b'\x83'
+    GET_DEVICE_SIZE_REQ = b'\x82'
+    GET_DEVICE_SIZE_RSP = b'\x83'
 
 
 def get_success_rsp(rsp_what: bytes) -> bytes | None:
@@ -64,7 +64,7 @@ def get_success_rsp_len(rsp_what: bytes) -> int | None:
     :return: int
     """
     match rsp_what:
-        case NovaWhat.SCREEN_WIDTH_HEIGHT_RSP:
+        case NovaWhat.GET_DEVICE_SIZE_RSP:
             return 10
         case NovaWhat.FILE_NAME_RSP:
             return len(get_success_rsp(NovaWhat.FILE_NAME_RSP))
@@ -82,3 +82,4 @@ class NovaReturnCode:
     SOCKET_ERROR = -1
     HOST_RESPONSE_TIMEOUT = -2
     HOST_RESPONSE_ERROR = -3
+    PROTOCOL_PARSER_ERROR = -4

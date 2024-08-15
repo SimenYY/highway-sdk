@@ -3,27 +3,24 @@
 
 import socket
 from contextlib import contextmanager
-from typing import Optional, Generator
+from typing import Optional
 
 from loguru import logger
 
 from highway_sdk.core.exceptions import (
     ResponseError,
-    CrcError,
-    InvalidSocketError,
+    ProtocolParserError,
     HostResponseTimeoutError
 )
 from highway_sdk.core.validators import (
     validate_ipv4_address,
     validate_port,
 )
+from .protocol import Protocol
 from .utils.constants import (
     NovaWhat,
-    NovaReturnCode,
-    get_success_rsp,
-    get_success_rsp_len
+    NovaReturnCode
 )
-from .utils.structs import NovaPacket
 from .utils.crc import Bytes16
 
 
@@ -43,23 +40,29 @@ class NovaClient:
         self.sock: Optional[socket.socket] = None
 
     @contextmanager
-    def connect(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.sock:
-            try:
-                self.sock.settimeout(self.nova_rsp_timeout)
-                self.sock.connect((self.ip, self.port))
-                yield self
-            except ConnectionRefusedError as e:
-                logger.error(f'{self.__log_prefix()} {e}')
-                yield None
-            except TimeoutError as e:
-                logger.error(f'{self.__log_prefix()} {e}')
-                yield None
-            except Exception as e:
-                logger.error(f'{self.__log_prefix()} {e}')
-                yield None
-            finally:
-                self.sock = None
+    def client_session(self):
+        try:
+            self.__create_socket()
+            yield self
+        finally:
+            self.__close_sock()
+
+    def __create_socket(self):
+        if self.sock is not None:
+            return
+
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.settimeout(self.nova_rsp_timeout)
+            self.sock.connect((self.ip, self.port))
+        except (TimeoutError, ConnectionRefusedError, Exception) as e:
+            logger.error(f'{self.log_prefix()} {e}')
+            self.__close_sock()
+
+    def __close_sock(self):
+        if self.sock is not None:
+            self.sock.close()
+            self.sock = None
 
     def __send_file_name(self, file_name: str) -> None:
         """
@@ -69,24 +72,20 @@ class NovaClient:
         :param file_name:
         :return: None
         """
-        BLOCK_SIZE = 65535
 
-        data = BLOCK_SIZE.to_bytes(2, 'little')
-        data += file_name.encode('utf-8', 'ignore')
-
-        send_buffer = NovaPacket.pack(what=NovaWhat.FILE_NAME_REQ,
-                                      data=data)
+        send_buffer = Protocol.file_name(file_name)
         self.sock.send(send_buffer)
         try:
             recv_buffer = self.sock.recv(1024)
+            data = Protocol.Parser(recv_buffer, NovaWhat.FILE_NAME_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_name {e}')
-
-        if (len(recv_buffer) == get_success_rsp_len(NovaWhat.FILE_NAME_RSP)
-                and recv_buffer == get_success_rsp(NovaWhat.FILE_NAME_RSP)):
-            pass
+        except ProtocolParserError as e:
+            raise ProtocolParserError(f'__send_file_name {e}')
         else:
-            raise ResponseError(f'发送文件名响应失败')
+            # 数据域内容： 执行结果1B
+            if data != b'\x01':
+                raise ResponseError(f'发送文件名响应失败')
 
     def __send_file_content(self, content: str) -> None:
         """
@@ -96,24 +95,20 @@ class NovaClient:
         :param content:
         :return: None
         """
-        BLOCK_NUM = 1
 
-        data = BLOCK_NUM.to_bytes(1, 'little')
-        data += content.encode('utf-8', 'ignore')
-
-        send_buffer = NovaPacket.pack(what=NovaWhat.FILE_CONTENT_REQ,
-                                      data=data)
+        send_buffer = Protocol.file_content(content)
         self.sock.send(send_buffer)
         try:
             recv_buffer = self.sock.recv(1024)
+            data = Protocol.Parser(recv_buffer, NovaWhat.FILE_CONTENT_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_content {e}')
-
-        if (len(recv_buffer) == get_success_rsp_len(NovaWhat.FILE_CONTENT_RSP)
-                and recv_buffer == get_success_rsp(NovaWhat.FILE_CONTENT_RSP)):
-            pass
+        except ProtocolParserError as e:
+            raise ProtocolParserError(f'__send_file_content {e}')
         else:
-            raise ResponseError('发送文件内容响应失败')
+            # 数据域内容： 块号2B + 执行结果1B
+            if data[2:] != b'\x01':
+                raise ResponseError('发送文件内容响应失败')
 
     def __play_list_by_id(self, play_id: int) -> None:
         """
@@ -123,22 +118,21 @@ class NovaClient:
         :param play_id:
         :return: None
         """
-        data = play_id.to_bytes(2, 'little')
-        send_buffer = NovaPacket.pack(what=NovaWhat.PLAY_LIST_REQ,
-                                      data=data)
+        send_buffer = Protocol.play_list(play_id)
         self.sock.send(send_buffer)
         try:
             recv_buffer = self.sock.recv(1024)
+            data = Protocol.Parser(recv_buffer, NovaWhat.PLAY_LIST_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__play_list {e}')
-
-        if (len(recv_buffer) == get_success_rsp_len(NovaWhat.PLAY_LIST_RSP)
-                and recv_buffer == get_success_rsp(NovaWhat.PLAY_LIST_RSP)):
-            pass
+        except ProtocolParserError as e:
+            raise ProtocolParserError(f'__send_file_content {e}')
         else:
-            raise ResponseError('指定播放响应失败')
+            # 数据域内容： 执行结果1B
+            if data == b'\x01':
+                raise ResponseError('指定播放响应失败')
 
-    def __log_prefix(self) -> str:
+    def log_prefix(self) -> str:
         return f'{self.ip}:{self.port}'
 
     @logger.catch
@@ -162,10 +156,13 @@ class NovaClient:
             # 指定播放
             self.__play_list_by_id(play_id)
         except HostResponseTimeoutError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
+            logger.error(f'{self.log_prefix()} {e}')
             return NovaReturnCode.HOST_RESPONSE_TIMEOUT
+        except ProtocolParserError as e:
+            logger.error(f'{self.log_prefix()} {e}')
+            return NovaReturnCode.PROTOCOL_PARSER_ERROR
         except ResponseError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
+            logger.error(f'{self.log_prefix()} {e}')
             return NovaReturnCode.HOST_RESPONSE_ERROR
 
         return NovaReturnCode.SUCCESS
@@ -180,27 +177,18 @@ class NovaClient:
             logger.error('socket is none.')
             return None
 
-        data = b''
-        send_buffer = NovaPacket.pack(what=NovaWhat.SCREEN_WIDTH_HEIGHT_REQ,
-                                      data=data)
+        send_buffer = Protocol.get_device_size()
         self.sock.send(send_buffer)
         try:
             recv_buffer = self.sock.recv(1024)
-            if len(recv_buffer) != get_success_rsp(NovaWhat.SCREEN_WIDTH_HEIGHT_RSP):
-                logger.error('host response length is incorrect.')
-                return None
-            packet = NovaPacket.unpack(recv_buffer)
-        except TimeoutError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
-        except CrcError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
+            data = Protocol.Parser(recv_buffer, NovaWhat.GET_DEVICE_SIZE_RSP)
+        except (TimeoutError, ProtocolParserError) as e:
+            logger.error(f'{self.log_prefix()} {e}')
         else:
-            if packet.what == NovaWhat.SCREEN_WIDTH_HEIGHT_RSP:
-                width = Bytes16(packet.data[:2]).reverse_bytes_to_int()
-                height = Bytes16(packet.data[2:4]).reverse_bytes_to_int()
-                return width, height
-            else:
-                logger.error('host response what is incorrect.')
+            width = Bytes16(data[:2]).reverse_bytes_to_int()
+            height = Bytes16(data[2:4]).reverse_bytes_to_int()
+
+            return width, height
 
         return None
 
@@ -214,26 +202,17 @@ class NovaClient:
             logger.error('socket is none.')
             return None
 
-        data = b''
-        send_buffer = NovaPacket.pack(what=NovaWhat.GET_PLAYING_ITEM_REQ,
-                                      data=data)
+        send_buffer = Protocol.get_now_play_content()
         self.sock.send(send_buffer)
         try:
             recv_buffer = self.sock.recv(1024)
-            if len(recv_buffer) != get_success_rsp_len(NovaWhat.GET_PLAYING_ITEM_RSP):
-                logger.error('host response length is incorrect.')
-                return None
-            packet = NovaPacket.unpack(recv_buffer)
-        except TimeoutError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
-        except CrcError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
+            data = Protocol.Parser(recv_buffer, NovaWhat.GET_NOW_PLAY_CONTENT_RSP)
+        except (TimeoutError, ProtocolParserError) as e:
+            logger.error(f'{self.log_prefix()} {e}')
         else:
-            if packet.what == NovaWhat.GET_PLAYING_ITEM_RSP:
-                current_item = packet.data[1:]
-                return current_item.decode('utf-8', 'ignore')
-            else:
-                logger.error('host response what is incorrect.')
+            current_item = data[1:]
+            return current_item.decode('utf-8', 'ignore')
+
         return None
 
     @logger.catch
@@ -246,25 +225,15 @@ class NovaClient:
             logger.error('socket is none.')
             return None
 
-        data = b''
-        send_buffer = NovaPacket.pack(what=NovaWhat.GET_PLAYING_ALL_REQ,
-                                      data=data)
+        send_buffer = Protocol.get_now_play_all_content()
         self.sock.send(send_buffer)
         try:
             recv_buffer = self.sock.recv(1024)
-            if len(recv_buffer) != get_success_rsp_len(NovaWhat.GET_PLAYING_ALL_RSP):
-                logger.error('host response length is incorrect.')
-                return None
-            packet = NovaPacket.unpack(recv_buffer)
-        except TimeoutError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
-        except CrcError as e:
-            logger.error(f'{self.__log_prefix()} {e}')
+            data = Protocol.Parser(recv_buffer, NovaWhat.GET_NOW_PLAY_ALL_CONTENT_RSP)
+        except (TimeoutError, ProtocolParserError) as e:
+            logger.error(f'{self.log_prefix()} {e}')
         else:
-            if packet.what == NovaWhat.GET_PLAYING_ALL_RSP:
-                current_all_item = packet.data[1:]
-                return current_all_item.decode('utf-8', 'ignore')
-            else:
-                logger.error('host response what is incorrect.')
+            current_all_item = data[1:]
+            return current_all_item.decode('utf-8', 'ignore')
 
         return None

@@ -21,8 +21,8 @@ item_builder.add_media_builder(text_plus_builder)
 play_builder = PlayBuilder()
 play_builder.add_item_builder(item_builder)
 
-cli = NovaClient('127.0.0.1')
+cli = NovaClient('128.0.0.1')
 
-with cli.connect() as connection:
-    if connection:
-        connection.get_device_size()
+with cli.client_session() as session:
+    session.get_device_size()
+

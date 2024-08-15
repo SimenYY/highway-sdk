@@ -70,7 +70,7 @@ class NovaPacket:
 
         crc_16 = CrcUtils.nova_crc_16_table(to_check)
         if crc_16.get_reverse_bytes() != crc:
-            raise CrcError('校验失败')
+            raise CrcError('crc error')
         else:
             address_what_and_data = NovaEscape.short_to_byte(address_what_and_data)
             address = address_what_and_data[:2]

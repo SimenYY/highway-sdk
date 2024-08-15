@@ -12,7 +12,7 @@
 """
 import pytest
 
-from ..media import (
+from highway_sdk.vms.nova.v3_11_5.media import (
     PlayBuilder,
     ItemBuilder,
     TextPlusMediaBuilder

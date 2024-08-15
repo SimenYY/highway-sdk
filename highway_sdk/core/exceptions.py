@@ -42,6 +42,16 @@ class CrcError(Exception):
         self.message = message
 
 
+class ProtocolParserError(Exception):
+    """
+    协议解析异常
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
 class HostResponseTimeoutError(Exception):
     """
     主机响应超时
