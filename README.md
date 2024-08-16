@@ -4,8 +4,6 @@
 # SDK使用说明
 ## VMS 情报板
 ### Nova
-#### 节目播放功能
-###### 文本媒体播放
 ```python
 from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
 from highway_sdk.vms.nova.v3_11_5.media import PlayBuilder, ItemBuilder, TextPlusMediaBuilder
@@ -35,9 +33,6 @@ cli.make_connection()
 cli.get_device_size()
 cli.close_connection()
 ```
-###### web页面播放
-待补充
-
 # 其他
 ## 打包
 ```bash

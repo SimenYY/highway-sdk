@@ -52,9 +52,12 @@ class TextPlusMediaBuilder(BaseMediaBuilder):
         self._voice_speed: int = 5
         self._intonation: int = 5
 
+    def auto_adjust_text_size(self):
+        # todo
+        pass
+
     def build(self) -> BaseMedia:
         return TextPlusMedia(**self.to_dict())
-
 
     @property
     def font(self) -> str:
@@ -215,5 +218,3 @@ class TextPlusMediaBuilder(BaseMediaBuilder):
     @intonation.setter
     def intonation(self, intonation: int) -> None:
         self._intonation = intonation
-
-
