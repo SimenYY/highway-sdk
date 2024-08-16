@@ -3,7 +3,7 @@
 
 import socket
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Generator
 
 from loguru import logger
 
@@ -37,32 +37,51 @@ class NovaClient:
 
         self.ip: str = ip
         self.port: int = port
-        self.sock: Optional[socket.socket] = None
+        self._sock: Optional[socket.socket] = None
 
-    @contextmanager
-    def client_session(self):
-        try:
-            self.__create_socket()
-            yield self
-        finally:
-            self.__close_sock()
+    def __enter__(self):
+        self.make_connection()
+        return self
 
-    def __create_socket(self):
-        if self.sock is not None:
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close_connection()
+        if exc_type is not None:
+            logger.error(f'{self.log_prefix()} {exc_type} {exc_val} {exc_tb}')
+        # 抑制异常
+        return True
+
+    @property
+    def sock(self) -> socket.socket:
+        return self._sock
+
+    @sock.setter
+    def sock(self, sock: socket.socket):
+        self._sock = sock
+
+    # @contextmanager
+    # def client_session(self) -> Generator['NovaClient', None, None]:
+    #     self.make_connection()
+    #     try:
+    #         yield self
+    #     finally:
+    #         self.close_connection()
+
+    def make_connection(self):
+        if self._sock is not None:
             return
 
         try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.settimeout(self.nova_rsp_timeout)
-            self.sock.connect((self.ip, self.port))
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock.settimeout(self.nova_rsp_timeout)
+            self._sock.connect((self.ip, self.port))
         except (TimeoutError, ConnectionRefusedError, Exception) as e:
             logger.error(f'{self.log_prefix()} {e}')
-            self.__close_sock()
+            self.close_connection()
 
-    def __close_sock(self):
-        if self.sock is not None:
-            self.sock.close()
-            self.sock = None
+    def close_connection(self):
+        if self._sock is not None:
+            self._sock.close()
+            self._sock = None
 
     def __send_file_name(self, file_name: str) -> None:
         """
@@ -74,18 +93,18 @@ class NovaClient:
         """
 
         send_buffer = Protocol.file_name(file_name)
-        self.sock.send(send_buffer)
+        self._sock.send(send_buffer)
         try:
-            recv_buffer = self.sock.recv(1024)
+            recv_buffer = self._sock.recv(1024)
             data = Protocol.Parser(recv_buffer, NovaWhat.FILE_NAME_RSP)
         except TimeoutError as e:
-            raise HostResponseTimeoutError(f'__send_file_name {e}')
+            raise HostResponseTimeoutError(f'__send_file_name recv timeout {e}')
         except ProtocolParserError as e:
-            raise ProtocolParserError(f'__send_file_name {e}')
+            raise ProtocolParserError(f'__send_file_name parser error {e}')
         else:
             # 数据域内容： 执行结果1B
             if data != b'\x01':
-                raise ResponseError(f'发送文件名响应失败')
+                raise ResponseError('__send_file_name response error')
 
     def __send_file_content(self, content: str) -> None:
         """
@@ -97,18 +116,18 @@ class NovaClient:
         """
 
         send_buffer = Protocol.file_content(content)
-        self.sock.send(send_buffer)
+        self._sock.send(send_buffer)
         try:
-            recv_buffer = self.sock.recv(1024)
+            recv_buffer = self._sock.recv(1024)
             data = Protocol.Parser(recv_buffer, NovaWhat.FILE_CONTENT_RSP)
         except TimeoutError as e:
-            raise HostResponseTimeoutError(f'__send_file_content {e}')
+            raise HostResponseTimeoutError(f'__send_file_content recv timeout {e}')
         except ProtocolParserError as e:
-            raise ProtocolParserError(f'__send_file_content {e}')
+            raise ProtocolParserError(f'__send_file_content parser error {e}')
         else:
             # 数据域内容： 块号2B + 执行结果1B
             if data[2:] != b'\x01':
-                raise ResponseError('发送文件内容响应失败')
+                raise ResponseError('__send_file_content response error')
 
     def __play_list_by_id(self, play_id: int) -> None:
         """
@@ -119,18 +138,18 @@ class NovaClient:
         :return: None
         """
         send_buffer = Protocol.play_list(play_id)
-        self.sock.send(send_buffer)
+        self._sock.send(send_buffer)
         try:
-            recv_buffer = self.sock.recv(1024)
+            recv_buffer = self._sock.recv(1024)
             data = Protocol.Parser(recv_buffer, NovaWhat.PLAY_LIST_RSP)
         except TimeoutError as e:
-            raise HostResponseTimeoutError(f'__play_list {e}')
+            raise HostResponseTimeoutError(f'__play_list_by_id timeout {e}')
         except ProtocolParserError as e:
-            raise ProtocolParserError(f'__send_file_content {e}')
+            raise ProtocolParserError(f'__play_list_by_id parser error {e}')
         else:
             # 数据域内容： 执行结果1B
-            if data == b'\x01':
-                raise ResponseError('指定播放响应失败')
+            if data != b'\x01':
+                raise ResponseError('__play_list_by_id response error')
 
     def log_prefix(self) -> str:
         return f'{self.ip}:{self.port}'
@@ -144,7 +163,7 @@ class NovaClient:
         :param play_id:
         :return: int 返回码
         """
-        if self.sock is None:
+        if self._sock is None:
             return NovaReturnCode.SOCKET_ERROR
 
         try:
@@ -173,14 +192,14 @@ class NovaClient:
         获取屏幕点阵大小
         :return: 宽，高 or None
         """
-        if self.sock is None:
+        if self._sock is None:
             logger.error('socket is none.')
             return None
 
         send_buffer = Protocol.get_device_size()
-        self.sock.send(send_buffer)
+        self._sock.send(send_buffer)
         try:
-            recv_buffer = self.sock.recv(1024)
+            recv_buffer = self._sock.recv(1024)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_DEVICE_SIZE_RSP)
         except (TimeoutError, ProtocolParserError) as e:
             logger.error(f'{self.log_prefix()} {e}')
@@ -198,14 +217,14 @@ class NovaClient:
         获取当前播放内容
         :return: 当前item内容 or None
         """
-        if self.sock is None:
+        if self._sock is None:
             logger.error('socket is none.')
             return None
 
         send_buffer = Protocol.get_now_play_content()
-        self.sock.send(send_buffer)
+        self._sock.send(send_buffer)
         try:
-            recv_buffer = self.sock.recv(1024)
+            recv_buffer = self._sock.recv(1024)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_NOW_PLAY_CONTENT_RSP)
         except (TimeoutError, ProtocolParserError) as e:
             logger.error(f'{self.log_prefix()} {e}')
@@ -221,14 +240,14 @@ class NovaClient:
         获取当前播放全部内容
         :return: 当前播放全部内容 or None
         """
-        if self.sock is None:
+        if self._sock is None:
             logger.error('socket is none.')
             return None
 
         send_buffer = Protocol.get_now_play_all_content()
-        self.sock.send(send_buffer)
+        self._sock.send(send_buffer)
         try:
-            recv_buffer = self.sock.recv(1024)
+            recv_buffer = self._sock.recv(1024)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_NOW_PLAY_ALL_CONTENT_RSP)
         except (TimeoutError, ProtocolParserError) as e:
             logger.error(f'{self.log_prefix()} {e}')

@@ -40,7 +40,7 @@ class Protocol:
 
     @classmethod
     def play_list(cls, play_id: int = 1):
-        data = play_id.to_bytes(2, 'little')
+        data = play_id.to_bytes(1, 'big')
         return NovaPacket.pack(what=NovaWhat.PLAY_LIST_REQ,
                                data=data)
 

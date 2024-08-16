@@ -18,7 +18,8 @@ def validate_ipv4_address(value):
     try:
         ipaddress.IPv4Address(value)
     except ValueError:
-        raise ValidationError('请输入一个合法的IPv4地址')
+        if value != 'localhost':
+            raise ValidationError('请输入一个合法的IPv4地址')
 
 
 def validate_port(value):
