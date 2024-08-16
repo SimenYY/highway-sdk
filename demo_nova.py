@@ -30,11 +30,11 @@ play_builder.add_item_builder(item_builder)
 # 生成播放表内容
 content = play_builder.set_play_id(1).build().create_msg()
 
-# 发送方法1
+# 发送播放表
 with NovaClient("localhost") as client:
     client.set_play_list(content)
 
-# 发送方法2
+# 发送查询设备点阵大小
 cli = NovaClient("localhost")
 cli.make_connection()
 cli.get_device_size()

@@ -7,34 +7,33 @@
 #### 节目播放功能
 ###### 文本媒体播放
 ```python
-# 创建一个nova客户端
-cli = NovaClient('127.0.0.1')
-# 创建一个节目构造器
-play_br = PlayBuilder()
-# 创建节目页面构造器
-item_br = ItemBuilder()
-# 创建文本媒体构造器
-text_br = TextMediaBuilder()
-# 添加媒体参数
-text_br.x = 10
-text_br.y = 10
-text_br.width = 200
-text_br.height = 100
-text_br.text = 'Hello World'
-text_br.text_color = '1'
-text_br.background_color = '8'
+from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
+from highway_sdk.vms.nova.v3_11_5.media import PlayBuilder, ItemBuilder, TextPlusMediaBuilder
 
-# 给页面添加媒体
-item_br.add_media_builder(text_br)
+# 创建媒体
+text_plus_builder = TextPlusMediaBuilder()
+text_plus_builder.text = "hello world"
 
-# 设置节目编号, 并添加页面
-play_br.set_play_id(1).add_item_builder(item_br)
+# 创建页面item
+item_builder = ItemBuilder()
+item_builder.add_media_builder(text_plus_builder)
 
-# 创建播放管理器
-pm = PlayManager(play_builder=play_br, nova_client=cli)
+# 创建播放表
+play_builder = PlayBuilder()
+play_builder.add_item_builder(item_builder)
 
-# 一键播放
-pm.play()
+# 生成播放表内容
+content = play_builder.set_play_id(1).build().create_msg()
+
+# 发送播放表
+with NovaClient("localhost") as client:
+    client.set_play_list(content)
+
+# 发送查询设备点阵大小
+cli = NovaClient("localhost")
+cli.make_connection()
+cli.get_device_size()
+cli.close_connection()
 ```
 ###### web页面播放
 待补充
