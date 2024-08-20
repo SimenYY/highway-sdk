@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import socket
-from contextlib import contextmanager
-from typing import Optional, Generator
+from typing import Optional
 
 from loguru import logger
 

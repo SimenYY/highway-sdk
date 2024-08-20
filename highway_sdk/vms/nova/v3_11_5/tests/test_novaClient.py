@@ -1,6 +1,7 @@
+from unittest.mock import patch, call
+
 import pytest
-import time
-from unittest.mock import MagicMock, patch, call
+
 from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
 from highway_sdk.vms.nova.v3_11_5.internet.utils.constants import get_success_rsp, NovaWhat, NovaReturnCode
 

@@ -34,9 +34,16 @@ cli.get_device_size()
 cli.close_connection()
 ```
 # 其他
-## 打包
+## 使用setup
+### 打包
+
 ```bash
 python setup.py sdist bdist_wheel
+```
+## 使用poetry
+### 打包
+```bash
+
 ```
 ## 本地安装
 ```bash
