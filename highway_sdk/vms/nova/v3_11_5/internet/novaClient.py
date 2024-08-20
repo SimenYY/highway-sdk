@@ -24,8 +24,13 @@ from .utils.crc import Bytes16
 
 
 class NovaClient:
+    """
+    详情用法可参考 http://172.16.1.53/supconit/highway_sdk/-/tree/dev?ref_type=heads
+    """
     # 通信响应超时时间
     nova_rsp_timeout: int = 3
+    # 接受字节流大小单位
+    buf_size: int = 1024
 
     def __init__(self, ip: str, port: int = 5000):
         """
@@ -94,7 +99,7 @@ class NovaClient:
         send_buffer = Protocol.file_name(file_name)
         self._sock.send(send_buffer)
         try:
-            recv_buffer = self._sock.recv(1024)
+            recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.FILE_NAME_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_name recv timeout {e}')
@@ -117,7 +122,7 @@ class NovaClient:
         send_buffer = Protocol.file_content(content)
         self._sock.send(send_buffer)
         try:
-            recv_buffer = self._sock.recv(1024)
+            recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.FILE_CONTENT_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_content recv timeout {e}')
@@ -139,7 +144,7 @@ class NovaClient:
         send_buffer = Protocol.play_list(play_id)
         self._sock.send(send_buffer)
         try:
-            recv_buffer = self._sock.recv(1024)
+            recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.PLAY_LIST_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__play_list_by_id timeout {e}')
@@ -198,7 +203,7 @@ class NovaClient:
         send_buffer = Protocol.get_device_size()
         self._sock.send(send_buffer)
         try:
-            recv_buffer = self._sock.recv(1024)
+            recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_DEVICE_SIZE_RSP)
         except (TimeoutError, ProtocolParserError) as e:
             logger.error(f'{self.log_prefix()} {e}')
@@ -223,7 +228,7 @@ class NovaClient:
         send_buffer = Protocol.get_now_play_content()
         self._sock.send(send_buffer)
         try:
-            recv_buffer = self._sock.recv(1024)
+            recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_NOW_PLAY_CONTENT_RSP)
         except (TimeoutError, ProtocolParserError) as e:
             logger.error(f'{self.log_prefix()} {e}')
@@ -246,7 +251,7 @@ class NovaClient:
         send_buffer = Protocol.get_now_play_all_content()
         self._sock.send(send_buffer)
         try:
-            recv_buffer = self._sock.recv(1024)
+            recv_buffer = self._sock.recv(self.buf_size * 2)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_NOW_PLAY_ALL_CONTENT_RSP)
         except (TimeoutError, ProtocolParserError) as e:
             logger.error(f'{self.log_prefix()} {e}')
