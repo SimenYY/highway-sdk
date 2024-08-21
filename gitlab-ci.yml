@@ -1,0 +1,29 @@
+image: vizguard_test:latest
+
+stages:
+  - release
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  POETRY_VIRTUALENVS_PATH: "$CI_PROJECT_DIR/.venv"
+
+before_script:
+  - poetry config virtualenvs.in-project true
+  - poetry install
+
+
+release:
+  stage: release
+  script:
+    - git diff --quiet HEAD^ HEAD -- pyproject.toml && exit 0 || true
+    - CURRENT_VERSION=$( poetry version -s)
+    - PREVIOUS_VERSION=$(git show HEAD^:pyproject.toml | grep '^version' | cut -d '"' -f 2)
+    - if [ "$CURRENT_VERSION" == "$PREVIOUS_VERSION" ]; then exit 0; fi
+    - poetry build
+    - poetry config repositories.private http://172.20.61.88:8080/
+    - poetry publish --repository private
+  only:
+    refs:
+      - release
+    changes:
+      - pyproject.toml
