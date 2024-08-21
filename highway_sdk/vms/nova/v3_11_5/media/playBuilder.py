@@ -18,8 +18,7 @@ class PlayBuilder(BaseBuilder):
         self._play_id: int = 1
 
     def add_item_builder(self, builder: ItemBuilder) -> 'PlayBuilder':
-        item = builder.build()
-        self.item_list.append(item)
+        self.item_list.append(builder.build())
 
         return self
 

@@ -5,6 +5,10 @@ import pytest
 from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
 from highway_sdk.vms.nova.v3_11_5.internet.utils.constants import get_success_rsp, NovaWhat, NovaReturnCode
 
+from loguru import logger
+
+logger.remove()
+
 
 class TestNovaClient:
     @pytest.fixture

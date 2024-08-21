@@ -20,37 +20,37 @@ class Protocol:
     PROTOCOL_MIN_LENGTH = 7
 
     @classmethod
-    def get_device_size(cls):
+    def get_device_size(cls) -> bytes:
         return NovaPacket.pack(what=NovaWhat.GET_DEVICE_SIZE_REQ,
                                data=b'')
 
     @classmethod
-    def file_name(cls, file_name: str, block_size: int = 65535):
+    def file_name(cls, file_name: str, block_size: int = 65535) -> bytes:
         data = block_size.to_bytes(2, 'little')
         data += file_name.encode('utf-8', 'ignore')
         return NovaPacket.pack(what=NovaWhat.FILE_NAME_REQ,
                                data=data)
 
     @classmethod
-    def file_content(cls, content: str, block_num: int = 1):
+    def file_content(cls, content: str, block_num: int = 1) -> bytes:
         data = block_num.to_bytes(1, 'little')
         data += content.encode('utf-8', 'ignore')
         return NovaPacket.pack(what=NovaWhat.FILE_CONTENT_REQ,
                                data=data)
 
     @classmethod
-    def play_list(cls, play_id: int = 1):
+    def play_list(cls, play_id: int = 1) -> bytes:
         data = play_id.to_bytes(1, 'big')
         return NovaPacket.pack(what=NovaWhat.PLAY_LIST_REQ,
                                data=data)
 
     @classmethod
-    def get_now_play_content(cls):
+    def get_now_play_content(cls) -> bytes:
         return NovaPacket.pack(what=NovaWhat.GET_NOW_PLAY_CONTENT_REQ,
                                data=b'')
 
     @classmethod
-    def get_now_play_all_content(cls):
+    def get_now_play_all_content(cls) -> bytes:
         return NovaPacket.pack(what=NovaWhat.GET_NOW_PLAY_ALL_CONTENT_REQ,
                                data=b'')
 

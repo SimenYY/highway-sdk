@@ -18,6 +18,10 @@ from highway_sdk.vms.nova.v3_11_5.media import (
     TextPlusMediaBuilder
 )
 
+from loguru import logger
+
+logger.remove()
+
 
 class TestPlayBuilder:
     def test_play_create_msg_test_plus(self):

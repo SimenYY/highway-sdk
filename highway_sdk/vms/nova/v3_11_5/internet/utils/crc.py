@@ -102,8 +102,8 @@ class Bytes16:
 
 class CrcUtils:
 
-    @staticmethod
-    def isCheckSuccess(crc: Bytes16, calc_crc: Bytes16) -> bool:
+    @classmethod
+    def isCheckSuccess(cls, crc: Bytes16, calc_crc: Bytes16) -> bool:
         """
         计算出的crc与原来的crc进行比较， 即校验
 
@@ -116,8 +116,8 @@ class CrcUtils:
         else:
             return False
 
-    @staticmethod
-    def nova_crc_16_table(cp: bytes) -> Bytes16:
+    @classmethod
+    def nova_crc_16_table(cls, cp: bytes) -> Bytes16:
         """
         Nova 16位crc校验函数
         @param cp:
@@ -128,12 +128,12 @@ class CrcUtils:
             fcs = (fcs >> 8) ^ nova_fcstab[(fcs ^ cp[i]) & 0xff]
         return Bytes16(fcs)
 
-    @staticmethod
-    def SanSi_crc_16_table(cp: bytes) -> Bytes16:
+    @classmethod
+    def SanSi_crc_16_table(cls, cp: bytes) -> Bytes16:
         return CrcUtils.YingSha_crc_16_table(cp)
 
-    @staticmethod
-    def YingSha_crc_16_table(buffer: bytes) -> Bytes16:
+    @classmethod
+    def YingSha_crc_16_table(cls, buffer: bytes) -> Bytes16:
         """
         英沙 16位crc校验函数
         :param buffer:
@@ -146,8 +146,17 @@ class CrcUtils:
             crc = crc & 0xFFFF
         return Bytes16(crc)
 
-    @staticmethod
-    def modbus_crc_16(cp: bytes) -> Bytes16:
+    @classmethod
+    def DianMing_crc_16_table(cls, cp: bytes) -> Bytes16:
+        """
+        电明 16位crc校验函数
+        :param cp:
+        :return:
+        """
+        return cls.YingSha_crc_16_table(cp)
+
+    @classmethod
+    def modbus_crc_16(cls, cp: bytes) -> Bytes16:
         """
         如晖车道指示器modbus校验
         @param cp:

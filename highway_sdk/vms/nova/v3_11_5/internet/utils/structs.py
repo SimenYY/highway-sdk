@@ -77,9 +77,9 @@ class NovaPacket:
             what = address_what_and_data[2:3]
             data = address_what_and_data[3:]
 
-        return NovaPacket(start=start,
-                          address=address,
-                          what=what,
-                          data=data,
-                          end=end,
-                          crc=crc)
+        return cls(start=start,
+                   address=address,
+                   what=what,
+                   data=data,
+                   end=end,
+                   crc=crc)

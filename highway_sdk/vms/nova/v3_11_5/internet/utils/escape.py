@@ -4,7 +4,7 @@
 
 class NovaEscape:
     """
-    对发送报文，接受报文进行转移
+    对发送报文，接受报文进行转义
     """
 
     @staticmethod

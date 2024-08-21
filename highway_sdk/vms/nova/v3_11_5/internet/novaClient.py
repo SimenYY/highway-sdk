@@ -11,10 +11,7 @@ from highway_sdk.core.exceptions import (
     ProtocolParserError,
     HostResponseTimeoutError
 )
-from highway_sdk.core.validators import (
-    validate_ipv4_address,
-    validate_port,
-)
+from highway_sdk.core.client import Client
 from .protocol import Protocol
 from .utils.constants import (
     NovaWhat,
@@ -23,69 +20,14 @@ from .utils.constants import (
 from .utils.crc import Bytes16
 
 
-class NovaClient:
+class NovaClient(Client):
     """
+    诺瓦通信客户端
     详情用法可参考 http://172.16.1.53/supconit/highway_sdk/-/tree/dev?ref_type=heads
     """
-    # 通信响应超时时间
-    nova_rsp_timeout: int = 3
-    # 接受字节流大小单位
-    buf_size: int = 1024
 
-    def __init__(self, ip: str, port: int = 5000):
-        """
-        不合法的通信地址要让实例一开始就不成立
-        """
-        validate_ipv4_address(ip)
-        validate_port(port)
-
-        self.ip: str = ip
-        self.port: int = port
-        self._sock: Optional[socket.socket] = None
-
-    def __enter__(self):
-        self.make_connection()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close_connection()
-        if exc_type is not None:
-            logger.error(f'{self.log_prefix()} {exc_type} {exc_val} {exc_tb}')
-        # 抑制异常
-        return True
-
-    @property
-    def sock(self) -> socket.socket:
-        return self._sock
-
-    @sock.setter
-    def sock(self, sock: socket.socket):
-        self._sock = sock
-
-    # @contextmanager
-    # def client_session(self) -> Generator['NovaClient', None, None]:
-    #     self.make_connection()
-    #     try:
-    #         yield self
-    #     finally:
-    #         self.close_connection()
-
-    def make_connection(self):
-        if self._sock is not None:
-            return
-
-        try:
-            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._sock.settimeout(self.nova_rsp_timeout)
-            self._sock.connect((self.ip, self.port))
-        except (TimeoutError, ConnectionRefusedError, Exception) as e:
-            logger.error(f'{self.log_prefix()} {e}')
-            self.close_connection()
-
-    def close_connection(self):
-        if self._sock is not None:
-            self._sock.close()
-            self._sock = None
+    def __init__(self, ip: str = 'localhost', port: int = 5000):
+        super().__init__(ip, port)
 
     def __send_file_name(self, file_name: str) -> None:
         """
@@ -155,13 +97,17 @@ class NovaClient:
             if data != b'\x01':
                 raise ResponseError('__play_list_by_id response error')
 
-    def log_prefix(self) -> str:
-        return f'{self.ip}:{self.port}'
-
     @logger.catch
     def set_play_list(self, content: str, play_id: int = 1) -> int:
         """
         组合指令，发送文件名，发送文件内容，指定播放
+
+        返回码参考
+        SUCCESS = 0
+        SOCKET_ERROR = -1
+        HOST_RESPONSE_TIMEOUT = -2
+        HOST_RESPONSE_ERROR = -3
+        PROTOCOL_PARSER_ERROR = -4
 
         :param content:
         :param play_id:
