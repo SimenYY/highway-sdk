@@ -9,7 +9,8 @@ from loguru import logger
 from highway_sdk.core.exceptions import (
     ResponseError,
     ProtocolParserError,
-    HostResponseTimeoutError
+    HostResponseTimeoutError,
+    InvalidSocketError
 )
 from highway_sdk.core.client import Client
 from .protocol import Protocol
@@ -37,16 +38,21 @@ class NovaClient(Client):
         :param file_name:
         :return: None
         """
+        if self._sock is None:
+            raise InvalidSocketError('__send_file_name sock is None')
 
         send_buffer = Protocol.file_name(file_name)
-        self._sock.send(send_buffer)
+
         try:
+            self._sock.send(send_buffer)
             recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.FILE_NAME_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_name recv timeout {e}')
         except ProtocolParserError as e:
             raise ProtocolParserError(f'__send_file_name parser error {e}')
+        except Exception:
+            raise
         else:
             # 数据域内容： 执行结果1B
             if data != b'\x01':
@@ -60,16 +66,21 @@ class NovaClient(Client):
         :param content:
         :return: None
         """
+        if self._sock is None:
+            raise InvalidSocketError('__send_file_content sock is None')
 
         send_buffer = Protocol.file_content(content)
-        self._sock.send(send_buffer)
+
         try:
+            self._sock.send(send_buffer)
             recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.FILE_CONTENT_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_content recv timeout {e}')
         except ProtocolParserError as e:
             raise ProtocolParserError(f'__send_file_content parser error {e}')
+        except Exception:
+            raise
         else:
             # 数据域内容： 块号2B + 执行结果1B
             if data[2:] != b'\x01':
@@ -83,15 +94,21 @@ class NovaClient(Client):
         :param play_id:
         :return: None
         """
+        if self._sock is None:
+            raise InvalidSocketError('__play_list_by_id sock is None')
+
         send_buffer = Protocol.play_list(play_id)
-        self._sock.send(send_buffer)
+
         try:
+            self._sock.send(send_buffer)
             recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.PLAY_LIST_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__play_list_by_id timeout {e}')
         except ProtocolParserError as e:
             raise ProtocolParserError(f'__play_list_by_id parser error {e}')
+        except Exception:
+            raise
         else:
             # 数据域内容： 执行结果1B
             if data != b'\x01':
@@ -113,9 +130,6 @@ class NovaClient(Client):
         :param play_id:
         :return: int 返回码
         """
-        if self._sock is None:
-            return NovaReturnCode.SOCKET_ERROR
-
         try:
             # 发送文件名
             file_name = f'play{play_id:03d}.lst'
@@ -124,6 +138,9 @@ class NovaClient(Client):
             self.__send_file_content(content)
             # 指定播放
             self.__play_list_by_id(play_id)
+        except InvalidSocketError as e:
+            logger.error(f'{self.log_prefix()} {e}')
+            return NovaReturnCode.SOCKET_ERROR
         except HostResponseTimeoutError as e:
             logger.error(f'{self.log_prefix()} {e}')
             return NovaReturnCode.HOST_RESPONSE_TIMEOUT
@@ -133,6 +150,9 @@ class NovaClient(Client):
         except ResponseError as e:
             logger.error(f'{self.log_prefix()} {e}')
             return NovaReturnCode.HOST_RESPONSE_ERROR
+        except Exception as e:
+            logger.error(f'{self.log_prefix()} {e}')
+            return NovaReturnCode.UNKNOWN_ERROR
 
         return NovaReturnCode.SUCCESS
 
