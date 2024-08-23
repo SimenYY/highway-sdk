@@ -206,7 +206,7 @@ poetry publish --repository private
 ```
 ## 本地安装
 ```bash
-pip install highway_sdk -i http://172.20.61.88:8080/simple/ --trusted-host 172.20.61
+pip install highway_sdk -i http://172.20.61.88:8080/simple/ --trusted-host 172.20.61.88
 ```
 ## 在线安装
 pip install highway_sdk
