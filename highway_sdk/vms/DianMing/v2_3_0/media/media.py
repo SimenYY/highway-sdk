@@ -10,8 +10,9 @@
 :Link:
 :Time: 2024/8/20 13:53
 """
+from pydantic import BaseModel, Field
+
 from .enums import ColorEnum, FontEnum, TextSizeEnum
-from pydantic import BaseModel, Field, field_validator
 
 
 class Media(BaseModel):

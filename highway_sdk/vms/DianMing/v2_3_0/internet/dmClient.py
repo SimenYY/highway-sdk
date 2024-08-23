@@ -29,6 +29,7 @@ class DmClient(Client):
     def __init__(self, ip: str = 'localhost', port: int = 5009):
         super().__init__(ip, port)
 
+    @logger.catch
     def set_play_list(self, content: str, play_id: int = 0) -> int:
         """
         发送播放表，并立即播放

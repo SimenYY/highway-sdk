@@ -10,11 +10,12 @@
 :Link:
 :Time: 2024/8/20 13:53
 """
-from typing import List, Optional
+from typing import Optional
+
+from .baseBuilder import BaseBuilder
 from .item import Item
 from .media import Media
 from .mediaBuilder import MediaBuilder
-from .baseBuilder import BaseBuilder
 
 
 class ItemBuilder(BaseBuilder):
@@ -22,10 +23,10 @@ class ItemBuilder(BaseBuilder):
         self.media: Optional[Media] = None
         # 单位是十分之一s
         self._duration: int = 100
-        self._screen_in: str = '0'
-        self._screen_out: str = '0'
+        self._screen_in: int = 0
+        self._screen_out: int = 0
 
-    def build(self):
+    def build(self) -> Item:
         return Item(**self.to_dict())
 
     def add_media_builder(self, builder: MediaBuilder):

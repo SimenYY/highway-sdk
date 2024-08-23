@@ -19,6 +19,7 @@ class Protocol:
     # 报文最小长度
     PROTOCOL_MIN_LENGTH = 11
 
+    ENCODING = 'utf-8'
     @classmethod
     def set_play_list(cls, content: str, play_id: int = 0) -> bytes:
         file_name = f'play{play_id:02d}.lst'
@@ -27,8 +28,8 @@ class Protocol:
         data = b'\x2B'
         # 文件偏移地址，默认
         data += b'\x30\x30\x30\x30\x30\x30\x30\x30'
-        data += file_name.encode('utf-8')
-        data += content.encode('utf-8')
+        data += file_name.encode(cls.ENCODING)
+        data += content.encode(cls.ENCODING)
 
         return DmPacket.pack(what=DmWhat.SEND_PLAY_LIST_AND_PLAY_REQ,
                              data=data)
@@ -39,7 +40,7 @@ class Protocol:
                              data=b'')
 
     @classmethod
-    def Parser(cls, recv_buffer: bytes, what: bytes) -> bytes | None:
+    def Parser(cls, recv_buffer: bytes, what: bytes) -> bytes:
         try:
             # 长度校验
             if len(recv_buffer) < cls.PROTOCOL_MIN_LENGTH:
