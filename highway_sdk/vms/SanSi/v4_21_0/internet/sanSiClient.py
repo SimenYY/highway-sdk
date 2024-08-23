@@ -36,18 +36,20 @@ class SanSiClient(Client):
         """
         # 在哪里使用就在哪里做防卫式编程
         if self.sock is None:
-            raise InvalidSocketError
+            raise InvalidSocketError('__send_file_name_and_content sock is None')
 
         send_buffer = Protocol.send_file_name_and_content(content, play_id)
-        self.sock.send(send_buffer)
 
         try:
+            self.sock.send(send_buffer)
             recv_buffer = self.sock.recv(self.buf_size)
             data = Protocol.parser(recv_buffer)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_name_and_content {e}')
         except ProtocolParserError as e:
             raise ProtocolParserError(f'__send_file_name_and_content {e}')
+        except Exception:
+            raise
         else:
             # 数据域内容
             if data[:1] != b'\x30':
