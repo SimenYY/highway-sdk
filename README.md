@@ -1,9 +1,25 @@
 # highway_sdk
 # 介绍
 本项目主要作用是作为公路交通领域，机电设备、智能设备等设备协议SDK封装，方便开发者统一用Python快速建立起对设备的交互
+# 快速浏览
+1. VMS 情报板
+   1. 诺瓦
+      1. 功能：
+         1. 查询当前播放节目
+         2. 查询当前所有播放节目
+         3. 发送并播放节目
+         4. 查询设备点阵大小
+   2. 电明
+      1. 功能
+         1. 查询当前播放节目
+         2. 发送并播放节目
+   3. 三思
+      1. 功能
+         1. 查询当前播放节目
+         2. 发送并播放节目
 # SDK使用说明
 ## VMS 情报板
-### 诺瓦Nova
+### 诺瓦 Nova
 #### 发送节目
 ```python 
 from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
@@ -35,11 +51,14 @@ with NovaClient("localhost") as client:
 
     client.set_play_list(content)
 
-# 发送查询设备点阵大小
-# cli = NovaClient("localhost")
-# cli.make_connection()
-# w, h = cli.get_device_size()
-# cli.close_connection()
+
+```
+#### 查询设备点阵大小
+```python
+from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
+
+with NovaClient("localhost") as client:
+    w, h = client.get_device_size
 ```
 #### 查询当前页面
 ```python
@@ -51,6 +70,13 @@ with NovaClient('127.0.0.1') as client:
     if data is not None:
         # todo 近一步解析数据域
         pass
+```
+### 查询当前所有播放节目
+```python
+from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
+
+with NovaClient('127.0.0.1') as client:
+    play_list = client.get_now_play_all_content()
 ```
 ### 电明 DianMing
 #### 发送节目
@@ -101,6 +127,67 @@ recv = sock.recv(1024)
 data = Protocol.Parser(recv, DmWhat.GET_NOW_PLAY_CONTENT_RSP)
 # todo 近一步处理...
 ```
+### 三思 SanSi
+#### 发送节目
+```python
+from highway_sdk.vms.SanSi.v4_21_0.media import PlayBuilder, ItemBuilder, WinBuilder, MediaBuilder
+from highway_sdk.vms.SanSi.v4_21_0.internet.sanSiClient import SanSiClient
+
+with SanSiClient("localhost") as client:
+    # 单窗口播放
+    media_builder = MediaBuilder()
+    media_builder.text = "hello world"
+    
+    item_builder = ItemBuilder()
+    item_builder.add_media_builder(media_builder)
+    item_builder.duration = 300
+    
+    play_builder = PlayBuilder()
+    play_builder.add_win_or_item_builder(item_builder)
+    
+    content = play_builder.build().create_msg()
+    
+    client.set_play_list(content)
+    
+    # 多窗口播放
+    media_builder = MediaBuilder()
+    media_builder.text = "hello world"
+    
+    item_builder = ItemBuilder()
+    item_builder.add_media_builder(media_builder)
+    item_builder.duration = 300
+    
+    # 窗口1
+    win_builder_1 = WinBuilder()
+    win_builder_1.add_item_builder(item_builder)
+    win_builder_1.x = 0
+    win_builder_1.y = 0
+    win_builder_1.w = 100
+    win_builder_1.h = 100
+    
+    # 窗口2 相同内容
+    win_builder_2 = WinBuilder()
+    win_builder_2.add_item_builder(item_builder)
+    win_builder_2.x = 100
+    win_builder_2.y = 100
+    win_builder_2.w = 100
+    win_builder_2.h = 100
+    
+    
+    play_builder = PlayBuilder()
+    play_builder.add_win_or_item_builder(win_builder_1).add_win_or_item_builder(win_builder_2)
+    
+    content = play_builder.build().create_msg()
+```
+#### 查询当前页面
+```python
+from highway_sdk.vms.SanSi.v4_21_0.internet.sanSiClient import SanSiClient
+with SanSiClient('localhost') as client:
+    data = client.get_now_play_content()
+    # todo 解析data
+    pass
+```
+
 # 其他
 ## 打包
 ### 使用setup
