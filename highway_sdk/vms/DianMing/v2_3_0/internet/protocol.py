@@ -19,7 +19,8 @@ class Protocol:
     # 报文最小长度
     PROTOCOL_MIN_LENGTH = 11
 
-    ENCODING = 'utf-8'
+    ENCODING = 'gbk'
+
     @classmethod
     def set_play_list(cls, content: str, play_id: int = 0) -> bytes:
         file_name = f'play{play_id:02d}.lst'

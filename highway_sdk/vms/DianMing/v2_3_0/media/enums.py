@@ -33,3 +33,11 @@ class TextSizeEnum(int, Enum):
     SIZE_32 = 3232
     SIZE_48 = 4848
     SIZE_64 = 6464
+    SIZE_72 = 7272
+    SIZE_80 = 8080
+    SIZE_88 = 8888
+    SIZE_96 = 9696
+    SIZE_104 = 104104
+    SIZE_112 = 112112
+    SIZE_120 = 120120
+

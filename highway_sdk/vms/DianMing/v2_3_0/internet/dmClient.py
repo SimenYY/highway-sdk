@@ -28,6 +28,7 @@ class DmClient(Client):
 
     def __init__(self, ip: str = 'localhost', port: int = 5009):
         super().__init__(ip, port)
+        # todo 增加使用协议属性，可以灵活更改协议的参数
 
     @logger.catch
     def set_play_list(self, content: str, play_id: int = 0) -> int:

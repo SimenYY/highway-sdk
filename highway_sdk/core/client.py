@@ -25,6 +25,7 @@ class Client:
     rsp_timeout: int = 3
     # 接受字节流大小单位
     buf_size: int = 1024
+
     def __init__(self, ip: str, port: int):
         """
         不合法的通信地址要让实例一开始就不成立
