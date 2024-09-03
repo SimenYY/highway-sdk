@@ -1,6 +1,10 @@
 # highway_sdk
 # 介绍
 本项目主要作用是作为公路交通领域，机电设备、智能设备等设备协议SDK封装，方便开发者统一用Python快速建立起对设备的交互
+
+项目地址：http://172.16.1.53/supconit/highway_sdk.git
+
+库地址：http://172.20.61.88:8080/simple/highway-sdk/
 # 快速浏览
 1. VMS 情报板
    1. 诺瓦
