@@ -20,6 +20,7 @@
 # SDK使用说明
 ## VMS 情报板
 ### 诺瓦 Nova
+在线文档：https://docapi.vnnox.com/web/#/20?page_id=2289
 #### 发送节目
 ```python 
 from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
