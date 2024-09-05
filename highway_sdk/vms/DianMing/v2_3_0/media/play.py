@@ -23,9 +23,9 @@ class Play(BaseModel):
     def create_msg(self) -> str:
         if not self.item_list:
             raise ValueError('item_list is empty')
-
-        protocol = ['[PLAYLIST]', '\r\n', f'ITEM_NO={len(self.item_list):03d}', '\r\n']
+        separator = '\r\n'
+        protocol = ['[PLAYLIST]', separator, f'ITEM_NO={len(self.item_list):03d}', separator]
         for i, item in enumerate(self.item_list):
             protocol.append(f'ITEM{i:03d}={item.create_msg()}')
-            protocol.append('\r\n')
+            protocol.append(separator)
         return ''.join(protocol[:-1])  # 去掉最后一个\r\n
