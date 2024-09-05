@@ -225,6 +225,8 @@ with SanSiClient('localhost') as client:
 ## 平台接口
 ### 物联智控 & MQTT
 使用with
+
+发布
 ```python
 import time
 from highway_sdk.interface.iot.mqttClient import MqttClient, IotMqttClient
@@ -233,6 +235,21 @@ from highway_sdk.interface.iot.mqttClient import MqttClient, IotMqttClient
 with IotMqttClient() as client:
     while True:
         client.publish_real_data(series='vms', sn='vms_127.0.0.1', data={'test': 'test'})
+        time.sleep(1)
+```
+订阅
+```python
+import time
+from highway_sdk.interface.iot.mqttClient import MqttClient, IotMqttClient
+
+
+def on_message(client, userdata, msg):
+    print(msg.topic + " " + str(msg.payload))
+
+
+with MqttClient() as client:
+    while True:
+        client.subscribe('test/', on_message)
         time.sleep(1)
 ```
 嵌入到你的代码里
@@ -248,3 +265,4 @@ cli.publish_real_data(series='vms', sn='vms_127.0.0.1', data={'test': 'test'})
 # 断开
 cli.disconnect()
 ```
+
