@@ -192,7 +192,32 @@ with SanSiClient('localhost') as client:
     # todo 解析data
     pass
 ```
+## 平台接口
+### 物联智控 & MQTT
+使用with
+```python
+import time
+from highway_sdk.interface.iot.mqttClient import MqttClient, IotMqttClient
 
+# 支持with
+with IotMqttClient() as client:
+    while True:
+        client.publish_real_data(series='vms', sn='vms_127.0.0.1', data={'test': 'test'})
+        time.sleep(1)
+```
+嵌入到你的代码里
+```python
+import time
+from highway_sdk.interface.iot.mqttClient import MqttClient, IotMqttClient
+
+cli = IotMqttClient()
+cli.connect()
+
+cli.publish_real_data(series='vms', sn='vms_127.0.0.1', data={'test': 'test'})
+
+# 断开
+cli.disconnect()
+```
 # 其他
 ## 打包
 ### 使用setup
