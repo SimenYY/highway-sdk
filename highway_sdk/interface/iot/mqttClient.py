@@ -12,7 +12,7 @@
 """
 import logging
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Callable
 import uuid
 import paho.mqtt.client as mqtt
 from loguru import logger
@@ -97,22 +97,20 @@ class MqttClient:
     def subscribe(
             self,
             topic: str,
+            on_message: Callable[[mqtt.Client, Any, mqtt.MQTTMessage], None]
     ) -> tuple[int, int]:
         """
+        回调函数格式
+        def on_message(client, userdata, message):
+            ...
 
-        :param topic:
+        :param topic: 订阅主题
+        :param on_message: 消息回调函数
         :return:
         """
+        self._client.on_message = on_message
         return self._client.subscribe(topic=topic,
                                       qos=self.qos)
-
-    # def loop_forever(
-    #         self,
-    #         timeout: float = 1.0,
-    #         retry_first_connection: bool = False,
-    # ) -> int:
-    #     return self._client.loop_forever(timeout=timeout,
-    #                                      retry_first_connection=retry_first_connection)
 
     def _on_connect(self, client, userdata, flags, reason_code, properties):
         """
@@ -153,18 +151,6 @@ class MqttClient:
         :return:
         """
         pass
-
-    @staticmethod
-    def _on_message(client, userdata, msg):
-        """
-        收到订阅主题的消息
-
-        :param client:
-        :param userdata:
-        :param msg:
-        :return:
-        """
-        logger.debug(f'topic: {msg.topic}, payload: {msg.payload}')
 
     @staticmethod
     def _on_publish(client, userdata, mid, reason_code, properties):
@@ -235,17 +221,19 @@ class IotMqttClient(MqttClient):
     def subscribe_control_req(
             self,
             series: str,
-            sn: str
+            sn: str,
+            on_message: Callable[[mqtt.Client, Any, mqtt.MQTTMessage], None]
     ) -> tuple[Any, int | None]:
         """
         订阅控制主题
 
         :param series:
         :param sn:
+        :param on_message:
         :return:
         """
         topic = SubscribeControlReqModel.getTopic(series=series, sn=sn)
-        return self.subscribe(topic=topic)
+        return self.subscribe(topic=topic, on_message=on_message)
 
     def publish_control_res(
             self,
