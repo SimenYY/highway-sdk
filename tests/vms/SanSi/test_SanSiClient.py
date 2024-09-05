@@ -40,7 +40,7 @@ class TestSanSiClient:
 
         # 测试发送报文的正确性
         excepted_send_call = [
-            call(b'\x02\x30\x30\x39\x37\x10\xF5\x03')
+            call(b'\x020010play.lst+\x00\x00\x00\x00\xda\xaf\x03')
         ]
         mock_socket.send.assert_has_calls(excepted_send_call)
 
@@ -62,3 +62,7 @@ class TestSanSiClient:
             call(b'\x02\x30\x30\x39\x37\x10\xF5\x03')
         ]
         mock_socket.send.assert_has_calls(excepted_send_call)
+
+
+if __name__ == '__main__':
+    pytest.main([__file__])

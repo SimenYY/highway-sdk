@@ -19,7 +19,7 @@ class TestNovaPacket:
     def test_pack_with_empty_data(self):
         what = b'\x37\x33'
         data = b''
-        pack = DmPacket.pack(what, data)
+        pack = DmPacket.pack(what, data, dst_addr=b'\x30\x31')
         expected_pack = b'\x02\x30\x31\x30\x31\x37\x33\xCD\x7D\x03'
         assert pack == expected_pack
 

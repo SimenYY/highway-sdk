@@ -53,9 +53,9 @@ class TestPlayBuilder:
         msg = play.add_item_builder(item).build().create_msg()
 
         expected_msg = '[PLAYLIST]'
-        expected_msg += '\n'
+        expected_msg += '\r\n'
         expected_msg += 'ITEM_NO=001'
-        expected_msg += '\n'
+        expected_msg += '\r\n'
         expected_msg += r'ITEM000=30,0,0,0,0,\C000000\Fs3232\T000255000000\K000000000000\WHello World'
         # print('msg', msg)
         # print('expected_msg', expected_msg)

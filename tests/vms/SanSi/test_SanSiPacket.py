@@ -41,3 +41,7 @@ class TestSanSiPacket:
         excepted_msg = b'\x02\x30\x30\x30\x31\xCA\xAB\x03'
 
         assert msg == excepted_msg
+
+
+if __name__ == '__main__':
+    pytest.main([__file__])
