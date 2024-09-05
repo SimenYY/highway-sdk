@@ -5,6 +5,34 @@
 项目地址：http://172.16.1.53/supconit/highway_sdk.git
 
 库地址：http://172.20.61.88:8080/simple/highway-sdk/
+
+## 打包
+### 使用setup
+```bash
+python setup.py sdist bdist_wheel
+```
+### 使用poetry
+```bash
+poetry build
+```
+## 上传
+### 使用poetry
+```bash
+poetry config repositories.private http://172.20.61.88:8080/
+poetry publish --repository private
+```
+## 本地安装
+```bash
+pip install highway_sdk -i http://172.20.61.88:8080/simple/ --trusted-host 172.20.61.88
+```
+## 在线安装
+```bash
+pip install highway_sdk
+```
+## 更新
+```bash
+poetry update
+```
 # 快速浏览
 1. VMS 情报板
    1. 诺瓦
@@ -218,25 +246,3 @@ cli.publish_real_data(series='vms', sn='vms_127.0.0.1', data={'test': 'test'})
 # 断开
 cli.disconnect()
 ```
-# 其他
-## 打包
-### 使用setup
-```bash
-python setup.py sdist bdist_wheel
-```
-### 使用poetry
-```bash
-poetry build
-```
-## 上传
-### 使用poetry
-```bash
-poetry config repositories.private http://172.20.61.88:8080/
-poetry publish --repository private
-```
-## 本地安装
-```bash
-pip install highway_sdk -i http://172.20.61.88:8080/simple/ --trusted-host 172.20.61.88
-```
-## 在线安装
-pip install highway_sdk
