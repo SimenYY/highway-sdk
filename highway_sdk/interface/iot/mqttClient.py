@@ -11,9 +11,9 @@
 :Time: 2024/9/4 10:22
 """
 import logging
+import random
 from datetime import datetime
 from typing import List, Dict, Any, Callable
-import uuid
 import paho.mqtt.client as mqtt
 from loguru import logger
 
@@ -32,22 +32,31 @@ class MqttClient:
                  port: int = 1883,
                  client_id: str | None = None,
                  qos: int = 0):
-        self.mqtt_host = host
-        self.mqtt_port = port
-        self.qos = qos
+        self._host = host
+        self._port = port
+        self._qos = qos
         if client_id is None:
-            self.client_id = f'mqtt_client_{uuid.uuid4()}'
+            self._client_id = f'hw-sdk-{random.randint(0, 1000)}'
         else:
-            self.client_id = client_id
+            self._client_id = client_id
 
         self._client: mqtt.Client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,
-                                                client_id=self.client_id)
+                                                client_id=self._client_id)
 
-        self._client.on_connect = self._on_connect
-        self._client.on_disconnect = self._on_disconnect
-        self._client.on_publish = self._on_publish
-        self._client.on_subscribe = self._on_subscribe
-        self._client.on_log = self._on_log
+        def on_log(client, userdata, paho_log_level, messages):
+            match paho_log_level:
+                case mqtt.MQTT_LOG_DEBUG:
+                    logger.debug(messages)
+                case mqtt.MQTT_LOG_INFO:
+                    logger.info(messages)
+                case mqtt.MQTT_LOG_WARNING:
+                    logger.warning(messages)
+                case mqtt.MQTT_LOG_ERR:
+                    logging.error(messages)
+                case _:
+                    logger.info(messages)
+
+        self._client.on_log = on_log
 
     def __enter__(self):
         self.connect()
@@ -55,138 +64,74 @@ class MqttClient:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.disconnect()
-        # 抑制异常
         return True
 
+    @property
     def log_address(self) -> str:
-        return f'{self.mqtt_host}:{self.mqtt_port}'
+        return f'{self._host}:{self._port}'
 
     def connect(self) -> None:
-        # try:
-        #     self._client.connect(self.mqtt_host, self.mqtt_port)
-        # except ConnectionRefusedError as e:
-        #     logger.error(f'Failed to connect to MQTT Broker {self.log_address()}: {e}')
+        def on_connect(client, userdata, flags, reason_code, properties):
+            if reason_code.is_failure:
+                logger.error(f'Failed to connect {self.log_address}: {reason_code}.')
+            else:
+                logger.info(f'Connected to MQTT Broker {self.log_address}')
 
-        # 连接在后台进行
-        self._client.connect_async(self.mqtt_host, self.mqtt_port)
+        self._client.on_connect = on_connect
+        try:
+            self._client.connect(self._host, self._port)
+        except ConnectionRefusedError as e:
+            logger.error(f'Failed to connect {self.log_address}: {e}')
+        # 启动守护线程，主线程退出，则线程退出
         self._client.loop_start()
 
     def disconnect(self) -> None:
+        def on_disconnect(client, userdata, disconnect_flags, reason_code, properties):
+            logger.error(f'Disconnected from MQTT Broker {self.log_address}')
+
+        self._client.on_disconnect = on_disconnect
         self._client.disconnect()
         self._client.loop_stop()
 
-    def publish(
-            self,
-            topic: str,
-            payload: str = None,
-            retain: bool = False
-    ) -> mqtt.MQTTMessageInfo:
+    def publish(self, topic: str, payload: str = None, retain: bool = False) -> mqtt.MQTTMessageInfo:
         """
 
         :param topic:
         :param payload:
-        :param qos:
         :param retain:
         :return:
         """
-        return self._client.publish(topic=topic,
-                                    payload=payload,
-                                    qos=self.qos,
-                                    retain=retain)
+        def on_publish(client, userdata, mid, reason_code, properties):
+            pass
+
+        self._client.on_publish = on_publish
+        return self._client.publish(topic=topic, payload=payload, qos=self._qos, retain=retain)
 
     def subscribe(
             self,
             topic: str,
-            on_message: Callable[[mqtt.Client, Any, mqtt.MQTTMessage], None]
-    ) -> tuple[int, int]:
+            callback: Callable[[mqtt.Client, Any, mqtt.MQTTMessage], None] = None,
+    ) -> None:
         """
         回调函数格式
         def on_message(client, userdata, message):
             ...
 
+
         :param topic: 订阅主题
-        :param on_message: 消息回调函数
+        :param callback: 消息回调函数
         :return:
         """
-        self._client.on_message = on_message
-        return self._client.subscribe(topic=topic,
-                                      qos=self.qos)
 
-    def _on_connect(self, client, userdata, flags, reason_code, properties):
-        """
+        def on_message(client, userdata, message):
+            logger.debug(f'Received "{message.payload}" from "{message.topic}" topic')
 
-        :param client:
-        :param userdata:
-        :param flags:
-        :param reason_code:
-        :param properties:
-        :return:
-        """
-        if reason_code.is_failure:
-            logger.error(f'Failed to connect {self.log_address()}: {reason_code}.')
+        if callback is None:
+            self._client.on_message = on_message
         else:
-            logger.info(f'Connected to MQTT Broker {self.log_address()}')
+            self._client.on_message = callback
 
-    def _on_disconnect(self, client, userdata, disconnect_flags, reason_code, properties):
-        """
-
-        :param client:
-        :param userdata:
-        :param disconnect_flags:
-        :param reason_code:
-        :param properties:
-        :return:
-        """
-        logger.error(f'Disconnected from MQTT Broker {self.log_address()}')
-
-    @staticmethod
-    def _on_subscribe(client, userdata, mid, reason_code_list, properties):
-        """
-
-        :param client:
-        :param userdata:
-        :param mid:
-        :param reason_code_list:
-        :param properties:
-        :return:
-        """
-        pass
-
-    @staticmethod
-    def _on_publish(client, userdata, mid, reason_code, properties):
-        """
-        发布消息成功回调
-
-        :param client:
-        :param userdata:
-        :param mid:
-        :param reason_code:
-        :param properties:
-        :return:
-        """
-        pass
-
-    @staticmethod
-    def _on_log(client, userdata, paho_log_level, messages):
-        """
-
-        :param client:
-        :param userdata:
-        :param paho_log_level:
-        :param messages:
-        :return:
-        """
-        match paho_log_level:
-            case mqtt.MQTT_LOG_DEBUG:
-                logger.debug(messages)
-            case mqtt.MQTT_LOG_INFO:
-                logger.info(messages)
-            case mqtt.MQTT_LOG_WARNING:
-                logger.warning(messages)
-            case mqtt.MQTT_LOG_ERR:
-                logging.error(messages)
-            case _:
-                logger.info(messages)
+        self._client.subscribe(topic=topic, qos=self._qos)
 
 
 class IotMqttClient(MqttClient):
@@ -223,7 +168,7 @@ class IotMqttClient(MqttClient):
             series: str,
             sn: str,
             on_message: Callable[[mqtt.Client, Any, mqtt.MQTTMessage], None]
-    ) -> tuple[Any, int | None]:
+    ) -> None:
         """
         订阅控制主题
 
@@ -233,7 +178,7 @@ class IotMqttClient(MqttClient):
         :return:
         """
         topic = SubscribeControlReqModel.getTopic(series=series, sn=sn)
-        return self.subscribe(topic=topic, on_message=on_message)
+        return self.subscribe(topic=topic, callback=on_message)
 
     def publish_control_res(
             self,
