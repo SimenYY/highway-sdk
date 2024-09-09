@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Callable
 import paho.mqtt.client as mqtt
 from loguru import logger
-
+import shortuuid
 from ._models import (
     PublishRealMqttModel,
     PublishHistoryModel,
@@ -36,7 +36,7 @@ class MqttClient:
         self._port = port
         self._qos = qos
         if client_id is None:
-            self._client_id = f'hw-sdk-{random.randint(0, 1000)}'
+            self._client_id = f'hw-sdk-{shortuuid.ShortUUID().random(length=12)}'
         else:
             self._client_id = client_id
 
@@ -101,6 +101,7 @@ class MqttClient:
         :param retain:
         :return:
         """
+
         def on_publish(client, userdata, mid, reason_code, properties):
             pass
 
