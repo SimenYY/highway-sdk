@@ -10,16 +10,29 @@
 :Link:
 :Time: 2024/9/4 17:05
 """
+import inspect
 import logging
 from loguru import logger
 
 
 # 将logging 转发到 loguru
-class LoguruHandler(logging.Handler):
+class InterceptHandler(logging.Handler):
     """
-    使用 logging.basicConfig(handlers=[LoguruHandler()], level=logging.DEBUG)
+    使用：logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
     """
-    def emit(self, record):
-        # 获取 loguru 的日志记录
-        loguru_record = logger.opt(depth=7, exception=record.exc_info)
-        loguru_record.log(record.levelname, record.getMessage())
+
+    def emit(self, record: logging.LogRecord) -> None:
+        # Get corresponding Loguru level if it exists.
+        level: str | int
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where originated the logged message.
+        frame, depth = inspect.currentframe(), 0
+        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
