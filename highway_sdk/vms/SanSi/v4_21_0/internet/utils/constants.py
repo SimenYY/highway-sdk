@@ -24,6 +24,12 @@ class SanSiWhat:
     # 播放播放表
     PLAY_LIST = b'\x39\x38'
 
+    # 设置当前显示亮度
+    SET_NOW_BRIGHTNESS = b'\x30\x35'
+
+    # 取当前显示亮度和调节方式
+    GET_NOW_BRIGHTNESS = b'\x30\x36'
+
 
 @dataclass(frozen=True)
 class SanSiReturnCode:
