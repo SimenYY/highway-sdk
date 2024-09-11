@@ -55,7 +55,7 @@ class Protocol:
                                data=b'')
 
     @classmethod
-    def Parser(cls, recv_buffer: bytes, what: bytes) -> bytes | None:
+    def parser(cls, recv_buffer: bytes, what: bytes) -> bytes | None:
         try:
             # 长度校验
             if len(recv_buffer) < cls.PROTOCOL_MIN_LENGTH:
