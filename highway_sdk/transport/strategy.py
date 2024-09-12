@@ -28,7 +28,7 @@ class RecvStrategy:
     def buffer(self, value: bytes) -> None:
         self._buffer = value
 
-    def receive(self, data: bytes) -> List[bytes]:
+    def recv(self, data: bytes) -> List[bytes]:
         raise NotImplementedError
 
 
@@ -42,7 +42,7 @@ class DelimiterStrategy(RecvStrategy):
 
         self.delimiter = delimiter
 
-    def receive(self, data: bytes) -> List[bytes]:
+    def recv(self, data: bytes) -> List[bytes]:
         self._buffer += data
         messages = []
         while self._buffer:
@@ -64,7 +64,7 @@ class HeaderFooterStrategy(RecvStrategy):
         self.header = header
         self.footer = footer
 
-    def receive(self, data: bytes) -> List[bytes]:
+    def recv(self, data: bytes) -> List[bytes]:
         self._buffer += data
         messages = []
         while True:
@@ -74,9 +74,39 @@ class HeaderFooterStrategy(RecvStrategy):
             end = self._buffer.find(self.footer, start + len(self.header))
             if end == -1:
                 break
-            messages.append(self._buffer[start: end + 1])
-            self._buffer = self._buffer[end + 1:]
+            messages.append(self._buffer[start: end + len(self.footer)])
+            self._buffer = self._buffer[end + len(self.footer):]
         return messages
+
+
+class HeaderFooterExtraStrategy(RecvStrategy):
+    """
+    例如Nova的报文
+    报文头--中间数据--报文尾--额外校验码
+    """
+    def __init__(self, header: bytes, footer: bytes, extra_len: int):
+        super().__init__()
+        self.header = header
+        self.footer = footer
+        self.extra_len = extra_len
+
+    def recv(self, data: bytes) -> List[bytes]:
+        self._buffer += data
+        messages = []
+        while True:
+            start = self._buffer.find(self.header)
+            if start == -1:
+                break
+            end = self._buffer.find(self.footer, start + len(self.header))
+            if end == -1:
+                break
+            extra = self._buffer[end + len(self.footer):]
+            if len(extra) < self.extra_len:
+                break
+            messages.append(self._buffer[start: end + len(self.footer) + self.extra_len])
+            self._buffer = self._buffer[end + len(self.footer) + self.extra_len:]
+        return messages
+
 
 
 class HeaderLengthStrategy(RecvStrategy):
@@ -89,7 +119,7 @@ class HeaderLengthStrategy(RecvStrategy):
         self.header = header
         self.length = length
 
-    def receive(self, data: bytes) -> List[bytes]:
+    def recv(self, data: bytes) -> List[bytes]:
         self._buffer += data
         messages = []
         while True:

@@ -36,6 +36,10 @@ class TcpClient(Protocol):
     def __init__(self):
         self.addr: IPv4Address | None = None
 
+    @property
+    def sn(self) -> str:
+        return f'{self.series}_{self.addr.host}'
+
     def connectionMade(self):
         logger.success(f"Connection is established {self.log_addr()}.")
         self.addr = self.transport.getPeer()
