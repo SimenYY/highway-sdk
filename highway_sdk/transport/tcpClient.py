@@ -11,56 +11,97 @@
 :Time: 2024/9/11 14:55
 """
 import random
-from typing import Optional, Type, List, Callable
+from typing import Type, List, Callable
 
-from twisted.internet.interfaces import IAddress
-from twisted.internet.task import LoopingCall
+from twisted.internet.address import IPv4Address
 from twisted.internet.protocol import Protocol, ReconnectingClientFactory
+from twisted.internet.task import LoopingCall
+from twisted.python.failure import Failure
+
+from .strategy import RecvStrategy
 from ..core.logx import logger
 
 
 class TcpClient(Protocol):
-    MAX_LENGTH = 16384
-
+    # 轮询时间
     polling_interval = 5
-
+    # 随机抖动因子
     jitter = 0.119626565582
+    # 数据接受策略
+    recv_strategy: Type[RecvStrategy] = None
+
+    # 设备产品型号
+    series: str = 'unknown'
 
     def __init__(self):
-        # 缓冲区
-        self._buffer: bytes = b''
-        # 分隔符
-        self.delimiter: bytes = b'\r\n'
+        self.addr: IPv4Address | None = None
 
     def connectionMade(self):
-        addr = self.transport.getPeer()
-        logger.success(f"Connection is established {addr.host}:{addr.port}.")
+        logger.success(f"Connection is established {self.log_addr()}.")
+        self.addr = self.transport.getPeer()
 
     def dataReceived(self, data: bytes) -> None:
-        self._buffer += data
+        logger.debug(f'Receive from {self.log_addr()}: {data.hex(" ")}')
 
-    def clear_buffer(self):
-        self._buffer = b''
+    def log_addr(self):
+        if self.transport:
+            addr = self.transport.getPeer()
+            return f'{addr.host}:{addr.port}'
+        else:
+            return 'None:None'
 
     def looping_call_tasks(self, tasks: List[Callable[[], None]]):
-        interval = random.normalvariate(self.polling_interval,
-                                        self.polling_interval * self.jitter)
+        """
+        执行定时任务
+
+        :param tasks:
+        :return:
+        """
         for task in tasks:
             loop = LoopingCall(task)
-            loopDeferred = loop.start(interval)
+
+            if len(tasks) > 1:
+                interval = random.normalvariate(self.polling_interval,
+                                                self.polling_interval * self.jitter)
+            else:
+                interval = self.polling_interval
+
+            loopDeferred = loop.start(interval, now=False)
+
+            loopDeferred.addErrback(self.eb_loop_failed)
+            loopDeferred.addCallback(self.cb_loop_done)
+
+    def eb_loop_failed(self, failure: Failure):
+        """
+        在循环任务失败时调用
+        """
+        pass
+
+    def cb_loop_done(self, result):
+        """
+        在循环任务完成时调用
+        """
+        pass
+
+    def send(self, data: bytes) -> None:
+        if self.transport:
+            logger.debug(f'Send to {self.log_addr()}: {data.hex(" ")}')
+            self.transport.write(data)
+        else:
+            logger.error(f'Send failed, transport is None.')
+            return
 
 
 class TcpClientFactory(ReconnectingClientFactory):
     protocol = TcpClient
-    # 最大重连时间，这个范围内波动
+    # 最大重连时间
     maxDelay = 10
+    # 延时因子
+    factor = 1.6180339887498948
 
     def __init__(self, protocol: Type[Protocol] | None = None):
         if protocol is not None:
             self.protocol = protocol
-
-    def buildProtocol(self, addr: IAddress) -> "Optional[Protocol]":
-        return super().buildProtocol(addr)
 
     def clientConnectionLost(self, connector, unused_reason) -> None:
         addr = connector.getDestination()
