@@ -73,9 +73,9 @@ class MqttClient:
     def connect(self) -> None:
         def on_connect(client, userdata, flags, reason_code, properties):
             if reason_code.is_failure:
-                logger.error(f'Failed to connect {self.log_address}: {reason_code}.')
+                logger.critical(f'Failed to connect {self.log_address}: {reason_code}.')
             else:
-                logger.info(f'Connected to MQTT Broker {self.log_address}')
+                logger.success(f'Connected to MQTT Broker {self.log_address}')
 
         self._client.on_connect = on_connect
         try:
