@@ -79,6 +79,21 @@ class Protocol:
                                    data=b'')
 
     @classmethod
+    def lazy_parser(cls, recv_buffer: bytes) -> dict:
+        """
+        如果你很懒的话，那就一键使用这个函数解析吧！
+
+        :param recv_buffer:
+        :return:
+        """
+        length = len(recv_buffer)
+        match length:
+            case 9:
+                return cls.parser_now_brightness(recv_buffer)
+            case _:
+                return cls.parser_now_play_content(recv_buffer)
+
+    @classmethod
     def parser(cls, recv_buffer: bytes) -> bytes:
         """
         :param recv_buffer:
@@ -167,10 +182,15 @@ class Protocol:
         return dataclasses.asdict(ret)
 
     @classmethod
-    def parser_now_brightness(cls, recv_buffer: bytes) -> int:
+    def parser_now_brightness(cls, recv_buffer: bytes) -> dict:
         """
         data组成：【亮度调节方式 1B】【显示亮度 2B】
         亮度调节方式：'0'表示自动，'1'表示手动
+
+        send:
+        02 30 30 30 36 BA 4C 03
+        recv:
+        02 30 31 31 31 35 F4 74 03
 
         :param recv_buffer:
         :return: 当前亮度值
@@ -187,4 +207,4 @@ class Protocol:
         second = int(chr(data[2]))
         brightness = first * 10 + second
 
-        return brightness
+        return {'brightness': brightness}
