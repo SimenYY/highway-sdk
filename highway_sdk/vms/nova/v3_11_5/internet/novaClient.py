@@ -41,7 +41,7 @@ class NovaClient(Client):
         if self._sock is None:
             raise InvalidSocketError('__send_file_name sock is None')
 
-        send_buffer = Protocol.file_name(file_name)
+        send_buffer = Protocol.send_file_name(file_name)
 
         try:
             self._sock.send(send_buffer)
@@ -69,7 +69,7 @@ class NovaClient(Client):
         if self._sock is None:
             raise InvalidSocketError('__send_file_content sock is None')
 
-        send_buffer = Protocol.file_content(content)
+        send_buffer = Protocol.send_file_content(content)
 
         try:
             self._sock.send(send_buffer)

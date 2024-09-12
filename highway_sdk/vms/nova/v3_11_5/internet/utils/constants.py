@@ -20,11 +20,11 @@ class NovaWhat:
     GET_NOW_PLAY_ALL_CONTENT_RSP = b'\x3B'
 
     # 发送文件名
-    FILE_NAME_REQ = b'\x11'
+    SEND_FILE_NAME_REQ = b'\x11'
     FILE_NAME_RSP = b'\x12'
 
     # 发送文件内容
-    FILE_CONTENT_REQ = b'\x13'
+    SEND_FILE_CONTENT_REQ = b'\x13'
     FILE_CONTENT_RSP = b'\x14'
 
     # 指定文件名播放
@@ -38,6 +38,10 @@ class NovaWhat:
     # 获取屏幕高宽
     GET_DEVICE_SIZE_REQ = b'\x82'
     GET_DEVICE_SIZE_RSP = b'\x83'
+
+    # 获取当前亮度
+    GET_NOW_BRIGHTNESS_REQ = b'\xC3'
+    GET_NOW_BRIGHTNESS_RSP = b'\xC3'
 
 
 def get_success_rsp(rsp_what: bytes) -> bytes | None:
