@@ -46,7 +46,7 @@ class NovaClient(Client):
         try:
             self._sock.send(send_buffer)
             recv_buffer = self._sock.recv(self.buf_size)
-            data = Protocol.Parser(recv_buffer, NovaWhat.FILE_NAME_RSP)
+            data = Protocol.parser(recv_buffer, NovaWhat.FILE_NAME_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_name recv timeout {e}')
         except ProtocolParserError as e:
