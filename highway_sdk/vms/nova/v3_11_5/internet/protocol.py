@@ -130,6 +130,7 @@ class Protocol:
         :param recv_buffer:
         :return:
         """
+        max_brightness = 255
         try:
             data = cls.parser(recv_buffer, NovaWhat.GET_NOW_BRIGHTNESS_RSP)
         except ProtocolParserError:
@@ -140,4 +141,6 @@ class Protocol:
 
         mode = data[0]
         brightness = data[1]
-        return {'brightness': brightness}
+        # 亮度显示百分比
+        percentage = round(brightness / max_brightness * 100)
+        return {'brightness': percentage}

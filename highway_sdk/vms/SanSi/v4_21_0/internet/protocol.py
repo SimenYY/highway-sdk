@@ -187,6 +187,8 @@ class Protocol:
         data组成：【亮度调节方式 1B】【显示亮度 2B】
         亮度调节方式：'0'表示自动，'1'表示手动
 
+        亮度范围0-31
+
         send:
         02 30 30 30 36 BA 4C 03
         recv:
@@ -195,6 +197,7 @@ class Protocol:
         :param recv_buffer:
         :return: 当前亮度值
         """
+        max_brightness = 31
         try:
             data = cls.parser(recv_buffer)
         except ProtocolParserError:
@@ -206,5 +209,6 @@ class Protocol:
         first = int(chr(data[1]))
         second = int(chr(data[2]))
         brightness = first * 10 + second
-
-        return {'brightness': brightness}
+        # 亮度显示百分比
+        percentage = round(brightness / max_brightness * 100)
+        return {'brightness': percentage}
