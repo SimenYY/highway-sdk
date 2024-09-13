@@ -12,6 +12,8 @@
 """
 import inspect
 import logging
+import sys
+
 from loguru import logger
 
 
@@ -36,3 +38,74 @@ class InterceptHandler(logging.Handler):
             depth += 1
 
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+
+class BaseLoggerConfig:
+
+    def __init__(self):
+        self._logger = logger
+        self._logger.remove()
+
+    @property
+    def logger(self):
+        return self._logger
+
+
+class DriverLoggerConfig(BaseLoggerConfig):
+    """
+    用于驱动脚本的日志配置
+    """
+
+    def __init__(
+            self,
+            name: str = 'unknown',
+            brand: str = 'unknown',
+            level: str = 'INFO',
+            rotation: str = '1 day',
+            retention: str = '7 days',
+            compression: str = 'zip',
+            enqueue: bool = True,
+            file: bool = True,
+            console: bool = False
+    ):
+        super().__init__()
+
+        if file:
+            self._logger.add(
+                f'logs/{name}/' + f'{brand}' + '_{time: YYYY-MM-DD}.log',
+                level=level,
+                rotation=rotation,
+                retention=retention,
+                compression=compression,
+                enqueue=enqueue
+            )
+        if console:
+            self._logger.add(
+                sys.stdout,
+                level='INFO',
+            )
+
+
+class ApiLoggerConfig(BaseLoggerConfig):
+    """
+    Api 服务日志配置
+    """
+
+    def __init__(
+            self,
+            log_file: str = 'api.log',
+            level: str = 'INFO',
+            rotation: str = '1 day',
+            retention: str = '7 days',
+            compression: str = True,
+            enqueue: bool = True
+    ):
+        super().__init__()
+        self._logger.add(
+            f'logs/Api/' + f'{log_file}' + '_{time: YYYY-MM-DD}.log',
+            level=level,
+            rotation=rotation,
+            retention=retention,
+            compression=compression,
+            enqueue=enqueue
+        )
