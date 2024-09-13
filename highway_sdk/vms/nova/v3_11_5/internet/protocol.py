@@ -60,11 +60,21 @@ class Protocol:
 
     @classmethod
     def set_now_brightness(cls, brightness: int) -> bytes:
+        """
+        nova手动控制命令不支持
+        :param brightness:
+        :return:
+        """
         pass
 
     @classmethod
     def get_now_brightness(cls) -> bytes:
         return NovaPacket.pack(what=NovaWhat.GET_NOW_BRIGHTNESS_REQ,
+                               data=b'')
+
+    @classmethod
+    def get_screen_switch_status(cls) -> bytes:
+        return NovaPacket.pack(what=NovaWhat.GET_SCREEN_SWITCH_STATUS_REQ,
                                data=b'')
 
     @classmethod

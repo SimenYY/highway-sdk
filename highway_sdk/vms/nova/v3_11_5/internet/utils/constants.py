@@ -43,6 +43,11 @@ class NovaWhat:
     GET_NOW_BRIGHTNESS_REQ = b'\xC3'
     GET_NOW_BRIGHTNESS_RSP = b'\xC3'
 
+    # 获取开关屏状态
+    GET_SCREEN_SWITCH_STATUS_REQ = b'\xBA'
+    GET_SCREEN_SWITCH_STATUS_RSP = b'\xBA'
+
+
 
 def get_success_rsp(rsp_what: bytes) -> bytes | None:
     """
