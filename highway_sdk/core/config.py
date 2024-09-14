@@ -18,7 +18,12 @@ from pydantic import BaseModel
 from .logx import logger
 
 
-class _Log(BaseModel):
+class ExtraForbidModel(BaseModel):
+    class Config:
+        extra = 'forbid'
+
+
+class _Log(ExtraForbidModel):
     name: str = None
     brand: str = None
     level: str = None
@@ -29,32 +34,20 @@ class _Log(BaseModel):
     file: bool = None
     console: bool = None
 
-    class Config:
-        extra = 'forbid'
 
-
-class _Comm(BaseModel):
+class _Comm(ExtraForbidModel):
     polling_interval: int = None
 
-    class Config:
-        extra = 'forbid'
 
-
-class _Address(BaseModel):
+class _Address(ExtraForbidModel):
     port: int
     ip_list: List[str]
 
-    class Config:
-        extra = 'forbid'
 
-
-class DriverConfigModel(BaseModel):
+class DriverConfigModel(ExtraForbidModel):
     log: Optional[_Log] = None
     protocol: Optional[_Comm] = None
     address: _Address
-
-    class Config:
-        extra = 'forbid'
 
 
 def load_config_model(config_model: Type[BaseModel], file_path: str) -> BaseModel | None:
@@ -63,7 +56,6 @@ def load_config_model(config_model: Type[BaseModel], file_path: str) -> BaseMode
             config = json.load(f)
             model = config_model(**config)
     except Exception as e:
-        logger.error(f'{e.__class__.__name__}: {e}')
         return None
     else:
         return model
