@@ -21,6 +21,7 @@ from highway_sdk.core.validators import (
 
 
 class Client:
+    # TODO 实现异步连接
     # 响应超时时间
     rsp_timeout: int = 3
     # 接受字节流大小单位
