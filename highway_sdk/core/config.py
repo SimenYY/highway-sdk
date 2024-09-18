@@ -49,13 +49,13 @@ class DriverConfigModel(ExtraForbidModel):
     comm: Optional[_Comm] = None
     address: _Address
 
-
-def load_config_model(config_model: Type[BaseModel], file_path: str) -> BaseModel | None:
-    try:
-        with open(file_path, 'r') as f:
-            config = json.load(f)
-            model = config_model(**config)
-    except Exception:
-        raise
-    else:
-        return model
+    @classmethod
+    def load(cls, file_path: str) -> 'DriverConfigModel':
+        try:
+            with open(file_path, 'r') as f:
+                config = json.load(f)
+                model = cls(**config)
+        except Exception:
+            raise
+        else:
+            return model
