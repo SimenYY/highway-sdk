@@ -46,7 +46,7 @@ class _Address(ExtraForbidModel):
 
 class DriverConfigModel(ExtraForbidModel):
     log: Optional[_Log] = None
-    protocol: Optional[_Comm] = None
+    comm: Optional[_Comm] = None
     address: _Address
 
 
@@ -55,9 +55,7 @@ def load_config_model(config_model: Type[BaseModel], file_path: str) -> BaseMode
         with open(file_path, 'r') as f:
             config = json.load(f)
             model = config_model(**config)
-    except Exception as e:
-        # TODO: 导入前读取配置不应该用logger，跟logger循环冲突
-        logger.error(f'{e.__class__.__name__}: {e}')
-        return None
+    except Exception:
+        raise
     else:
         return model
