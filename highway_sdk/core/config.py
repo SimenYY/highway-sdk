@@ -11,11 +11,9 @@
 :Time: 2024/9/14 9:47
 """
 import json
-from typing import List, Optional, Type
+from typing import List
 
 from pydantic import BaseModel
-
-from .logx import logger
 
 
 class ExtraForbidModel(BaseModel):
@@ -24,30 +22,56 @@ class ExtraForbidModel(BaseModel):
 
 
 class _Log(ExtraForbidModel):
-    name: str = None
-    brand: str = None
-    level: str = None
-    rotation: str = None
-    retention: str = None
-    compression: str = None
-    enqueue: bool = None
-    file: bool = None
-    console: bool = None
+    name: str = 'unknown'
+    brand: str = 'unknown'
+    level: str = 'ERROR'
+    rotation: str = '1 day'
+    retention: str = '7 days'
+    compression: str = 'zip'
+    enqueue: bool = True
+    file: bool = True
+    console: bool = False
 
 
 class _Comm(ExtraForbidModel):
-    polling_interval: int = None
+    polling_interval: int = 5
 
 
 class _Address(ExtraForbidModel):
-    port: int
-    ip_list: List[str]
+    port: int = 28888
+    ip_list: List[str] = ['127.0.0.1']
 
 
 class DriverConfigModel(ExtraForbidModel):
-    log: Optional[_Log] = None
-    comm: Optional[_Comm] = None
-    address: _Address
+    """
+    示例
+    {
+      'log': {
+        'name': 'unknown',
+        'brand': 'unknown',
+        'level': 'ERROR',
+        'rotation': '1 day',
+        'retention': '7 days',
+        'compression': 'zip',
+        'enqueue': True,
+        'file': True,
+        'console': False
+      },
+      'comm': {
+        'polling_interval': 5
+      },
+      'address': {
+        'port': 28888,
+        'ip_list': [
+          '127.0.0.1'
+        ]
+      }
+    }
+
+    """
+    log: _Log = _Log()
+    comm: _Comm = _Comm()
+    address: _Address = _Address()
 
     @classmethod
     def load(cls, file_path: str) -> 'DriverConfigModel':
