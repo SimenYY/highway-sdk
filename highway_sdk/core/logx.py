@@ -82,7 +82,7 @@ class DriverLoggerConfig(BaseLoggerConfig):
         if console:
             self._logger.add(
                 sys.stdout,
-                level='INFO',
+                level=level,
             )
 
 
