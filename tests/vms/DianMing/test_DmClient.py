@@ -49,7 +49,7 @@ class TestDmClient:
 
     @pytest.fixture
     def dm_client(self):
-        return DmClient(ip='127.0.0.1', port=5000)
+        return DmClient(host='127.0.0.1', port=5000)
 
     @patch('socket.socket')
     def test_set_play_list_success(self, mock_socket, dm_client):
