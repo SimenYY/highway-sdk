@@ -11,7 +11,7 @@
 :Time: 2024/9/11 14:55
 """
 import random
-from typing import Type, List, Callable
+from typing import Type, List, Callable, Optional
 
 from twisted.internet.address import IPv4Address
 from twisted.internet.protocol import Protocol, ReconnectingClientFactory
@@ -20,6 +20,7 @@ from twisted.python.failure import Failure
 
 from .strategy import RecvStrategy
 from ..core.logx import logger
+from ..interface.iot import MqttClient
 
 
 class TcpClient(Protocol):
@@ -103,7 +104,7 @@ class TcpClientFactory(ReconnectingClientFactory):
     # 延时因子
     factor = 1.6180339887498948
 
-    def __init__(self, protocol: Type[Protocol] | None = None):
+    def __init__(self, protocol: Optional[Callable[[], Protocol]] = None):
         if protocol is not None:
             self.protocol = protocol
 
@@ -116,3 +117,11 @@ class TcpClientFactory(ReconnectingClientFactory):
         addr = connector.getDestination()
         logger.critical(f"Connection is lost {addr.host}:{addr.port}. reason: {reason}")
         return super().clientConnectionLost(connector, reason)
+
+
+class IotMqttMixin:
+    mqtt_client: Optional[MqttClient] = None
+
+    def startFactory(self):
+        logger.info("Start connecting to MQTT Broker......")
+        self.mqtt_client.connect()
