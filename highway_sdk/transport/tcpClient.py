@@ -20,7 +20,7 @@ from twisted.python.failure import Failure
 
 from .strategy import RecvStrategy
 from ..core.logx import logger
-from ..interface.iot import MqttClient
+from ..interface.iot import MqttClient, IotMqttClient
 
 
 class TcpClient(Protocol):
@@ -119,26 +119,23 @@ class TcpClientFactory(ReconnectingClientFactory):
         return cls.forProtocol(protocol, *args, **kwargs)
 
     @classmethod
-    def init(cls, *args, **kwargs) -> None:
+    def init(cls) -> None:
         """
         实现一次性初始化动作
 
-        :param args:
-        :param kwargs:
         :return:
         """
         logger.info(f'{cls.__name__} init.')
 
 
-class IotMqttMixin:
+class _IotMqttMixin:
     mqtt_client: Optional[MqttClient] = None
 
     @classmethod
-    def mqtt_init(cls) -> None:
+    def init(cls) -> None:
         logger.info("Start connecting to MQTT Broker......")
         cls.mqtt_client.connect()
 
-    @classmethod
-    def init(cls, *args, **kwargs) -> None:
-        super().init(cls, *args, **kwargs)
-        cls.mqtt_init()
+
+class IotMqttClientFactory(_IotMqttMixin, TcpClientFactory):
+    mqtt_client = IotMqttClient()
