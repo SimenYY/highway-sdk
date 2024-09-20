@@ -22,8 +22,8 @@ from loguru import logger
 
 class SanSiClient(Client):
 
-    def __init__(self, ip: str = 'localhost', port: int = 2929):
-        super().__init__(ip, port)
+    def __init__(self, host: str = 'localhost', port: int = 2929):
+        super().__init__(host, port)
 
     def __send_file_name_and_content(self, content: str, play_id: int = 0) -> None:
         """
@@ -80,16 +80,16 @@ class SanSiClient(Client):
             logger.error(f'{e}')
             return SanSiReturnCode.SOCKET_ERROR
         except HostResponseTimeoutError as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
             return SanSiReturnCode.HOST_RESPONSE_TIMEOUT
         except ProtocolParserError as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
             return SanSiReturnCode.PROTOCOL_PARSER_ERROR
         except ResponseError as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
             return SanSiReturnCode.HOST_RESPONSE_ERROR
         except Exception as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
             return SanSiReturnCode.UNKNOWN_ERROR
         else:
             return SanSiReturnCode.SUCCESS
@@ -107,7 +107,7 @@ class SanSiClient(Client):
             recv_buffer = self.sock.recv(self.buf_size)
             data = Protocol.parser(recv_buffer)
         except (TimeoutError, ProtocolParserError, Exception) as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
             return None
         else:
             current_str = data[15:].decode(Protocol.ENCODING, 'ignore')

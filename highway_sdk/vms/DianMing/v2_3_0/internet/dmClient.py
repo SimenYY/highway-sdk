@@ -26,8 +26,8 @@ class DmClient(Client):
     详情用法可参考 http://172.16.1.53/supconit/highway_sdk/-/tree/dev?ref_type=heads
     """
 
-    def __init__(self, ip: str = 'localhost', port: int = 5009):
-        super().__init__(ip, port)
+    def __init__(self, host: str = 'localhost', port: int = 5009):
+        super().__init__(host, port)
         # todo 增加使用协议属性，可以灵活更改协议的参数
 
     @logger.catch
@@ -58,26 +58,26 @@ class DmClient(Client):
             recv_buffer = self.sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, DmWhat.SEND_PLAY_LIST_AND_PLAY_RSP)
         except TimeoutError as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
             return DmReturnCode.HOST_RESPONSE_TIMEOUT
         except ProtocolParserError as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
             return DmReturnCode.PROTOCOL_PARSER_ERROR
         except Exception as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
             return DmReturnCode.UNKNOWN_ERROR
         else:
             match data:
                 case b'\x31':
                     return DmReturnCode.SUCCESS
                 case b'\x30':
-                    logger.error(f'{self.log_prefix()} 响应异常')
+                    logger.error(f'{self.log_addr()} 响应异常')
                     return DmReturnCode.HOST_RESPONSE_ERROR
                 case b'\x36':
-                    logger.error(f'{self.log_prefix()} 播放表格式错误')
+                    logger.error(f'{self.log_addr()} 播放表格式错误')
                     return DmReturnCode.CLIENT_REQUEST_ERROR
                 case _:
-                    logger.error(f'{self.log_prefix()} 响应未知错误 - {data}')
+                    logger.error(f'{self.log_addr()} 响应未知错误 - {data}')
                     return DmReturnCode.UNKNOWN_ERROR
 
     @logger.catch
@@ -113,7 +113,7 @@ class DmClient(Client):
             rev_buffer = self.sock.recv(self.buf_size)
             data = Protocol.Parser(rev_buffer, DmWhat.GET_NOW_PLAY_CONTENT_RSP)
         except (TimeoutError, ProtocolParserError) as e:
-            logger.error(f'{self.log_prefix()} {e}')
+            logger.error(f'{self.log_addr()} {e}')
         else:
             current_str = data[16:].decode('utf-8', 'ignore')
             return current_str
