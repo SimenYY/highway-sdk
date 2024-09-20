@@ -104,10 +104,6 @@ class TcpClientFactory(ReconnectingClientFactory):
     # 延时因子
     factor = 1.6180339887498948
 
-    def __init__(self, protocol: Optional[Callable[[], Protocol]] = None):
-        if protocol is not None:
-            self.protocol = protocol
-
     def clientConnectionLost(self, connector, unused_reason) -> None:
         addr = connector.getDestination()
         logger.critical(f"Connection is lost {addr.host}:{addr.port}. reason: {unused_reason}")
@@ -118,10 +114,31 @@ class TcpClientFactory(ReconnectingClientFactory):
         logger.critical(f"Connection is lost {addr.host}:{addr.port}. reason: {reason}")
         return super().clientConnectionLost(connector, reason)
 
+    @classmethod
+    def set_protocol(cls, protocol: Callable[[], Protocol], *args, **kwargs) -> 'TcpClientFactory':
+        return cls.forProtocol(protocol, *args, **kwargs)
+
+    @classmethod
+    def init(cls, *args, **kwargs) -> None:
+        """
+        实现一次性初始化动作
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        logger.info(f'{cls.__name__} init.')
+
 
 class IotMqttMixin:
     mqtt_client: Optional[MqttClient] = None
 
-    def startFactory(self):
+    @classmethod
+    def mqtt_init(cls) -> None:
         logger.info("Start connecting to MQTT Broker......")
-        self.mqtt_client.connect()
+        cls.mqtt_client.connect()
+
+    @classmethod
+    def init(cls, *args, **kwargs) -> None:
+        super().init(cls, *args, **kwargs)
+        cls.mqtt_init()
