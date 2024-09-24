@@ -38,6 +38,7 @@ class Client:
         self.host: str = host
         self.port: int = port
         self._sock: Optional[socket.socket] = None
+        self._connected = False
 
     def __enter__(self):
         self.connect()
@@ -46,7 +47,7 @@ class Client:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
         if exc_type is not None:
-            logger.error(f'{self.log_addr()} {exc_type} {exc_val} {exc_tb}')
+            logger.error(f'{self.log_addr} {exc_type} {exc_val} {exc_tb}')
         # 抑制异常
         return True
 
@@ -58,7 +59,13 @@ class Client:
     def sock(self, sock: socket.socket):
         self._sock = sock
 
-    def connect(self):
+    def connect(self) -> None:
+        """
+        建立连接
+
+        :raise socket.error:
+        :return:
+        """
         if self._sock is not None:
             return
 
@@ -66,17 +73,35 @@ class Client:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._sock.settimeout(self.rsp_timeout)
             self._sock.connect((self.host, self.port))
-        except (TimeoutError, ConnectionRefusedError, Exception) as e:
-            logger.error(f'{self.log_addr()} {e}')
+            self._connected = True
+        except socket.error as e:
+            logger.error(f'{self.log_addr} {e}')
             self.close()
+            raise e
 
     def close(self):
         if self._sock is not None:
             self._sock.close()
             self._sock = None
+            self._connected = False
 
+    @property
     def log_addr(self) -> str:
         return f'{self.host}:{self.port}'
+
+    def send(self, data: bytes, log_prefix: str = '') -> None:
+        """
+
+        :raise socket.error:
+        :param data:
+        :param log_prefix:
+        :return:
+        """
+        if self._connected:
+            logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
+            self._sock.sendall(data)
+        else:
+            raise socket.error(f'Not connected to {self.log_addr} server')
 
 
 class AsyncClient:
