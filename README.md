@@ -35,22 +35,24 @@ poetry update
 ```
 # 快速浏览
 1. VMS 情报板
-   1. 诺瓦
+   1. 诺瓦 | nova
       1. 功能：
          1. 查询当前播放节目
          2. 查询当前所有播放节目
          3. 发送并播放节目
          4. 查询设备点阵大小
-   2. 电明
+   2. 电明 | DianMing
       1. 功能
          1. 查询当前播放节目
          2. 发送并播放节目
-   3. 三思
+   3. 三思 | SanSi
       1. 功能
          1. 查询当前播放节目
          2. 发送并播放节目
-2. 平台接口
+2. 平台接口 | interface
    1. 物联智控 & MQTT
+3. 传输驱动 | transport
+   1. tcpclient: tcp协议接口，支持物联智控
 # SDK使用说明
 ## VMS 情报板
 ### 诺瓦 Nova
@@ -106,7 +108,7 @@ with NovaClient('127.0.0.1') as client:
         # todo 近一步解析数据域
         pass
 ```
-### 查询当前所有播放节目
+#### 查询当前所有播放节目
 ```python
 from highway_sdk.vms.nova.v3_11_5.internet.novaClient import NovaClient
 
@@ -254,7 +256,6 @@ with MqttClient() as client:
 ```
 嵌入到你的代码里
 ```python
-import time
 from highway_sdk.interface.iot.mqttClient import MqttClient, IotMqttClient
 
 cli = IotMqttClient()
@@ -265,4 +266,111 @@ cli.publish_real_data(series='vms', sn='vms_127.0.0.1', data={'test': 'test'})
 # 断开
 cli.disconnect()
 ```
+## 传输驱动
+### tcp驱动
+```python
+from highway_sdk.core.config import DriverConfigModel
+from highway_sdk.core.logx import DriverLoggerConfig
+from highway_sdk.transport import driver
+from highway_sdk.transport.strategy import HeaderFooterStrategy
+from highway_sdk.transport.tcpClient import TcpClient, IotMqttClientFactory
+from highway_sdk.vms.SanSi.v4_21_0.internet.protocol import Protocol
+from highway_sdk.vms.SanSi.v4_21_0.internet.utils.structs import SanSiPacketRsp
 
+settings = DriverConfigModel.load('settings/driver_vms_ss_settings.json')
+
+logger = DriverLoggerConfig(**settings.log.dict()).logger
+
+
+class VmsSSClient(TcpClient):
+    series = settings.log.name
+
+    recv_strategy = HeaderFooterStrategy(SanSiPacketRsp.start, SanSiPacketRsp.end)
+    polling_interval = settings.comm.polling_interval
+
+    def connectionMade(self):
+        super().connectionMade()
+
+        tasks = [
+            self.task_get_now_brightness,
+            self.task_get_now_play_content
+        ]
+
+        self.looping_call_tasks(tasks)
+
+    def dataReceived(self, data: bytes) -> None:
+        super().dataReceived(data)
+        messages = self.recv_strategy.recv(data)
+        for message in messages:
+            try:
+                data = Protocol.lazy_parser(recv_buffer=message)
+            except Exception as e:
+                logger.error(e)
+                continue
+            else:
+                temp = {}
+                if 'text' in data and 'text_color' in data:
+                    temp['content'] = data['text']
+                    temp['color'] = data['text_color']
+                    data = temp
+
+                self.factory.mqtt_client.publish_real_data(
+                    series=self.series,
+                    sn=self.sn,
+                    data=data
+                )
+
+    def task_get_now_brightness(self):
+        self.send(Protocol.get_now_brightness())
+
+    def task_get_now_play_content(self):
+        self.send(Protocol.get_now_play_content())
+
+
+if __name__ == '__main__':
+    """
+    pyinstaller -F .\projects\Hengxi_TollStation\driver_vms_ss.py --specpath=spec
+    """
+    test = False
+    if test:
+        driver.run(
+            factory=IotMqttClientFactory.set_protocol(VmsSSClient),
+            ip_list=['127.0.0.1'],
+            port=8888
+        )
+    else:
+        driver.run(
+            factory=IotMqttClientFactory.set_protocol(VmsSSClient),
+            ip_list=settings.address.ip_list,
+            port=settings.address.port
+        )
+```
+### 带有控制的tcp驱动
+```python
+from highway_sdk.transport.tcpClient import IotControlTcpClient, IotMqttClientFactory
+from highway_sdk.transport import driver
+
+
+class DemoClient(IotControlTcpClient):
+    series = 'bg'
+
+    def connectionMade(self) -> None:
+        super().connectionMade()
+
+        self.iot_subscribe(self.__class__.on_message)
+
+    @classmethod
+    def on_message(cls, client, userdata, message) -> None:
+        super().on_message(client, userdata, message)
+        host = cls.get_topic_host(message.topic)
+
+        cls.single_send(host, 8888, b"Hello World!")
+
+
+if __name__ == '__main__':
+    driver.run(
+        factory=IotMqttClientFactory.set_protocol(DemoClient),
+        ip_list=['127.0.0.1'],
+        port=8888
+    )
+```
