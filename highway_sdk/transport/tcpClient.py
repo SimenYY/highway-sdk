@@ -24,9 +24,24 @@ from ..core.logx import logger
 from ..core.client import Client
 from ..interface.iot import MqttClient, IotMqttClient
 
+__all__ = [
+    'TcpClient',
+    'IotControlTcpClient',
+    'TcpClientFactory',
+    'IotMqttClient'
+]
+
 
 class _IotControlClientMixin:
     def iot_subscribe(self, on_message: Callable[..., None]):
+        if not hasattr(self.factory, 'mqtt_client'):
+            logger.error(f"mqtt_client not found in {self.factory.__name__}")
+            return
+
+        if self.factory.mqtt_client is None:
+            logger.error(f"{self.factory.__name__} mqtt_client is None.")
+            return
+
         self.factory.mqtt_client.subscribe_control_req(
             series=self.series,
             sn=self.sn,
