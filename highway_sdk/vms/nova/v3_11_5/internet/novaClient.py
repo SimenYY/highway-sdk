@@ -139,19 +139,19 @@ class NovaClient(Client):
             # 指定播放
             self.__play_list_by_id(play_id)
         except InvalidSocketError as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
             return NovaReturnCode.SOCKET_ERROR
         except HostResponseTimeoutError as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
             return NovaReturnCode.HOST_RESPONSE_TIMEOUT
         except ProtocolParserError as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
             return NovaReturnCode.PROTOCOL_PARSER_ERROR
         except ResponseError as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
             return NovaReturnCode.HOST_RESPONSE_ERROR
         except Exception as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
             return NovaReturnCode.UNKNOWN_ERROR
 
         return NovaReturnCode.SUCCESS
@@ -172,7 +172,7 @@ class NovaClient(Client):
             recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_DEVICE_SIZE_RSP)
         except (TimeoutError, ProtocolParserError) as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
         else:
             width = Bytes16(data[:2]).reverse_bytes_to_int()
             height = Bytes16(data[2:4]).reverse_bytes_to_int()
@@ -197,7 +197,7 @@ class NovaClient(Client):
             recv_buffer = self._sock.recv(self.buf_size)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_NOW_PLAY_CONTENT_RSP)
         except (TimeoutError, ProtocolParserError) as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
         else:
             current_item = data[1:]
             return current_item.decode('utf-8', 'ignore')
@@ -220,7 +220,7 @@ class NovaClient(Client):
             recv_buffer = self._sock.recv(self.buf_size * 2)
             data = Protocol.Parser(recv_buffer, NovaWhat.GET_NOW_PLAY_ALL_CONTENT_RSP)
         except (TimeoutError, ProtocolParserError) as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
         else:
             current_all_item = data[1:]
             return current_all_item.decode('utf-8', 'ignore')
