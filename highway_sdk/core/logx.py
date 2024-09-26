@@ -14,6 +14,7 @@ import inspect
 import logging
 import sys
 
+import requests
 from loguru import logger
 
 
@@ -38,6 +39,26 @@ class InterceptHandler(logging.Handler):
             depth += 1
 
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+
+class HttpHandler:
+    def __init__(self, url):
+        self.url = url
+
+    def emit(self, record):
+        print(record)
+        log_entry = {'log': record}
+        self.send_log(log_entry)
+
+    def send_log(self, log_entry):
+        try:
+            response = requests.post(
+                self.url,
+                json=log_entry,
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to send log to server: {e}")
 
 
 class BaseLoggerConfig:
