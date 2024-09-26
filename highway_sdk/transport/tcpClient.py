@@ -28,6 +28,7 @@ __all__ = [
     'TcpClient',
     'IotControlTcpClient',
     'TcpClientFactory',
+    'IotMqttClientFactory',
     'IotMqttClient'
 ]
 
