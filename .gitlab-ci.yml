@@ -25,7 +25,5 @@ release:
   only:
     refs:
       - release
-    changes:
-      - pyproject.toml
   tags:
     - release
