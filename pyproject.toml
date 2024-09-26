@@ -16,6 +16,7 @@ twisted = "^24.7.0"
 click = "^8.1.7"
 requests = "^2.32.3"
 flask = "^3.0.3"
+redis = "^5.0.8"
 
 
 [[tool.poetry.source]]
