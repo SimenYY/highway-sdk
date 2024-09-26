@@ -13,9 +13,10 @@
 import inspect
 import logging
 import sys
-
+from logging.handlers import HTTPHandler
 import requests
 from loguru import logger
+from requests.auth import HTTPBasicAuth
 
 
 # 将logging 转发到 loguru
@@ -41,24 +42,57 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-class HttpHandler:
-    def __init__(self, url):
-        self.url = url
+class PooledHTTPHandler(HTTPHandler):
+    """
+    发送一个日志太慢了，大概需要2~3s时间，谨慎使用
+    """
+    def __init__(self,
+                 host,
+                 url,
+                 method="POST",
+                 secure=False,
+                 credentials=None,
+                 context=None,
+                 ):
+        super().__init__(host, url, method, secure, credentials, context)
+        self.session = requests.Session()
 
-    def emit(self, record):
-        print(record)
-        log_entry = {'log': record}
-        self.send_log(log_entry)
+    @property
+    def full_url(self) -> str:
+        """
+        Get an HTTP[S] URL using requests.
+        """
+        if self.secure:
+            url = f"https://{self.host}{self.url}"
+        else:
+            url = f"http://{self.host}{self.url}"
+        return url
 
-    def send_log(self, log_entry):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
-            response = requests.post(
-                self.url,
-                json=log_entry,
-            )
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to send log to server: {e}")
+            url = self.full_url
+            data = self.mapLogRecord(record)
+            auth = None
+
+            if self.credentials:
+                auth = HTTPBasicAuth(*self.credentials)
+
+            match self.method:
+                case "GET":
+                    import urllib.parse
+                    data = urllib.parse.urlencode(data)
+                    if '?' in url:
+                        sep = '&'
+                    else:
+                        sep = '?'
+                    url = f"{url}{sep}{data}"
+                    self.session.get(url, auth=auth)
+                case "POST":
+                    self.session.post(url, json=data, auth=auth)
+                case _:
+                    raise ValueError(f"Unsupported method: {self.method}")
+        except Exception:
+            self.handleError(record)
 
 
 class BaseLoggerConfig:
