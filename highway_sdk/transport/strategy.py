@@ -24,12 +24,11 @@ class RecvStrategy:
     def buffer(self) -> bytes:
         return self._buffer
 
-    @buffer.setter
-    def buffer(self, value: bytes) -> None:
-        self._buffer = value
-
     def recv(self, data: bytes) -> List[bytes]:
         raise NotImplementedError
+
+    def clear_buffer(self):
+        self._buffer = b''
 
 
 class DelimiterStrategy(RecvStrategy):
@@ -43,6 +42,9 @@ class DelimiterStrategy(RecvStrategy):
         self.delimiter = delimiter
 
     def recv(self, data: bytes) -> List[bytes]:
+        if len(self._buffer) >= self.MAX_LENGTH:
+            self.clear_buffer()
+
         self._buffer += data
         messages = []
         while self._buffer:
@@ -65,6 +67,9 @@ class HeaderFooterStrategy(RecvStrategy):
         self.footer = footer
 
     def recv(self, data: bytes) -> List[bytes]:
+        if len(self._buffer) >= self.MAX_LENGTH:
+            self.clear_buffer()
+
         self._buffer += data
         messages = []
         while True:
@@ -84,6 +89,7 @@ class HeaderFooterExtraStrategy(RecvStrategy):
     例如Nova的报文
     报文头--中间数据--报文尾--额外校验码
     """
+
     def __init__(self, header: bytes, footer: bytes, extra_len: int):
         super().__init__()
         self.header = header
@@ -91,6 +97,9 @@ class HeaderFooterExtraStrategy(RecvStrategy):
         self.extra_len = extra_len
 
     def recv(self, data: bytes) -> List[bytes]:
+        if len(self._buffer) >= self.MAX_LENGTH:
+            self.clear_buffer()
+
         self._buffer += data
         messages = []
         while True:
@@ -108,7 +117,6 @@ class HeaderFooterExtraStrategy(RecvStrategy):
         return messages
 
 
-
 class HeaderLengthStrategy(RecvStrategy):
     """
     根据报文头，长度来筛选报文
@@ -120,6 +128,9 @@ class HeaderLengthStrategy(RecvStrategy):
         self.length = length
 
     def recv(self, data: bytes) -> List[bytes]:
+        if len(self._buffer) >= self.MAX_LENGTH:
+            self.clear_buffer()
+
         self._buffer += data
         messages = []
         while True:
