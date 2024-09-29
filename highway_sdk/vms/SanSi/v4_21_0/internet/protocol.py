@@ -10,12 +10,12 @@
 :Link:
 :Time: 2024/8/22 9:20
 """
-import dataclasses
 import re
 
 from .utils.constants import SanSiWhat
 from .utils.structs import SanSiPacketReq, SanSiPacketRsp
 from highway_sdk.core.exceptions import CrcError, ProtocolParserError
+from highway_sdk.vms.tags import NowPlayContent, NowBrightness
 
 
 class Protocol:
@@ -130,56 +130,45 @@ class Protocol:
         except ProtocolParserError:
             raise
 
-        @dataclasses.dataclass
-        class NowPlayContent:
-            raw_str: str = None
-            font: str = None
-            font_height: str = None
-            font_width: str = None
-            text_color: str = None
-            text: str = None
-            image_type: str = None
-            image_name: str = None
-
-        ret = NowPlayContent()
+        tags = NowPlayContent()
 
         remaining_str = data.decode(cls.ENCODING)
 
         # 除去\n
         remaining_str = remaining_str.replace('\\n', ' ')
 
-        ret.raw_str = remaining_str
+        tags.raw_str = remaining_str
 
         # 字体，字体大小
         font_search_result = re.search(r'\\f([a-zA-Z])(\d{2})(\d{2})', remaining_str)
 
         if font_search_result:
-            ret.font = font_search_result.group(1)
-            ret.font_height = font_search_result.group(2)
-            ret.font_width = font_search_result.group(3)
+            tags.font = font_search_result.group(1)
+            font_height = font_search_result.group(2)
+            font_width = font_search_result.group(3)
+            tags.font_size = f'{font_height}{font_width}'
             remaining_str = remaining_str.replace(font_search_result.group(), '')
 
         # 字符颜色
         text_color_search_result = re.search(r'\\c(\d{12})', remaining_str)
 
         if text_color_search_result:
-            ret.text_color = text_color_search_result.group(1)
+            tags.text_color = text_color_search_result.group(1)
             remaining_str = remaining_str.replace(text_color_search_result.group(), '')
 
         # 文本内容
         text_search_result = re.search(r'[\u4e00-\u9fff].*[\u4e00-\u9fff]', remaining_str)
 
         if text_search_result:
-            ret.text = text_search_result.group()
+            tags.text = text_search_result.group()
             remaining_str = remaining_str.replace(text_search_result.group(), '')
 
         # 图片内容
         image_search_result = re.search(r'\\([BJG])(\d{3})', remaining_str)
         if image_search_result:
-            ret.image_type = image_search_result.group(1)
-            ret.image_name = image_search_result.group(2)
+            tags.image_name = image_search_result.group(2)
 
-        return dataclasses.asdict(ret)
+        return tags.to_dict()
 
     @classmethod
     def parser_now_brightness(cls, recv_buffer: bytes) -> dict:
@@ -198,6 +187,7 @@ class Protocol:
         :return: 当前亮度值
         """
         max_brightness = 31
+        tags = NowBrightness()
         try:
             data = cls.parser(recv_buffer)
         except ProtocolParserError:
@@ -211,4 +201,5 @@ class Protocol:
         brightness = first * 10 + second
         # 亮度显示百分比
         percentage = round(brightness / max_brightness * 100)
-        return {'brightness': percentage}
+        tags.brightness = percentage
+        return tags.to_dict()

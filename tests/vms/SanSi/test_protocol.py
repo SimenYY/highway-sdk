@@ -29,11 +29,9 @@ class TestProtocol:
                 'expected': {
                     'raw_str': '000005000100000\\fs2424\\c000255000000隧道路段 谨慎驾驶',
                     'font': 's',
-                    'font_height': '24',
-                    'font_width': '24',
+                    'font_size': '2424',
                     'text_color': '000255000000',
                     'text': '隧道路段 谨慎驾驶',
-                    'image_type': None,
                     'image_name': None,
                 },
             },

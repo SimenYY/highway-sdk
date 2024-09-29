@@ -10,11 +10,11 @@
 :Link:
 :Time: 2024/8/15 13:41
 """
-import dataclasses
 
+from highway_sdk.core.exceptions import CrcError, ProtocolParserError
+from highway_sdk.vms.tags import NowPlayContent, NowBrightness
 from .utils.constants import NovaWhat
 from .utils.structs import NovaPacket
-from highway_sdk.core.exceptions import CrcError, ProtocolParserError
 
 
 class Protocol:
@@ -112,7 +112,59 @@ class Protocol:
 
     @classmethod
     def parser_now_play_content(cls, recv_buffer: bytes) -> dict:
-        pass
+        """
+        内容	        字节数	备注
+        开关屏标志	1	    1-表示开屏 2-表示关屏，关屏时以下内容无效
+        播放类型标志	1	    1-列表播放
+        播放列表号	1	    当前播放的列表编号或测试编号
+        内容头	    8	    [itemN]\r\n,N 为播放清单中 item 编号
+        当前播放内容	n	    参见附录一 播放文件列表说明
+
+
+        now_play_content:
+            param=100,1,1,1,0,5,1,0,1
+            txt1=10,0,3,1616,1,8,0,车牌：冀A318AA大货车,192,320,0
+            txtparam1=0,0
+
+        :param recv_buffer:
+        :return:
+        """
+        try:
+            data = cls.parser(recv_buffer, NovaWhat.GET_NOW_PLAY_CONTENT_RSP)
+        except ProtocolParserError:
+            raise
+
+        try:
+            tags = NowPlayContent()
+
+            now_play_content = data[11:].decode(cls.ENCODING)
+
+            parts = now_play_content.split('\n')
+            media_type_n, reminder = parts[1].split('=', 1)
+            params: list = reminder.split(',')
+            media_type = media_type_n[:-1]
+            match media_type:
+                case 'txt':
+                    tags.raw_str = reminder
+                    tags.text = params[7]
+                    tags.text_color = params[4]
+                    tags.font = params[2]
+                    tags.font_size = params[3]
+                case 'txtext':
+                    tags.raw_str = reminder
+                    tags.text = params[17]
+                    tags.text_color = params[11]
+                    tags.font = params[4]
+                    tags.font_size = params[5]
+                case 'img':
+                    tags.raw_str = reminder
+                    tags.image_name = params[2]
+                case _:
+                    ValueError(f'media_type {media_type} not support')
+        except Exception:
+            raise
+        else:
+            return tags.to_dict()
 
     @classmethod
     def parser_now_brightness(cls, recv_buffer: bytes) -> dict:
@@ -131,6 +183,7 @@ class Protocol:
         :return:
         """
         max_brightness = 255
+        tags = NowBrightness()
         try:
             data = cls.parser(recv_buffer, NovaWhat.GET_NOW_BRIGHTNESS_RSP)
         except ProtocolParserError:
@@ -139,8 +192,9 @@ class Protocol:
         if len(data) != 2:
             raise ProtocolParserError('data length is not 2')
 
-        mode = data[0]
+        # mode = data[0]
         brightness = data[1]
         # 亮度显示百分比
         percentage = round(brightness / max_brightness * 100)
-        return {'brightness': percentage}
+        tags.brightness = percentage
+        return tags.to_dict()
