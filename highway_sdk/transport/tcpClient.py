@@ -49,6 +49,10 @@ class _IotControlClientMixin:
             on_message=on_message
         )
 
+
+class _IotClientMixin:
+    factory: Optional['IotMqttClientFactory'] = None
+
     @classmethod
     def get_topic_host(cls, topic: str) -> Optional[str]:
         """
@@ -210,6 +214,10 @@ class TcpClient(Protocol):
         else:
             logger.error(f'{log_prefix} - Send failed, self.connected is 0.')
             return
+
+
+class IotTcpClient(_IotClientMixin, TcpClient):
+    pass
 
 
 class IotControlTcpClient(_IotControlClientMixin, TcpClient):
