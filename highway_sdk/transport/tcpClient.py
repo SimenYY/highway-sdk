@@ -26,10 +26,10 @@ from ..interface.iot import MqttClient, IotMqttClient
 
 __all__ = [
     'TcpClient',
+    'IotTcpClient',
     'IotControlTcpClient',
     'TcpClientFactory',
     'IotMqttClientFactory',
-    'IotMqttClient'
 ]
 
 
