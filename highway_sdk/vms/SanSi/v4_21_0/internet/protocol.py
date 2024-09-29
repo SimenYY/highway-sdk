@@ -15,7 +15,7 @@ import re
 from .utils.constants import SanSiWhat
 from .utils.structs import SanSiPacketReq, SanSiPacketRsp
 from highway_sdk.core.exceptions import CrcError, ProtocolParserError
-from highway_sdk.vms.tags import NowPlayContent, NowBrightness
+from highway_sdk.vms.tags import NowPlayContentTags, NowBrightnessTags
 
 
 class Protocol:
@@ -111,7 +111,7 @@ class Protocol:
             return packet.data
 
     @classmethod
-    def parser_now_play_content(cls, recv_buffer: bytes) -> dict:
+    def parser_now_play_content(cls, recv_buffer: bytes) -> NowPlayContentTags:
         """
         返回字典键值说明， 默认没有则为None
             raw_str: 原始字符串
@@ -130,7 +130,7 @@ class Protocol:
         except ProtocolParserError:
             raise
 
-        tags = NowPlayContent()
+        tags = NowPlayContentTags()
 
         remaining_str = data.decode(cls.ENCODING)
 
@@ -168,10 +168,10 @@ class Protocol:
         if image_search_result:
             tags.image_name = image_search_result.group(2)
 
-        return tags.to_dict()
+        return tags
 
     @classmethod
-    def parser_now_brightness(cls, recv_buffer: bytes) -> dict:
+    def parser_now_brightness(cls, recv_buffer: bytes) -> NowBrightnessTags:
         """
         data组成：【亮度调节方式 1B】【显示亮度 2B】
         亮度调节方式：'0'表示自动，'1'表示手动
@@ -187,7 +187,7 @@ class Protocol:
         :return: 当前亮度值
         """
         max_brightness = 31
-        tags = NowBrightness()
+        tags = NowBrightnessTags()
         try:
             data = cls.parser(recv_buffer)
         except ProtocolParserError:
@@ -202,4 +202,4 @@ class Protocol:
         # 亮度显示百分比
         percentage = round(brightness / max_brightness * 100)
         tags.brightness = percentage
-        return tags.to_dict()
+        return tags

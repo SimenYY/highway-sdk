@@ -10,7 +10,8 @@
 :Link:
 :Time: 2024/9/27 10:52
 """
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
+from typing import List
 
 
 @dataclass
@@ -20,7 +21,7 @@ class BaseTags:
 
 
 @dataclass
-class NowPlayContent(BaseTags):
+class NowPlayContentTags(BaseTags):
     """
     当前显示点位
     """
@@ -33,7 +34,15 @@ class NowPlayContent(BaseTags):
 
 
 @dataclass
-class NowBrightness(BaseTags):
+class NowPlayAllContentTags(BaseTags):
+    """
+    当前播放点位列表
+    """
+    items: List[NowPlayContentTags] = field(default_factory=list)
+
+
+@dataclass
+class NowBrightnessTags(BaseTags):
     """
     当前显示亮度
     """

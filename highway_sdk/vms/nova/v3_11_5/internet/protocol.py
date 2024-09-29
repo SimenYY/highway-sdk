@@ -10,11 +10,13 @@
 :Link:
 :Time: 2024/8/15 13:41
 """
+from typing import Union
 
 from highway_sdk.core.exceptions import CrcError, ProtocolParserError
-from highway_sdk.vms.tags import NowPlayContent, NowBrightness
+from highway_sdk.vms.tags import NowPlayContentTags, NowBrightnessTags, NowPlayAllContentTags
 from .utils.constants import NovaWhat
 from .utils.structs import NovaPacket
+import configparser
 
 
 class Protocol:
@@ -96,7 +98,7 @@ class Protocol:
             return packet.data
 
     @classmethod
-    def lazy_parser(cls, recv_buffer) -> dict:
+    def lazy_parser(cls, recv_buffer) -> Union["NowPlayContentTags", "NowBrightnessTags"]:
         """
         如果你很懒的话，那就一键使用这个函数解析吧！
 
@@ -111,7 +113,7 @@ class Protocol:
                 return cls.parser_now_play_content(recv_buffer)
 
     @classmethod
-    def parser_now_play_content(cls, recv_buffer: bytes) -> dict:
+    def parser_now_play_content(cls, recv_buffer: bytes) -> NowPlayContentTags:
         """
         内容	        字节数	备注
         开关屏标志	1	    1-表示开屏 2-表示关屏，关屏时以下内容无效
@@ -122,6 +124,7 @@ class Protocol:
 
 
         now_play_content:
+            [item1]
             param=100,1,1,1,0,5,1,0,1
             txt1=10,0,3,1616,1,8,0,车牌：冀A318AA大货车,192,320,0
             txtparam1=0,0
@@ -135,39 +138,64 @@ class Protocol:
             raise
 
         try:
-            tags = NowPlayContent()
-
-            now_play_content = data[11:].decode(cls.ENCODING)
-
-            parts = now_play_content.split('\n')
-            media_type_n, reminder = parts[1].split('=', 1)
-            params: list = reminder.split(',')
-            media_type = media_type_n[:-1]
-            match media_type:
-                case 'txt':
-                    tags.raw_str = reminder
-                    tags.text = params[7]
-                    tags.text_color = params[4]
-                    tags.font = params[2]
-                    tags.font_size = params[3]
-                case 'txtext':
-                    tags.raw_str = reminder
-                    tags.text = params[17]
-                    tags.text_color = params[11]
-                    tags.font = params[4]
-                    tags.font_size = params[5]
-                case 'img':
-                    tags.raw_str = reminder
-                    tags.image_name = params[2]
-                case _:
-                    ValueError(f'media_type {media_type} not support')
+            now_play_content = data[3:].decode(cls.ENCODING)
+            tags = Protocol._parser_item(now_play_content)
         except Exception:
             raise
         else:
-            return tags.to_dict()
+            return tags
+
+    @staticmethod
+    def _parser_item(item: Union[str, dict]) -> NowPlayContentTags:
+        """
+        解析目标，item内容，例如：
+            [item1]
+            param=100,1,1,1,0,5,1,0,1
+            txt1=10,0,3,1616,1,8,0,车牌：冀A318AA大货车,192,320,0
+            txtparam1=0,0
+
+        :param item:
+        :return:
+        """
+        like_config = configparser.ConfigParser()
+
+        if type(item) is str:
+            like_config.read_string(item)
+        elif type(item) is dict:
+            like_config.read_dict(item)
+
+        item_name = like_config.sections()[0]
+        item_index = int(item_name[len('item'):])
+        options = like_config.options(item_name)
+        tags = NowPlayContentTags()
+        if f'txt{item_index}' in options:
+            raw = like_config.get(item_name, f'txt{item_index}')
+            params = raw.split(',')
+            tags.raw_str = raw
+            tags.text = params[7]
+            tags.text_color = params[4]
+            tags.font = params[2]
+            tags.font_size = params[3]
+        elif f'txtext{item_index}' in options:
+            raw = like_config.get(item_name, f'txtext{item_index}')
+            params = raw.split(',')
+            tags.raw_str = raw
+            tags.text = params[17]
+            tags.text_color = params[11]
+            tags.font = params[4]
+            tags.font_size = params[5]
+        elif f'img{item_index}' in options:
+            raw = like_config.get(item_name, f'img{item_index}')
+            params = raw.split(',')
+            tags.raw_str = raw
+            tags.image_name = params[2]
+        else:
+            ValueError(f'item {options} dont support')
+
+        return tags
 
     @classmethod
-    def parser_now_brightness(cls, recv_buffer: bytes) -> dict:
+    def parser_now_brightness(cls, recv_buffer: bytes) -> NowBrightnessTags:
         """
         内容	        字节数	备注
         亮度控制模式	1	    0-获取亮度异常；
@@ -179,11 +207,19 @@ class Protocol:
         上位机发送: AA FF FF C3 CC 67 79
         设备回复: AA FF FF C3 02 FF CC 3A 2F
 
+        all_content:
+            [all]
+            items=1
+            [item1]
+            param=100,1,1,1,0,5,1,0,1
+            txt1=10,0,3,1616,1,8,0,车牌：冀A318AA大货车,192,320,0
+            txtparam1=0,0
+
         :param recv_buffer:
         :return:
         """
         max_brightness = 255
-        tags = NowBrightness()
+        tags = NowBrightnessTags()
         try:
             data = cls.parser(recv_buffer, NovaWhat.GET_NOW_BRIGHTNESS_RSP)
         except ProtocolParserError:
@@ -197,4 +233,57 @@ class Protocol:
         # 亮度显示百分比
         percentage = round(brightness / max_brightness * 100)
         tags.brightness = percentage
-        return tags.to_dict()
+        return tags
+
+    @classmethod
+    def parser_now_play_all_content(cls, recv_buffer: bytes) -> NowPlayAllContentTags:
+        """
+        内容	                字节数	备注
+        当前播放节目的列表编号	1	    0x01 代表 play001.lst
+        当前播放节目的所有内容	N	    UTF8 编码，格式同附录的播放内容的单个 item 内所有内容
+
+        上位机发送：AA FF FF 3A CC 77 D2
+        设备回复：AA FF FF 3B 01 5B 61 6C 6C 5D 0A 69 74 65 6D 73 3D 31 0A 5B 69 74 65 6D 31 5D
+        0A 70 61 72 61 6D 3D 31 30 30 2C 31 2C 31 2C 31 2C 30 2C 35 2C 31 2C 30 2C 31 0A 74 78 74 31 3D 31 30 2C 30
+        2C 33 2C 31 36 31 36 2C 31 2C 38 2C 30 2C E8 BD A6 E7 89 8C EF BC 9A E5 86 80 41 33 31 38 41 41 E5 A4 A7 E8
+        B4 A7 E8 BD A6 2C 31 39 32 2C 33 32 30 2C 30 0A 74 78 74 70 61 72 61 6D 31 3D 30 2C 30 CC D9 25
+
+        all_content:
+            [all]
+            items=2
+            [item1]
+            param=100,1,1,1,0,5,1,0,1
+            txt1=10,0,3,1616,1,8,0,车牌：冀A318AA大货车,192,320,0
+            txtparam1=0,0
+            [item2]
+            param=100,1,1,1,0,5,1,0,1
+            txt1=10,0,3,1616,1,8,0,车牌：冀A318AA大货车,192,320,0
+            txtparam1=0,0
+
+        :param recv_buffer:
+        :return:
+        """
+
+        try:
+            data = cls.parser(recv_buffer, NovaWhat.GET_NOW_PLAY_ALL_CONTENT_RSP)
+        except ProtocolParserError:
+            raise
+
+        try:
+            tags = NowPlayAllContentTags()
+            now_all_content = data[1:].decode(cls.ENCODING)
+            like_config = configparser.ConfigParser()
+            like_config.read_string(now_all_content)
+            items_count = int(like_config.get('all', 'items'))
+
+            for i in range(1, items_count + 1):
+                section = f'item{i}'
+                item = {}
+                for option in like_config.options(section):
+                    item[option] = like_config.get(section, option)
+                item_tags = Protocol._parser_item({section: item})
+                tags.items.append(item_tags)
+        except Exception:
+            raise
+        else:
+            return tags
