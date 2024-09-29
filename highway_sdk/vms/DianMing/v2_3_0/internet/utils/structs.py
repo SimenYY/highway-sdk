@@ -12,7 +12,7 @@
 """
 from dataclasses import dataclass
 from .escape import DmEscape
-from .crc import CrcUtils
+from highway_sdk.vms.crc import CrcUtils
 from highway_sdk.core.exceptions import CrcError
 
 

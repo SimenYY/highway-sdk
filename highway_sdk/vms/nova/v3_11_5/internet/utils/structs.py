@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass
 
-from .crc import CrcUtils
+from highway_sdk.vms.crc import CrcUtils
 from .escape import NovaEscape
 from highway_sdk.core.exceptions import CrcError
 
