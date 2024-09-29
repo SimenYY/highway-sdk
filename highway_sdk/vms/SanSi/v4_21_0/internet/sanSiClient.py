@@ -42,7 +42,7 @@ class SanSiClient(Client):
 
         try:
             self.sock.send(send_buffer)
-            recv_buffer = self.sock.recv(self.buf_size)
+            recv_buffer = self.sock.recv(self.buffer_size)
             data = Protocol.parser(recv_buffer)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_name_and_content {e}')
@@ -104,7 +104,7 @@ class SanSiClient(Client):
 
         try:
             self.sock.send(send_buffer)
-            recv_buffer = self.sock.recv(self.buf_size)
+            recv_buffer = self.sock.recv(self.buffer_size)
             data = Protocol.parser(recv_buffer)
         except (TimeoutError, ProtocolParserError, Exception) as e:
             logger.error(f'{self.log_addr} {e}')

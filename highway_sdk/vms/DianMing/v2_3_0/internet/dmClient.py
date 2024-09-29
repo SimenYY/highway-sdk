@@ -12,12 +12,12 @@
 """
 
 from loguru import logger
-import re
+
 from highway_sdk.core.client import Client
 from highway_sdk.core.exceptions import ProtocolParserError
 from .protocol import Protocol
-from .utils.constants import DmWhat
 from .utils.constants import DmReturnCode
+from .utils.constants import DmWhat
 
 
 class DmClient(Client):
@@ -55,7 +55,7 @@ class DmClient(Client):
             send_buffer = Protocol.set_play_list(content, play_id)
             self.sock.send(send_buffer)
 
-            recv_buffer = self.sock.recv(self.buf_size)
+            recv_buffer = self.sock.recv(self.buffer_size)
             data = Protocol.Parser(recv_buffer, DmWhat.SEND_PLAY_LIST_AND_PLAY_RSP)
         except TimeoutError as e:
             logger.error(f'{self.log_addr} {e}')
@@ -110,7 +110,7 @@ class DmClient(Client):
         send_buffer = Protocol.get_now_play_content()
         self.sock.send(send_buffer)
         try:
-            rev_buffer = self.sock.recv(self.buf_size)
+            rev_buffer = self.sock.recv(self.buffer_size)
             data = Protocol.Parser(rev_buffer, DmWhat.GET_NOW_PLAY_CONTENT_RSP)
         except (TimeoutError, ProtocolParserError) as e:
             logger.error(f'{self.log_addr} {e}')

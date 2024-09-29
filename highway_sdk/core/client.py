@@ -22,21 +22,28 @@ import asyncio
 from asyncio import StreamReader, StreamWriter
 
 
-class Client:
-    # 响应超时时间
-    rsp_timeout: int = 3
+class BaseClient:
     # 接受字节流大小单位
-    buf_size: int = 1024
+    buffer_size: int = 1024
 
     def __init__(self, host: str, port: int):
-        """
-        不合法的通信地址要让实例一开始就不成立
-        """
         validate_ipv4_address(host)
         validate_port(port)
 
-        self.host: str = host
-        self.port: int = port
+        self.host = host
+        self.port = port
+
+    @property
+    def log_addr(self) -> str:
+        return f'{self.host}:{self.port}'
+
+
+class Client(BaseClient):
+    # 响应超时时间
+    rsp_timeout: int = 3
+
+    def __init__(self, host: str, port: int):
+        super().__init__(host, port)
         self._sock: Optional[socket.socket] = None
         self._connected = False
 
@@ -85,61 +92,88 @@ class Client:
             self._sock = None
             self._connected = False
 
-    @property
-    def log_addr(self) -> str:
-        return f'{self.host}:{self.port}'
-
-    def send(self, data: bytes, log_prefix: str = '') -> None:
+    def send(self, data: bytes, debug: bool = False, log_prefix: str = '') -> None:
         """
 
         :raise socket.error:
         :param data:
+        :param debug:
         :param log_prefix:
         :return:
         """
-        if self._connected:
-            logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
-            self._sock.sendall(data)
-        else:
+        if not self._connected:
             raise socket.error(f'Not connected to {self.log_addr} server')
 
+        self._sock.sendall(data)
 
-class AsyncClient:
-    # 接受字节流大小单位
-    buf_size: int = 1024
+        if debug:
+            logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
 
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
-        self.reader: StreamReader | None = None
-        self.writer: StreamWriter | None = None
+    def recv(self, buffer_size: int, debug: bool = False, log_prefix: str = '') -> bytes:
+        """
+
+        :param buffer_size:
+        :param debug:
+        :param log_prefix:
+        :return:
+        """
+        if not self._connected:
+            raise socket.error(f'Not connected to {self.log_addr} server')
+
+        data = self._sock.recv(buffer_size)
+
+        if not data:
+            raise socket.error(f'{self.log_addr} No data received')
+
+        if debug:
+            logger.debug(f'{log_prefix} - Received from {self.log_addr}: {data.hex(" ")}')
+
+        return data
+
+
+class AsyncClient(BaseClient):
+
+    def __init__(self, host: str, port: int):
+        super().__init__(host, port)
+        self.reader: Optional[StreamReader] = None
+        self.writer: Optional[StreamWriter] = None
 
     async def connect(self) -> bool:
         ret = True
         try:
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
         except ConnectionRefusedError as e:
-            logger.error(f'{self.log_addr()} {e}')
+            logger.error(f'{self.log_addr} {e}')
             await self.close()
             ret = False
         return ret
 
-    async def send(self, msg: bytes):
-        if self.writer is None:
-            raise Exception("Not connected to server")
-        self.writer.write(msg)
-        await self.writer.drain()
+    async def send(self, data: bytes, debug: bool = False, log_prefix: str = '') -> None:
+        """
 
-    async def recv(self) -> bytes:
+        :param data:
+        :param debug:
+        :param log_prefix:
+        :return:
+        """
+        if self.writer is None:
+            raise IOError(f"Not connected to {self.log_addr} server")
+        self.writer.write(data)
+        await self.writer.drain()
+        if debug:
+            logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
+
+    async def recv(self):
+        """
+
+        :return:
+        """
         if self.reader is None:
-            raise Exception("Not connected to server")
-        data = await self.reader.read(self.buf_size)
+            raise IOError(f"Not connected to {self.log_addr} server")
+        data = await self.reader.read(self.buffer_size)
         return data
 
     async def close(self):
         if self.writer is not None:
             self.writer.close()
             await self.writer.wait_closed()
-
-    def log_addr(self) -> str:
-        return f'{self.host}:{self.port}'
