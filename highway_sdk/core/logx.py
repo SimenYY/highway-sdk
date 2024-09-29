@@ -79,16 +79,9 @@ class PooledHTTPHandler(HTTPHandler):
 
             match self.method:
                 case "GET":
-                    import urllib.parse
-                    data = urllib.parse.urlencode(data)
-                    if '?' in url:
-                        sep = '&'
-                    else:
-                        sep = '?'
-                    url = f"{url}{sep}{data}"
-                    self.session.get(url, auth=auth)
+                    self.session.get(url, params=data, auth=auth)
                 case "POST":
-                    self.session.post(url, json=data, auth=auth)
+                    self.session.post(url, params=data, auth=auth)
                 case _:
                     raise ValueError(f"Unsupported method: {self.method}")
         except Exception:
@@ -109,6 +102,9 @@ class BaseLoggerConfig:
 class DriverLoggerConfig(BaseLoggerConfig):
     """
     用于驱动脚本的日志配置
+
+    默认的使用方式
+    logger = DriverLoggerConfig().logger
     """
 
     def __init__(
@@ -144,6 +140,9 @@ class DriverLoggerConfig(BaseLoggerConfig):
 class ApiLoggerConfig(BaseLoggerConfig):
     """
     Api 服务日志配置
+
+    默认的使用方式
+    logger = ApiLoggerConfig().logger
     """
 
     def __init__(
