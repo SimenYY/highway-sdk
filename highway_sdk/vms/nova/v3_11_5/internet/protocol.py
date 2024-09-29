@@ -98,7 +98,7 @@ class Protocol:
             return packet.data
 
     @classmethod
-    def lazy_parser(cls, recv_buffer) -> Union["NowPlayContentTags", "NowBrightnessTags"]:
+    def lazy_parser(cls, recv_buffer) -> Union["NowPlayContentTags", "NowBrightnessTags", "NowPlayAllContentTags"]:
         """
         如果你很懒的话，那就一键使用这个函数解析吧！
 
@@ -106,11 +106,16 @@ class Protocol:
         :return:
         """
         length = len(recv_buffer)
-        match length:
-            case 9:
-                return cls.parser_now_brightness(recv_buffer)
-            case _:
-                return cls.parser_now_play_content(recv_buffer)
+        what = recv_buffer[3:4]
+
+        if length == 9 and what == NovaWhat.GET_NOW_BRIGHTNESS_RSP:
+            return cls.parser_now_brightness(recv_buffer)
+        elif what == NovaWhat.GET_NOW_PLAY_CONTENT_RSP:
+            return cls.parser_now_play_content(recv_buffer)
+        elif what == NovaWhat.GET_NOW_PLAY_ALL_CONTENT_RSP:
+            return cls.parser_now_play_all_content(recv_buffer)
+        else:
+            raise ValueError(f'Unknown what = {what} and recv_buffer = {recv_buffer}')
 
     @classmethod
     def parser_now_play_content(cls, recv_buffer: bytes) -> NowPlayContentTags:
