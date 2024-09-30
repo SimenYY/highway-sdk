@@ -14,7 +14,7 @@ from typing import Union
 
 from highway_sdk.core.exceptions import CrcError, ProtocolParserError
 from highway_sdk.vms.tags import NowPlayContentTags, NowBrightnessTags, NowPlayAllContentTags
-from .utils.constants import NovaWhat
+from .utils.constants import NovaWhat, TagsConvertor
 from .utils.structs import NovaPacket
 import configparser
 
@@ -116,6 +116,34 @@ class Protocol:
             return cls.parser_now_play_all_content(recv_buffer)
         else:
             raise ValueError(f'Unknown what = {what} and recv_buffer = {recv_buffer}')
+
+    @staticmethod
+    def convert_tags_to_platform(tags: Union["NowPlayContentTags", "NowBrightnessTags", "NowPlayAllContentTags"]):
+        """
+        将点位转化为平台点位
+        :param tags:
+        :return:
+        """
+        new_tags = {}
+
+        if type(tags) is NowPlayAllContentTags:
+            for i, item in enumerate(tags.items):
+                i += 1
+                new_tags = {
+                    f'FO{i}': TagsConvertor.FONT_TO_PLATFORM.get(item.font),
+                    f'FC{i}': TagsConvertor.COLOR_TO_PLATFORM.get(item.text_color),
+                    f'ZCT{i}': item.text,
+                }
+        elif type(tags) is NowPlayContentTags:
+            new_tags = {
+                'CT': tags.text,
+            }
+        elif type(tags) is NowBrightnessTags:
+            new_tags = {
+                'TGFK': tags.brightness,
+            }
+
+        return new_tags
 
     @classmethod
     def parser_now_play_content(cls, recv_buffer: bytes) -> NowPlayContentTags:
