@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "highway-sdk"
-version = "1.13.0"
+version = "1.14.0"
 description = "Python SDK for Highway commonly used mechanical and electrical device and intelligent device."
 authors = ["AdzLovelace <heyinyu.sensi@foxmail.com>"]
 license = "GPL-3.0"
