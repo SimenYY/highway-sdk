@@ -48,7 +48,6 @@ class NovaWhat:
     GET_SCREEN_SWITCH_STATUS_RSP = b'\xBA'
 
 
-
 def get_success_rsp(rsp_what: bytes) -> bytes | None:
     """
     成功响应，响应固定
@@ -94,3 +93,32 @@ class NovaReturnCode:
     PROTOCOL_PARSER_ERROR = -4
     CLIENT_REQUEST_ERROR = -5
     UNKNOWN_ERROR = -99
+
+
+@dataclass(frozen=True)
+class TagsConvertor:
+    COLOR_TO_PLATFORM = {
+        '4': '1',  # 黄
+        '1': '2',  # 红
+        '2': '4',  # 绿
+    }
+
+    PLATFORM_TO_COLOR = {
+        '1': '4',  # 黄
+        '2': '1',  # 红
+        '3': '2',  # 绿
+    }
+
+    PLATFORM_TO_FONT = {
+        '104': '2',  # 楷体
+        '107': '3',  # 宋体
+        '102': '1',  # 黑体
+        '115': '4',  # 仿宋
+    }
+
+    FONT_TO_PLATFORM = {
+        '2': '104',  # 楷体
+        '3': '107',  # 宋体
+        '1': '102',  # 黑体
+        '4': '115',  # 仿宋
+    }

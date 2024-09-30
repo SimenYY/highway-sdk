@@ -40,3 +40,32 @@ class SanSiReturnCode:
     PROTOCOL_PARSER_ERROR = -4
     CLIENT_REQUEST_ERROR = -5
     UNKNOWN_ERROR = -99
+
+
+@dataclass(frozen=True)
+class TagsConvertor:
+    PLATFORM_TO_COLOR = {
+        '1': '255185000000',  # 黄
+        '2': '255000000000',  # 红
+        '3': '000255000000',  # 绿
+    }
+
+    COLOR_TO_PLATFORM = {
+        '255185000000': '1',  # 黄
+        '255000000000': '2',  # 红
+        '000255000000': '3',  # 绿
+    }
+
+    PLATFORM_TO_FONT = {
+        '104': 'k',  # 楷体
+        '107': 's',  # 宋体
+        '102': 'h',  # 黑体
+        '115': 'f',  # 仿宋
+    }
+
+    FONT_TO_PLATFORM = {
+        'k': '104',  # 楷体
+        's': '107',  # 宋体
+        'h': '102',  # 黑体
+        'f': '115',  # 仿宋
+    }
