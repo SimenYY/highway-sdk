@@ -12,9 +12,10 @@
 """
 import ipaddress
 import random
-from typing import Type, List, Callable, Optional, Any
+from typing import Type, List, Callable, Optional, Any, Dict
 
 from twisted.internet.address import IPv4Address
+from twisted.internet.interfaces import IAddress
 from twisted.internet.protocol import Protocol, ReconnectingClientFactory
 from twisted.internet.task import LoopingCall
 from twisted.python.failure import Failure
@@ -102,33 +103,25 @@ class _IotClientMixin:
             logger.error(f'{log_prefix} - Send failed, {e}.')
 
 
-class _IotFactoryMixin:
-    mqtt_client: Optional[MqttClient] = None
-
-    @classmethod
-    def init(cls) -> None:
-        """
-
-        :return:
-        """
-        logger.info("Start connecting to MQTT Broker......")
-        cls.mqtt_client.connect()
-
-
 class TcpClient(Protocol):
     """
     用于基于TCP协议的设备的客户端，具备与设备通信交互的功能
 
     """
-
+    # 默认轮询时间
+    DEFAULT_INTERVAL = 5
     # 轮询时间
-    polling_interval = 5
+    polling_interval = DEFAULT_INTERVAL
     # 随机抖动因子
     jitter = 0.119626565582
     # 数据接受策略
     recv_strategy: Type[RecvStrategy] = None
     # 设备产品型号
     series: Optional[str] = None
+    # 报文编码
+    encoding: str = 'utf-8'
+
+    factory: Optional['TcpClientFactory'] = None
 
     def __init__(self):
         self.addr: Optional[IPv4Address] = None
@@ -165,19 +158,22 @@ class TcpClient(Protocol):
         :param tasks:
         :return:
         """
+
         for task in tasks:
-            loop = LoopingCall(task)
+            self.looping_call_task(task)
 
-            if len(tasks) > 1:
-                interval = random.normalvariate(self.polling_interval,
-                                                self.polling_interval * self.jitter)
-            else:
-                interval = self.polling_interval
+    def looping_call_task(self, task: Callable[[], None]) -> None:
+        # 验证轮询时间的合法性，否则设置为默认值
+        if self.polling_interval <= 0:
+            self.polling_interval = self.DEFAULT_INTERVAL
 
-            loopDeferred = loop.start(interval, now=False)
-
-            loopDeferred.addErrback(self.eb_loop_failed)
-            loopDeferred.addCallback(self.cb_loop_done)
+        interval = self.polling_interval
+        if self.jitter:
+            interval = random.normalvariate(self.polling_interval,
+                                            self.polling_interval * self.jitter)
+        loop_deferred = LoopingCall(task).start(interval, now=False)
+        loop_deferred.addErrback(self.eb_loop_failed)
+        loop_deferred.addCallback(self.cb_loop_done)
 
     def eb_loop_failed(self, failure: Failure) -> None:
         """
@@ -235,20 +231,42 @@ class TcpClientFactory(ReconnectingClientFactory):
     """
 
     protocol = TcpClient
-    # 最大重连时间
-    maxDelay = 10
+    # 如果设备过多，重连时间过长的话会导致再某个时间点对reactor压力变大
+    # maxDelay = 10
     # 延时因子
     factor = 1.6180339887498948
+    # 用于维护活动的客户端
+    clients: Dict[IPv4Address, TcpClient] = {}
+    # 最大延迟时间常数
+    MAX_DELAY = 3600
 
-    def clientConnectionLost(self, connector, unused_reason) -> None:
-        addr = connector.getDestination()
-        logger.critical(f"Connection is lost {addr.host}:{addr.port}. reason: {unused_reason}")
-        return super().clientConnectionLost(connector, unused_reason)
+    @property
+    def current_clients_count(self) -> int:
+        return len(self.clients)
 
-    def clientConnectionFailed(self, connector, reason) -> None:
+    def before_reconnect(self, connector, reason) -> None:
+        """
+        在重连之前处理
+
+        :param reason:
+        :param connector:
+        :return:
+        """
         addr = connector.getDestination()
-        logger.critical(f"Connection is lost {addr.host}:{addr.port}. reason: {reason}")
-        return super().clientConnectionLost(connector, reason)
+        removed = self.remove_client(addr)
+        condition = 'Lost' if removed else 'Failed'
+        logger.critical(f"Connection is {condition} {addr.host}:{addr.port}. reason: {reason}")
+
+    def remove_client(self, addr: IAddress) -> bool:
+        """
+        :param addr:
+        :return: 是否删除
+        """
+        removed = False
+        if addr in self.clients:
+            del self.clients[addr]
+            removed = True
+        return removed
 
     @classmethod
     def set_protocol(cls, protocol: Callable[[], Protocol], *args, **kwargs) -> 'TcpClientFactory':
@@ -262,19 +280,27 @@ class TcpClientFactory(ReconnectingClientFactory):
         """
         return cls.forProtocol(protocol, *args, **kwargs)
 
-    @classmethod
-    def init(cls) -> None:
-        """
-        实现初始化动作
+    def buildProtocol(self, addr: IAddress) -> "Optional[Protocol]":
+        p = self.protocol()
+        p.factory = self
+        self.clients[addr] = p
+        return p
 
-        :return:
-        """
-        logger.info(f'{cls.__name__} init.')
+    def clientConnectionLost(self, connector, unused_reason) -> None:
+        self.before_reconnect(connector, unused_reason)
+        return super().clientConnectionLost(connector, unused_reason)
+
+    def clientConnectionFailed(self, connector, reason) -> None:
+        self.before_reconnect(connector, reason)
+        return super().clientConnectionLost(connector, reason)
 
 
-class IotMqttClientFactory(_IotFactoryMixin, TcpClientFactory):
+class IotMqttClientFactory(TcpClientFactory):
     """
     增加了mqtt_client，使之于mqtt broker保持通信
 
     """
     mqtt_client = IotMqttClient()
+
+    def __init__(self):
+        self.mqtt_client.connect()
