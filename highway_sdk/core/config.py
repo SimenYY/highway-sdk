@@ -75,11 +75,17 @@ class DriverConfigModel(ExtraForbidModel):
 
     @classmethod
     def load(cls, file_path: str) -> 'DriverConfigModel':
+        if not file_path.endswith('.json'):
+            raise Exception('配置文件必须是配置文件类型')
+
         try:
             with open(file_path, 'r') as f:
                 config = json.load(f)
-                model = cls(**config)
+                return cls(**config)
+        except FileNotFoundError:
+            with open(file_path, 'w') as f:
+                default = cls()
+                json.dump(default.dict(), f, indent=4)
+            raise FileNotFoundError(f'{file_path} 不存在，已创建默认配置文件！')
         except Exception:
             raise
-        else:
-            return model
