@@ -44,7 +44,7 @@ class InterceptHandler(logging.Handler):
 
 class PooledHTTPHandler(HTTPHandler):
     """
-    发送一个日志太慢了，大概需要2~3s时间，谨慎使用
+    http日志记录
     """
     def __init__(self,
                  host,
@@ -54,6 +54,15 @@ class PooledHTTPHandler(HTTPHandler):
                  credentials=None,
                  context=None,
                  ):
+        """
+
+        :param host: e.g. 127.0.0.1:8888
+        :param url: e.g. /log
+        :param method:
+        :param secure:
+        :param credentials: (username, password)
+        :param context:
+        """
         super().__init__(host, url, method, secure, credentials, context)
         self.session = requests.Session()
 

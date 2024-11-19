@@ -25,6 +25,8 @@ from asyncio import StreamReader, StreamWriter
 class BaseClient:
     # 接受字节流大小单位
     buffer_size: int = 1024
+    # 超时时间
+    timeout: int = 3
 
     def __init__(self, host: str, port: int):
         validate_ipv4_address(host)
@@ -154,6 +156,7 @@ class AsyncClient(BaseClient):
         :param data:
         :param debug:
         :param log_prefix:
+        :raise IOError
         :return:
         """
         if self.writer is None:
@@ -163,15 +166,28 @@ class AsyncClient(BaseClient):
         if debug:
             logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
 
-    async def recv(self):
+    async def recv(self) -> bytes:
         """
-
+        :raise IOError
         :return:
         """
         if self.reader is None:
             raise IOError(f"Not connected to {self.log_addr} server")
-        data = await self.reader.read(self.buffer_size)
+        data = await self.read_timeout()
         return data
+
+    async def read_timeout(self) -> bytes:
+        if self.reader is None:
+            raise IOError(f"Not connected to {self.log_addr} server")
+        try:
+            res = await asyncio.wait_for(
+                self.reader.read(self.buffer_size),
+                self.timeout
+            )
+        except asyncio.TimeoutError:
+            raise asyncio.TimeoutError(f'read_timeout timeout >{self.timeout}s !')
+
+        return res
 
     async def close(self):
         if self.writer is not None:
