@@ -12,7 +12,7 @@
 """
 import ipaddress
 import random
-from typing import Type, List, Callable, Optional, Any, Dict
+from typing import Type, List, Callable, Optional, Dict
 
 from twisted.internet.address import IPv4Address
 from twisted.internet.interfaces import IAddress
@@ -21,9 +21,9 @@ from twisted.internet.task import LoopingCall
 from twisted.python.failure import Failure
 
 from .strategy import RecvStrategy
-from ..core.logx import logger
 from ..core.client import Client
-from ..interface.iot import MqttClient, IotMqttClient
+from ..core.logx import logger
+from ..interface.iot import IotMqttClient
 
 __all__ = [
     'TcpClient',
