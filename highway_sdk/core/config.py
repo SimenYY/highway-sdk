@@ -10,18 +10,17 @@
 :Link:
 :Time: 2024/9/14 9:47
 """
-import json
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
-class ExtraForbidModel(BaseModel):
+class ConfigModel(BaseModel):
     class Config:
         extra = 'forbid'
 
 
-class _Log(ExtraForbidModel):
+class _Log(ConfigModel):
     name: str = 'unknown'
     brand: str = 'unknown'
     level: str = 'ERROR'
@@ -33,16 +32,16 @@ class _Log(ExtraForbidModel):
     console: bool = False
 
 
-class _Comm(ExtraForbidModel):
+class _Comm(ConfigModel):
     polling_interval: int = 5
 
 
-class _Address(ExtraForbidModel):
+class _Address(ConfigModel):
     port: int = 28888
     ip_list: List[str] = ['127.0.0.1']
 
 
-class DriverConfigModel(ExtraForbidModel):
+class DriverConfigModel(ConfigModel):
     """
     示例
     {
@@ -74,18 +73,33 @@ class DriverConfigModel(ExtraForbidModel):
     address: _Address = _Address()
 
     @classmethod
-    def load(cls, file_path: str) -> 'DriverConfigModel':
-        if not file_path.endswith('.json'):
-            raise Exception('配置文件必须是配置文件类型')
+    def load(
+            cls, json_file_path: str,
+            validate: bool = True
+    ) -> 'DriverConfigModel':
+        """
+        如果需要加载额外字段，需要重新定义config
 
+        :param json_file_path:
+        :param validate:
+        :return:
+        """
+        if not json_file_path.endswith('.json'):
+            raise Exception('配置文件必须是配置文件类型')
         try:
-            with open(file_path, 'r') as f:
-                config = json.load(f)
-                return cls(**config)
+            with open(json_file_path, 'r') as f:
+                if validate:
+                    return cls.model_validate_json(f.read())
+                else:
+                    import json
+                    return cls.model_construct(json.load(f))
         except FileNotFoundError:
-            with open(file_path, 'w') as f:
+            with open(json_file_path, 'w') as f:
+                import json
                 default = cls()
                 json.dump(default.dict(), f, indent=4)
-            raise FileNotFoundError(f'{file_path} 不存在，已创建默认配置文件！')
+            raise FileNotFoundError(f'{json_file_path} 不存在，已创建默认配置文件！')
+        except ValidationError:
+            raise
         except Exception:
             raise
