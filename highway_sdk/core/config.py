@@ -34,6 +34,9 @@ class _Log(ConfigModel):
 
 class _Comm(ConfigModel):
     polling_interval: int = 5
+    timeout: int = 3
+    buffer_size: int = 1024
+    encoding: str = 'utf-8'
 
 
 class _Address(ConfigModel):
