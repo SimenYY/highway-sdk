@@ -10,17 +10,26 @@
 :Link:
 :Time: 2024/8/8 10:52
 """
-from highway_sdk.core.client import Client
+from highway_sdk.vms.base.vmsClient import VmsClient
 from highway_sdk.core.exceptions import (HostResponseTimeoutError,
                                          ProtocolParserError,
                                          ResponseError,
                                          InvalidSocketError)
 from .protocol import Protocol
-from .utils.constants import SanSiReturnCode
+from highway_sdk.vms.constants import DeviceReturnCode
 from loguru import logger
 
 
-class SanSiClient(Client):
+class SanSiClient(VmsClient):
+
+    def get_now_play_all_content(self) -> str | None:
+        pass
+
+    def set_now_brightness(self, brightness: int) -> int:
+        pass
+
+    def get_now_brightness(self) -> str | None:
+        pass
 
     def __init__(self, host: str = 'localhost', port: int = 2929):
         super().__init__(host, port)
@@ -78,21 +87,21 @@ class SanSiClient(Client):
             self.__send_file_name_and_content(content, play_id)
         except InvalidSocketError as e:
             logger.error(f'{e}')
-            return SanSiReturnCode.SOCKET_ERROR
+            return DeviceReturnCode.SOCKET_ERROR
         except HostResponseTimeoutError as e:
             logger.error(f'{self.log_addr} {e}')
-            return SanSiReturnCode.HOST_RESPONSE_TIMEOUT
+            return DeviceReturnCode.HOST_RESPONSE_TIMEOUT
         except ProtocolParserError as e:
             logger.error(f'{self.log_addr} {e}')
-            return SanSiReturnCode.PROTOCOL_PARSER_ERROR
+            return DeviceReturnCode.PROTOCOL_PARSER_ERROR
         except ResponseError as e:
             logger.error(f'{self.log_addr} {e}')
-            return SanSiReturnCode.HOST_RESPONSE_ERROR
+            return DeviceReturnCode.HOST_RESPONSE_ERROR
         except Exception as e:
             logger.error(f'{self.log_addr} {e}')
-            return SanSiReturnCode.UNKNOWN_ERROR
+            return DeviceReturnCode.UNKNOWN_ERROR
         else:
-            return SanSiReturnCode.SUCCESS
+            return DeviceReturnCode.SUCCESS
 
     @logger.catch
     def get_now_play_content(self) -> str | None:
