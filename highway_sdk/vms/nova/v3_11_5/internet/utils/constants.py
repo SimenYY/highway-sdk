@@ -85,17 +85,6 @@ def get_success_rsp_len(rsp_what: bytes) -> int | None:
 
 
 @dataclass(frozen=True)
-class NovaReturnCode:
-    SUCCESS = 0
-    SOCKET_ERROR = -1
-    HOST_RESPONSE_TIMEOUT = -2
-    HOST_RESPONSE_ERROR = -3
-    PROTOCOL_PARSER_ERROR = -4
-    CLIENT_REQUEST_ERROR = -5
-    UNKNOWN_ERROR = -99
-
-
-@dataclass(frozen=True)
 class TagsConvertor:
     COLOR_TO_PLATFORM = {
         '4': '1',  # 黄

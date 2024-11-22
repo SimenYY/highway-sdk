@@ -32,17 +32,6 @@ class SanSiWhat:
 
 
 @dataclass(frozen=True)
-class SanSiReturnCode:
-    SUCCESS = 0
-    SOCKET_ERROR = -1
-    HOST_RESPONSE_TIMEOUT = -2
-    HOST_RESPONSE_ERROR = -3
-    PROTOCOL_PARSER_ERROR = -4
-    CLIENT_REQUEST_ERROR = -5
-    UNKNOWN_ERROR = -99
-
-
-@dataclass(frozen=True)
 class TagsConvertor:
     PLATFORM_TO_COLOR = {
         '1': '255185000000',  # 黄
