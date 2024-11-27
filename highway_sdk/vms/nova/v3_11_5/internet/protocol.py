@@ -180,7 +180,12 @@ class Protocol:
         item_index = int(item_name[len('item'):])
         options = like_config.options(item_name)
         tags = NowPlayContentTags()
-        if f'txt{item_index}' in options:
+        if 'param' in options:
+            param = like_config.get(item_name, 'param')
+            params = param.split(',')
+            tags.duration = int(params[0]) * 0.1
+            tags.screen_in = params[1]
+        elif f'txt{item_index}' in options:
             raw = like_config.get(item_name, f'txt{item_index}')
             params = raw.split(',')
             tags.raw_str = raw
