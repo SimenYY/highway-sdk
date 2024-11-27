@@ -10,6 +10,8 @@
 :Link:
 :Time: 2024/9/14 9:47
 """
+import sys
+from pathlib import Path
 from typing import List
 
 from pydantic import BaseModel, ValidationError
@@ -106,3 +108,29 @@ class DriverConfigModel(ConfigModel):
             raise
         except Exception:
             raise
+
+
+def get_settings_path(driver_file: str, config_name: str = 'settings') -> str:
+    """
+    获取统一放置在配置文件夹中的驱动配置文件
+
+    如果设置本地测试配置local.json，则会被识别
+
+    :param driver_file: 默认填__file__
+    :param config_name:
+    :return:
+    """
+    driver_name = Path(driver_file).name
+
+    local_file = Path(config_name) / 'local.json'
+    if local_file.is_file():
+        path = str(local_file)
+    else:
+        if getattr(sys, 'frozen', False):
+            base_dir = Path(sys.executable).parent
+        else:
+            base_dir = Path(__file__).resolve().parent
+
+        path = str(base_dir / config_name / driver_name)
+
+    return path

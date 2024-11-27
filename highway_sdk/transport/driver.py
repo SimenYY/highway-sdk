@@ -18,7 +18,7 @@ from .tcpClient import TcpClientFactory
 
 
 def run(
-        factory: Type[TcpClientFactory],
+        factory: TcpClientFactory,
         ip_list: list,
         port: int
 ) -> None:
