@@ -32,7 +32,7 @@ class SanSiWhat:
 
 
 @dataclass(frozen=True)
-class TagsConvertor:
+class SansiTagsConvertor:
     PLATFORM_TO_COLOR = {
         '1': '255185000000',  # 黄
         '2': '255000000000',  # 红

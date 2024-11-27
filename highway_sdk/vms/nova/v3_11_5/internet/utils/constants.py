@@ -85,7 +85,7 @@ def get_success_rsp_len(rsp_what: bytes) -> int | None:
 
 
 @dataclass(frozen=True)
-class TagsConvertor:
+class NovaTagsConvertor:
     COLOR_TO_PLATFORM = {
         '4': '1',  # 黄
         '1': '2',  # 红
