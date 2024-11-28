@@ -122,15 +122,16 @@ def get_settings_path(driver_file: str, config_name: str = 'settings') -> str:
     """
     driver_name = Path(driver_file).name
 
-    local_file = Path(config_name) / 'local.json'
+    if getattr(sys, 'frozen', False):
+        base_dir = Path(sys.executable).parent
+    else:
+        base_dir = Path(driver_file).resolve().parent
+
+    local_file = base_dir / config_name / 'local.json'
+
     if local_file.is_file():
         path = str(local_file)
     else:
-        if getattr(sys, 'frozen', False):
-            base_dir = Path(sys.executable).parent
-        else:
-            base_dir = Path(__file__).resolve().parent
-
         path = str(base_dir / config_name / driver_name)
 
     return path
