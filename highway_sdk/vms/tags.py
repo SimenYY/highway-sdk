@@ -36,6 +36,7 @@ class NowPlayContentTags(BaseTags):
     image_name: str = None
     # 单位秒
     duration: int = None
+    # 入屏方式
     screen_in: str = None
 
 
@@ -71,9 +72,9 @@ class VmsTagConvert:
     ):
         self.tags = tags
         self.vms_brand = None if vms_brand is None else vms_brand.lower()
-        self.convertor = self.__get_convertor()
+        self.convertor = self.get_convertor()
 
-    def __get_convertor(self):
+    def get_convertor(self):
         match self.vms_brand:
             case 'nova':
                 return NovaTagsConvertor
@@ -96,7 +97,7 @@ class VmsTagConvert:
             if tags_type is NowPlayAllContentTags:
                 for i, item in enumerate(self.tags.items):
                     i += 1
-                    new_tags = {
+                    new_tags.update({
                         # 字体
                         f'FO{i}': self.convertor.FONT_TO_PLATFORM.get(item.font),
                         # 字体颜色
@@ -107,7 +108,7 @@ class VmsTagConvert:
                         f'TI{i}': item.duration,
                         # 入屏方式
                         f'SH{i}': item.screen_in
-                    }
+                    })
             elif tags_type is NowPlayContentTags:
                 new_tags = {
                     # 文字或者图片编号
@@ -128,4 +129,5 @@ class VmsTagConvert:
                 }
         else:
             new_tags = None
+
         return new_tags
