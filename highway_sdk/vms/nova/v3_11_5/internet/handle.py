@@ -27,7 +27,8 @@ class TextHandler:
             letter_spacing: int = 0,
             font_size_list: list = None
     ):
-        self.text = text
+        # 对英文逗号进行转义
+        self.text = text.replace(',', '\,')
         # 显示区域高度
         self.h = h
         # 显示区域宽度
