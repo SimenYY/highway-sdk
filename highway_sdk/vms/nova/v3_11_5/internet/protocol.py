@@ -39,7 +39,7 @@ class Protocol:
 
     @classmethod
     def send_file_content(cls, content: str, block_num: int = 1) -> bytes:
-        data = block_num.to_bytes(1, 'little')
+        data = block_num.to_bytes(2, 'little')
         data += content.encode(cls.ENCODING, 'ignore')
         return NovaPacket.pack(what=NovaWhat.SEND_FILE_CONTENT_REQ,
                                data=data)
