@@ -121,7 +121,7 @@ def get_settings_path(driver_file: str, config_name: str = 'settings') -> str:
     :return:
     """
     driver_name = Path(driver_file).name
-
+    driver_settings = driver_name.split('.', 1)[0] + '.json'
     if getattr(sys, 'frozen', False):
         base_dir = Path(sys.executable).parent
     else:
@@ -132,6 +132,6 @@ def get_settings_path(driver_file: str, config_name: str = 'settings') -> str:
     if local_file.is_file():
         path = str(local_file)
     else:
-        path = str(base_dir / config_name / driver_name)
+        path = str(base_dir / config_name / driver_settings)
 
     return path
