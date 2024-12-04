@@ -99,9 +99,9 @@ class VmsTagConvert:
                     i += 1
                     new_tags.update({
                         # 字体
-                        f'FO{i}': self.convertor.FONT_TO_PLATFORM.get(item.font),
+                        f'FO{i}': self.convertor.FONT_TO_PLATFORM.get(item.font, item.font),
                         # 字体颜色
-                        f'FC{i}': self.convertor.COLOR_TO_PLATFORM.get(item.text_color),
+                        f'FC{i}': self.convertor.COLOR_TO_PLATFORM.get(item.text_color, item.text_color),
                         # 文字或者图片编号
                         f'ZCT{i}': item.text or item.image_name,
                         # 停留时间

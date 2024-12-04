@@ -177,37 +177,39 @@ class Protocol:
             like_config.read_dict(item)
 
         item_name = like_config.sections()[0]
-        item_index = int(item_name[len('item'):])
+        # item_index = int(item_name[len('item'):])
         options = like_config.options(item_name)
         tags = NowPlayContentTags()
-        if 'param' in options:
-            param = like_config.get(item_name, 'param')
-            params = param.split(',')
-            tags.duration = int(params[0]) * 0.1
-            tags.screen_in = params[1]
-        elif f'txt{item_index}' in options:
-            raw = like_config.get(item_name, f'txt{item_index}')
-            params = raw.split(',')
-            tags.raw_str = raw
-            tags.text = params[7]
-            tags.text_color = params[4]
-            tags.font = params[2]
-            tags.font_size = params[3]
-        elif f'txtext{item_index}' in options:
-            raw = like_config.get(item_name, f'txtext{item_index}')
-            params = raw.split(',')
-            tags.raw_str = raw
-            tags.text = params[17]
-            tags.text_color = params[11]
-            tags.font = params[4]
-            tags.font_size = params[5]
-        elif f'img{item_index}' in options:
-            raw = like_config.get(item_name, f'img{item_index}')
-            params = raw.split(',')
-            tags.raw_str = raw
-            tags.image_name = params[2]
-        else:
-            ValueError(f'item {options} dont support')
+        for option in options:
+            match option:
+                case 'param':
+                    param = like_config.get(item_name, 'param')
+                    params = param.split(',')
+                    tags.duration = int(params[0]) * 0.1
+                    tags.screen_in = params[1]
+                case 'txt1':
+                    raw = like_config.get(item_name, f'txt1')
+                    params = raw.split(',')
+                    tags.raw_str = raw
+                    tags.text = params[7]
+                    tags.text_color = params[4]
+                    tags.font = params[2]
+                    tags.font_size = params[3]
+                case 'txtext1':
+                    raw = like_config.get(item_name, f'txtext1')
+                    params = raw.split(',')
+                    tags.raw_str = raw
+                    tags.text = params[17]
+                    tags.text_color = params[11]
+                    tags.font = params[4]
+                    tags.font_size = params[5]
+                case 'img1':
+                    raw = like_config.get(item_name, f'img1')
+                    params = raw.split(',')
+                    tags.raw_str = raw
+                    tags.image_name = params[2]
+                case _:
+                    ValueError(f'item {option} dont support')
 
         return tags
 
