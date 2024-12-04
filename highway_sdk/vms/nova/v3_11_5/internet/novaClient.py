@@ -51,7 +51,7 @@ class NovaClient(VmsClient):
         try:
             self._sock.send(send_buffer)
             recv_buffer = self._sock.recv(self.buffer_size)
-            data = Protocol.parser(recv_buffer, NovaWhat.FILE_NAME_RSP)
+            data = Protocol.parser(recv_buffer, NovaWhat.SEND_FILE_NAME_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_name recv timeout {e}')
         except ProtocolParserError as e:
@@ -79,7 +79,7 @@ class NovaClient(VmsClient):
         try:
             self._sock.send(send_buffer)
             recv_buffer = self._sock.recv(self.buffer_size)
-            data = Protocol.parser(recv_buffer, NovaWhat.FILE_CONTENT_RSP)
+            data = Protocol.parser(recv_buffer, NovaWhat.SEND_FILE_CONTENT_RSP)
         except TimeoutError as e:
             raise HostResponseTimeoutError(f'__send_file_content recv timeout {e}')
         except ProtocolParserError as e:
@@ -268,22 +268,23 @@ class NovaAsyncClient(VmsAsyncClient):
         :param file_name:
         :return: None
         """
+        func_name = 'send_file_name'
         send_buffer = Protocol.send_file_name(file_name)
 
         try:
             await self.send(send_buffer)
             recv_buffer = await self.recv()
-            data = Protocol.parser(recv_buffer, NovaWhat.FILE_NAME_RSP)
+            data = Protocol.parser(recv_buffer, NovaWhat.SEND_FILE_NAME_RSP)
         except asyncio.TimeoutError as e:
-            raise HostResponseTimeoutError(f'__send_file_name recv timeout {e}')
+            raise HostResponseTimeoutError(f'{func_name} recv timeout {e}')
         except ProtocolParserError as e:
-            raise ProtocolParserError(f'__send_file_name parser error {e}')
+            raise ProtocolParserError(f'{func_name} parser error {e}')
         except Exception as e:
             raise
         else:
             # 数据域内容： 执行结果1B
             if data != b'\x01':
-                raise ResponseError('__send_file_name response error')
+                raise ResponseError(f'{func_name} response error')
 
     async def __send_file_content(self, content: str) -> None:
         """
@@ -300,22 +301,27 @@ class NovaAsyncClient(VmsAsyncClient):
         :param content:
         :return: None
         """
+        func_name = 'send_file_content'
         send_buffer = Protocol.send_file_content(content)
-
         try:
             await self.send(send_buffer)
             recv_buffer = await self.recv()
-            data = Protocol.parser(recv_buffer, NovaWhat.FILE_CONTENT_RSP)
+            data_1 = Protocol.parser(recv_buffer, NovaWhat.SEND_FILE_CONTENT_RSP)
+            # 文件发送完毕
+            finished_rsp = await self.recv()
+            data_2 = Protocol.parser(finished_rsp, NovaWhat.FILE_SEND_END_RSP)
         except asyncio.TimeoutError as e:
-            raise HostResponseTimeoutError(f'__send_file_content recv timeout {e}')
+            raise HostResponseTimeoutError(f'{func_name} recv timeout {e}')
         except ProtocolParserError as e:
-            raise ProtocolParserError(f'__send_file_content parser error {e}')
+            raise ProtocolParserError(f'{func_name} parser error {e}')
         except Exception:
             raise
         else:
             # 数据域内容： 块号2B + 执行结果1B
-            if data[2:] != b'\x01':
-                raise ResponseError('__send_file_content response error')
+            if data_1[2:] != b'\x01':
+                raise ResponseError(f'{func_name} response error')
+            if data_2 != b'\x01':
+                raise ResponseError(f'{func_name} finished response error')
 
     async def __play_list_by_id(self, play_id: int) -> None:
         """
@@ -332,7 +338,7 @@ class NovaAsyncClient(VmsAsyncClient):
         :param play_id:
         :return: None
         """
-
+        func_name = 'play_list_by_id'
         send_buffer = Protocol.play_list(play_id)
 
         try:
@@ -340,15 +346,15 @@ class NovaAsyncClient(VmsAsyncClient):
             recv_buffer = await self.recv()
             data = Protocol.parser(recv_buffer, NovaWhat.PLAY_LIST_RSP)
         except asyncio.TimeoutError as e:
-            raise HostResponseTimeoutError(f'__play_list_by_id timeout {e}')
+            raise HostResponseTimeoutError(f'{func_name} timeout {e}')
         except ProtocolParserError as e:
-            raise ProtocolParserError(f'__play_list_by_id parser error {e}')
+            raise ProtocolParserError(f'{func_name} parser error {e}')
         except Exception:
             raise
         else:
             # 数据域内容： 执行结果1B
             if data != b'\x01':
-                raise ResponseError('__play_list_by_id response error')
+                raise ResponseError(f'{func_name} response error')
 
     async def set_play_list(self, content: str, play_id: int = 1) -> int:
         """

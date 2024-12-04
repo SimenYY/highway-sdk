@@ -21,11 +21,14 @@ class NovaWhat:
 
     # 发送文件名
     SEND_FILE_NAME_REQ = b'\x11'
-    FILE_NAME_RSP = b'\x12'
+    SEND_FILE_NAME_RSP = b'\x12'
 
     # 发送文件内容
     SEND_FILE_CONTENT_REQ = b'\x13'
-    FILE_CONTENT_RSP = b'\x14'
+    SEND_FILE_CONTENT_RSP = b'\x14'
+
+    # 文件发送完毕
+    FILE_SEND_END_RSP = b'\xF9'
 
     # 指定文件名播放
     PLAY_LIST_REQ = b'\x1B'
@@ -55,9 +58,9 @@ def get_success_rsp(rsp_what: bytes) -> bytes | None:
     :return: bytes
     """
     match rsp_what:
-        case NovaWhat.FILE_NAME_RSP:
+        case NovaWhat.SEND_FILE_NAME_RSP:
             return b'\xAA\xFF\xFF\x12\x01\xCC\xA1\xB4'
-        case NovaWhat.FILE_CONTENT_RSP:
+        case NovaWhat.SEND_FILE_CONTENT_RSP:
             return b'\xAA\xFF\xFF\x14\x01\x00\x01\xCC\x91\xC4'
         case NovaWhat.PLAY_LIST_RSP:
             return b'\xAA\xFF\xFF\x1C\x01\xCC\xBA\xA4'
@@ -74,10 +77,10 @@ def get_success_rsp_len(rsp_what: bytes) -> int | None:
     match rsp_what:
         case NovaWhat.GET_DEVICE_SIZE_RSP:
             return 10
-        case NovaWhat.FILE_NAME_RSP:
-            return len(get_success_rsp(NovaWhat.FILE_NAME_RSP))
-        case NovaWhat.FILE_CONTENT_RSP:
-            return len(get_success_rsp(NovaWhat.FILE_CONTENT_RSP))
+        case NovaWhat.SEND_FILE_NAME_RSP:
+            return len(get_success_rsp(NovaWhat.SEND_FILE_NAME_RSP))
+        case NovaWhat.SEND_FILE_CONTENT_RSP:
+            return len(get_success_rsp(NovaWhat.SEND_FILE_CONTENT_RSP))
         case NovaWhat.PLAY_LIST_RSP:
             return len(get_success_rsp(NovaWhat.PLAY_LIST_RSP))
         case _:

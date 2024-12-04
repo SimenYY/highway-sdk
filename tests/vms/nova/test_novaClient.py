@@ -19,8 +19,8 @@ class TestNovaClient:
     def test_set_play_list_success(self, mock_socket, nova_client):
         nova_client._sock = mock_socket
         nova_client._sock.recv.side_effect = [
-            get_success_rsp(NovaWhat.FILE_NAME_RSP),
-            get_success_rsp(NovaWhat.FILE_CONTENT_RSP),
+            get_success_rsp(NovaWhat.SEND_FILE_NAME_RSP),
+            get_success_rsp(NovaWhat.SEND_FILE_CONTENT_RSP),
             get_success_rsp(NovaWhat.PLAY_LIST_RSP)
         ]
         result = nova_client.set_play_list("")
@@ -44,15 +44,15 @@ class TestNovaClient:
         assert result == NovaReturnCode.HOST_RESPONSE_TIMEOUT
 
         nova_client._sock.recv.side_effect = [
-            get_success_rsp(NovaWhat.FILE_NAME_RSP),
+            get_success_rsp(NovaWhat.SEND_FILE_NAME_RSP),
             TimeoutError,
         ]
         result = nova_client.set_play_list("")
         assert result == NovaReturnCode.HOST_RESPONSE_TIMEOUT
 
         nova_client._sock.recv.side_effect = [
-            get_success_rsp(NovaWhat.FILE_NAME_RSP),
-            get_success_rsp(NovaWhat.FILE_CONTENT_RSP),
+            get_success_rsp(NovaWhat.SEND_FILE_NAME_RSP),
+            get_success_rsp(NovaWhat.SEND_FILE_CONTENT_RSP),
             TimeoutError,
         ]
         result = nova_client.set_play_list("")
@@ -63,7 +63,7 @@ class TestNovaClient:
         nova_client._sock = mock_socket
         nova_client._sock.recv.side_effect = [
             b'\xAA\xFF\xFF\x12\x01\xCC\xA2\xB4',  # wrong crc
-            get_success_rsp(NovaWhat.FILE_CONTENT_RSP),
+            get_success_rsp(NovaWhat.SEND_FILE_CONTENT_RSP),
             get_success_rsp(NovaWhat.PLAY_LIST_RSP)
         ]
 
@@ -72,7 +72,7 @@ class TestNovaClient:
 
         nova_client._sock.recv.side_effect = [
             b'\xAA\xFF\xFF\x1C\x01\xCC\xBA\xA4',  # wrong flag
-            get_success_rsp(NovaWhat.FILE_CONTENT_RSP),
+            get_success_rsp(NovaWhat.SEND_FILE_CONTENT_RSP),
             get_success_rsp(NovaWhat.PLAY_LIST_RSP)
         ]
 
@@ -81,7 +81,7 @@ class TestNovaClient:
 
         nova_client._sock.recv.side_effect = [
             b'\xAA\xFF\xFF\xCC\xA1\xB4',  # wrong length
-            get_success_rsp(NovaWhat.FILE_CONTENT_RSP),
+            get_success_rsp(NovaWhat.SEND_FILE_CONTENT_RSP),
             get_success_rsp(NovaWhat.PLAY_LIST_RSP)
         ]
 
