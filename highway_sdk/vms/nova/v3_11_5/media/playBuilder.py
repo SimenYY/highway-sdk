@@ -17,8 +17,13 @@ class PlayBuilder(BaseBuilder):
         # 节目id，一般不指定，默认1
         self._play_id: int = 1
 
-    def add_item_builder(self, builder: ItemBuilder) -> 'PlayBuilder':
-        self.item_list.append(builder.build())
+        # play内item序号，默认从0开始，自动累加，不应该被修改
+        self._auto_item_index: int = 0
+
+    def add_item_builder(self, item_builder: ItemBuilder) -> 'PlayBuilder':
+        self._auto_item_index += 1
+        item_builder.index = self._auto_item_index
+        self.item_list.append(item_builder.build())
 
         return self
 

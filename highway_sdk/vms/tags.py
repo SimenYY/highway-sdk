@@ -114,13 +114,13 @@ class VmsTagConvert:
                     # 文字或者图片编号
                     'CT': self.tags.text or self.tags.image_name,
                     # 字体颜色
-                    'FC': self.tags.text_color,
+                    'FC': self.convertor.COLOR_TO_PLATFORM.get(self.tags.text_color, self.tags.text_color),
                     # 入屏方式
                     'SH': self.tags.screen_in,
                     # 停留时间
                     'TI': self.tags.duration,
                     # 字体
-                    'FO': self.tags.font
+                    'FO': self.convertor.FONT_TO_PLATFORM.get(self.tags.font, self.tags.font)
                 }
             elif tags_type is NowBrightnessTags:
                 new_tags = {

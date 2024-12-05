@@ -14,8 +14,8 @@ class ItemBuilder(BaseBuilder):
     def __init__(self):
         self.media_list: List[BaseMedia] = []
 
-        # item序号，默认从0开始，自动累加，不应该被修改
-        self._index: int = 0
+        # item内媒体序号，默认从0开始，自动累加，不应该被修改
+        self._auto_media_index: int = 0
 
         # 停留时间， 默认单位是100ms
         self._duration: int = 100
@@ -39,11 +39,10 @@ class ItemBuilder(BaseBuilder):
         :param media_builder:
         :return:
         """
-        self._index += 1
-        media_builder.index = self._index
+        self._auto_media_index += 1
+        media_builder.index = self._auto_media_index
         media_builder.duration = self.duration
-        media = media_builder.build()
-        self.media_list.append(media)
+        self.media_list.append(media_builder.build())
 
         return self
 
@@ -60,11 +59,11 @@ class ItemBuilder(BaseBuilder):
 
     @property
     def index(self) -> int:
-        return self._index
+        return self._auto_media_index
 
     @index.setter
     def index(self, index: int):
-        self._index = index
+        self._auto_media_index = index
 
     @property
     def screen_in(self) -> str:
