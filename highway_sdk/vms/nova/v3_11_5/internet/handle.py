@@ -25,7 +25,9 @@ class TextHandler:
             min_font_size: int = None,
             line_spacing: int = 1,
             letter_spacing: int = 0,
-            font_size_list: list = None
+            font_size_list: list = None,
+            lf: str = '\n'
+
     ):
         # 对英文逗号进行转义
         self.text = text.replace(',', '\,')
@@ -49,28 +51,27 @@ class TextHandler:
         self.letter_spacing = letter_spacing
         # 如果提供了情报板支持的字库列表，则最终从列表中选择合适的字号。
         self.font_size_list = font_size_list
+        # 换行符
+        self.lf = lf
 
-    @classmethod
-    def is_ascall(cls, ch):
+    @staticmethod
+    def is_ascall(ch):
         return 0 <= ord(ch) <= 127
 
-    @classmethod
-    def calc_text_len(cls, text: str, size: int, letter_spacing=0):
+    def calc_text_len(self, curr_size: int):
         """
         计算文本占阵列大小总长度
 
-        :param text:
-        :param size:
-        :param letter_spacing:
+        :param curr_size: 当前使用的字体大小
         :return:
         """
-        ch_list = list(text)
+        ch_list = list(self.text)
         length = 0
         for ch in ch_list:
-            if cls.is_ascall(ch):
-                length += size / 2 + letter_spacing
+            if self.is_ascall(ch):
+                length += curr_size / 2 + self.letter_spacing
             else:
-                length += size + letter_spacing
+                length += curr_size + self.letter_spacing
         return length
 
     @staticmethod
@@ -79,33 +80,9 @@ class TextHandler:
             return None
         return max((size for size in size_list if size <= compared), default=None)
 
-    def text_wrap(self, text: str, size: int, width: int, letter_spacing: int = 0) -> str:
+    def get_adjusted_size(self) -> int:
         """
-        文本换行
-
-        :param text:
-        :param size:
-        :param width:
-        :param letter_spacing:
-        :return:
-        """
-        length = 0
-        ch_list = list(text)
-        for i, ch in enumerate(ch_list):
-            if self.is_ascall(ch):
-                length += size / 2 + letter_spacing
-            else:
-                length += size + letter_spacing
-
-            if length > width:
-                ch_list.insert(i, '\n')
-                length = 0
-
-        return ''.join(ch_list)
-
-    def adjust_text(self) -> str:
-        """
-        调整文本
+        获取合适的字体
 
         :return:
         """
@@ -117,7 +94,7 @@ class TextHandler:
             # 在当前行数时，判断最合适字号是否在该字号范围内
             while size >= curr_rows_min_size:
                 # 计算当前字号时，下发字符总长度
-                length = self.calc_text_len(text=self.text, size=size, letter_spacing=self.letter_spacing)
+                length = self.calc_text_len(curr_size=size)
                 # 如果一行显示长度超过了显示区域宽度，则减少字号，否则就是找到
                 if length / rows > self.w:
                     size -= 1
@@ -132,14 +109,30 @@ class TextHandler:
             else:
                 rows += 1
 
-        target = self.max_less_than(size, self.font_size_list)
+        target_size = self.max_less_than(size, self.font_size_list)
 
-        if target is None:
-            target = size
-        print(size)
-        return self.text_wrap(self.text, target, self.w, self.letter_spacing)
+        if target_size is None:
+            target_size = size
 
+        return target_size
 
-if __name__ == '__main__':
-    th = TextHandler(text='喝酒不开车，开车不喝酒', h=60, w=600)
-    print(th.adjust_text())
+    def get_adjusted_text(self, adjusted_size: int) -> str:
+        """
+        获取换行调整的文本
+
+        :param adjusted_size:
+        :return:
+        """
+        length = 0
+        ch_list = list(self.text)
+        for i, ch in enumerate(ch_list):
+            if self.is_ascall(ch):
+                length += adjusted_size / 2 + self.letter_spacing
+            else:
+                length += adjusted_size + self.letter_spacing
+
+            if length > self.w:
+                ch_list.insert(i, self.lf)
+                length = 0
+
+        return ''.join(ch_list)
