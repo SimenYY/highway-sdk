@@ -71,6 +71,10 @@ class PlayEffectEnum(str, Enum):
     """
     NONE = '0'
     NORMAL = '1'
+    MOVE_UP = '2'
+    MOVE_DOWN = '3'
+    MOVE_LEFT = '4'
+    MOVE_RIGHT = '5'
 
 
 class EffectSpeedEnum(str, Enum):
