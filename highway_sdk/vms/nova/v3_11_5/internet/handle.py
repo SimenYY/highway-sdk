@@ -125,7 +125,7 @@ class TextHandler:
         """
         length = 0
         ch_list = list(self.text)
-        for i, ch in enumerate(ch_list):
+        for i, ch in enumerate(self.text):
             if self.is_ascall(ch):
                 length += adjusted_size / 2 + self.letter_spacing
             else:
@@ -136,3 +136,4 @@ class TextHandler:
                 length = 0
 
         return ''.join(ch_list)
+
