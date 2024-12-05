@@ -35,8 +35,8 @@ class TextPlusMediaBuilder(BaseMediaBuilder):
         self._font: str = FontEnum.HEI_TI.value
         self._text_size: int = 1616
         self._font_style: str = FontStyleEnum.NORMAL.value
-        self._horizontal_alignment: str = HorizontalAlignmentEnum.LEFT.value
-        self._vertical_alignment: str = VerticalAlignmentEnum.TOP.value
+        self._horizontal_alignment: str = HorizontalAlignmentEnum.CENTER.value
+        self._vertical_alignment: str = VerticalAlignmentEnum.CENTER.value
         self._line_space: int = 1
         self._word_space: int = 0
         self._text_color: str = ColorEnum.RED.value

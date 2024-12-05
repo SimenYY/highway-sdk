@@ -253,7 +253,7 @@ class NovaAsyncClient(VmsAsyncClient):
     def __init__(self, host: str = 'localhost', port: int = 5000):
         super().__init__(host, port)
 
-    async def __send_file_name(self, file_name: str) -> None:
+    async def _send_file_name(self, file_name: str) -> None:
         """
         发送文件名
 
@@ -286,7 +286,7 @@ class NovaAsyncClient(VmsAsyncClient):
             if data != b'\x01':
                 raise ResponseError(f'{func_name} response error')
 
-    async def __send_file_content(self, content: str) -> None:
+    async def _send_file_content(self, content: str) -> None:
         """
         发送文件内容
 
@@ -323,7 +323,7 @@ class NovaAsyncClient(VmsAsyncClient):
             if data_2 != b'\x01':
                 raise ResponseError(f'{func_name} finished response error')
 
-    async def __play_list_by_id(self, play_id: int) -> None:
+    async def _play_list_by_id(self, play_id: int) -> None:
         """
         指定播放
 
@@ -376,11 +376,11 @@ class NovaAsyncClient(VmsAsyncClient):
         try:
             # 发送文件名
             file_name = f'play{play_id:03d}.lst'
-            await self.__send_file_name(file_name)
+            await self._send_file_name(file_name)
             # 发送文件内容
-            await self.__send_file_content(content)
+            await self._send_file_content(content)
             # 指定播放
-            await self.__play_list_by_id(play_id)
+            await self._play_list_by_id(play_id)
         except InvalidSocketError as e:
             logger.error(f'{self.log_addr} {e}')
             return DeviceReturnCode.SOCKET_ERROR
