@@ -10,7 +10,7 @@
 :Link:
 :Time: 2024/9/3 15:35
 """
-from baseMedia import BaseMedia
+from .baseMedia import BaseMedia
 
 
 class ImageMedia(BaseMedia):
