@@ -21,7 +21,7 @@ class ImageMedia(BaseMedia):
         protocol_1 = (f'img{self.index}='
                       f'{self.x},'
                       f'{self.y},'
-                      f'{self.file_name},'
+                      f'{self.file_path},'
                       f'{self.flash},'
                       f'{self.width},'
                       f'{self.height}')
