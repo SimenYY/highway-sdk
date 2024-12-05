@@ -47,18 +47,19 @@ class TextPlusMedia(BaseMedia):
     voice_speed: int = Field(..., ge=0, le=9)
     intonation: int = Field(..., ge=0, le=9)
 
-    @field_validator('text_size')
-    @classmethod
-    def validate_text_size(cls, value: int):
-        value_str = str(value)
-        length = len(value_str)
-        half_len = int(length / 2)
-        if length % 2 != 0:
-            raise ValueError('Text size 格式不正确，e.g. 1616， 2424')
-        elif value_str[:half_len] != value_str[half_len:]:
-            raise ValueError('Text size 格式不正确，e.g. 1616， 2424')
-        else:
-            return value
+    # @field_validator('text_size')
+    # @classmethod
+    # def validate_text_size(cls, value: int):
+    #     value_str = str(value)
+    #     length = len(value_str)
+    #     half_len = int(length / 2)
+    #     if length % 2 != 0:
+    #         raise ValueError('Text size 格式不正确，e.g. 1616， 2424')
+    #     elif value_str[:half_len] != value_str[half_len:]:
+    #         raise ValueError('Text size 格式不正确，e.g. 1616， 2424')
+    #     else:
+    #         return value
+
     def create_msg(self):
         protocol = (f'txtext{self.index}='
                     f'{self.x},'
@@ -66,7 +67,7 @@ class TextPlusMedia(BaseMedia):
                     f'{self.width},'
                     f'{self.height},'
                     f'{self.font},'
-                    f'{self.text_size},'
+                    f'{self.text_size}{self.text_size},'
                     f'{self.font_style},'
                     f'{self.horizontal_alignment},'
                     f'{self.vertical_alignment},'

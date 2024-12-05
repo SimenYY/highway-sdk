@@ -52,10 +52,6 @@ class TextPlusMediaBuilder(BaseMediaBuilder):
         self._voice_speed: int = 5
         self._intonation: int = 5
 
-    def auto_adjust_text_size(self):
-        # todo
-        pass
-
     def build(self) -> BaseMedia:
         return TextPlusMedia(**self.to_dict())
 
@@ -80,9 +76,8 @@ class TextPlusMediaBuilder(BaseMediaBuilder):
         :param text_size:
         :return:
         """
-        size_str = str(text_size)
-        self._text_size = int(f'{size_str}{size_str}')
-
+        # self._text_size = int(f'{text_size}{text_size}')
+        self._text_size = text_size
     @property
     def font_style(self) -> str:
         return self._font_style
