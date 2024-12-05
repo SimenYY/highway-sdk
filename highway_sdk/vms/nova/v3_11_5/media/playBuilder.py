@@ -23,7 +23,8 @@ class PlayBuilder(BaseBuilder):
     def add_item_builder(self, item_builder: ItemBuilder) -> 'PlayBuilder':
         self._auto_item_index += 1
         item_builder.index = self._auto_item_index
-        self.item_list.append(item_builder.build())
+        item = item_builder.build()
+        self.item_list.append(item)
 
         return self
 

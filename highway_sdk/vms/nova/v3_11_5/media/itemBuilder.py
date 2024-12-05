@@ -16,7 +16,8 @@ class ItemBuilder(BaseBuilder):
 
         # item内媒体序号，默认从0开始，自动累加，不应该被修改
         self._auto_media_index: int = 0
-
+        # item序号
+        self._index: int = 0
         # 停留时间， 默认单位是100ms
         self._duration: int = 100
         # 入屏方式
@@ -42,12 +43,21 @@ class ItemBuilder(BaseBuilder):
         self._auto_media_index += 1
         media_builder.index = self._auto_media_index
         media_builder.duration = self.duration
-        self.media_list.append(media_builder.build())
+        media = media_builder.build()
+        self.media_list.append(media)
 
         return self
 
     def build(self):
         return Item(**self.to_dict())
+
+    @property
+    def index(self) -> int:
+        return self._index
+
+    @index.setter
+    def index(self, index: int):
+        self._index = index
 
     @property
     def duration(self) -> int:
@@ -58,11 +68,11 @@ class ItemBuilder(BaseBuilder):
         self._duration = duration
 
     @property
-    def index(self) -> int:
+    def auto_media_index(self) -> int:
         return self._auto_media_index
 
-    @index.setter
-    def index(self, index: int):
+    @auto_media_index.setter
+    def auto_media_index(self, index: int):
         self._auto_media_index = index
 
     @property

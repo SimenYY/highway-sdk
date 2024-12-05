@@ -12,6 +12,7 @@ class Item(BaseModel):
     """
     media_list: List[BaseMedia]
     duration: NonNegativeInt
+    auto_media_index: NonNegativeInt
     index: NonNegativeInt
     screen_in: str
     screen_out: str
@@ -21,6 +22,7 @@ class Item(BaseModel):
     play_count: str
 
     def create_msg(self) -> str:
+        protocol = [f'[item{self.index}]', '\n']
         param = (f"param={self.duration},"
                  f"{self.screen_in},"
                  f"{self.screen_out},"
@@ -28,8 +30,8 @@ class Item(BaseModel):
                  f"{self.flash_speed},"
                  f"{self.flash_count},"
                  f"{self.play_count}")
-
-        protocol = [param, '\n']
+        protocol.append(param)
+        protocol.append('\n')
 
         for media in self.media_list:
             protocol.append(media.create_msg())
