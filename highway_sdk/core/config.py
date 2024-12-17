@@ -11,6 +11,9 @@
 :Time: 2024/9/14 9:47
 """
 import sys
+import os
+import json
+from contextlib import suppress
 from pathlib import Path
 from typing import List
 
@@ -23,15 +26,15 @@ class ConfigModel(BaseModel):
 
 
 class _Log(ConfigModel):
-    name: str = 'unknown'
-    brand: str = 'unknown'
-    level: str = 'ERROR'
+    name: str = 'none'
+    brand: str = 'none'
+    level: str = 'DEBUG'
     rotation: str = '1 day'
     retention: str = '7 days'
     compression: str = 'zip'
     enqueue: bool = True
     file: bool = True
-    console: bool = False
+    console: bool = True
 
 
 class _Comm(ConfigModel):
@@ -39,10 +42,11 @@ class _Comm(ConfigModel):
     timeout: int = 3
     buffer_size: int = 1024
     encoding: str = 'utf-8'
+    max_reconnect_delay: float = 3600
 
 
 class _Address(ConfigModel):
-    port: int = 28888
+    port: int = 8888
     ip_list: List[str] = ['127.0.0.1']
 
 
@@ -51,8 +55,8 @@ class DriverConfigModel(ConfigModel):
     示例
     {
       'log': {
-        'name': 'unknown',
-        'brand': 'unknown',
+        'name': 'none',
+        'brand': 'none',
         'level': 'ERROR',
         'rotation': '1 day',
         'retention': '7 days',
@@ -96,14 +100,14 @@ class DriverConfigModel(ConfigModel):
                 if validate:
                     return cls.model_validate_json(f.read())
                 else:
-                    import json
                     return cls.model_construct(json.load(f))
         except FileNotFoundError:
+            # 默认创建配置
+            Path(json_file_path).parent.mkdir(parents=True, exist_ok=True)
             with open(json_file_path, 'w') as f:
-                import json
                 default = cls()
                 json.dump(default.dict(), f, indent=4)
-            raise FileNotFoundError(f'{json_file_path} 不存在，已创建默认配置文件！')
+            return default
         except ValidationError:
             raise
         except Exception:
