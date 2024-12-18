@@ -36,15 +36,15 @@ class DriverLoggerConfig(BaseLoggerConfig):
 
     def __init__(
             self,
-            name: str = 'unknown',
-            brand: str = 'unknown',
-            level: str = 'INFO',
+            name: str = 'none',
+            brand: str = 'none',
+            level: str = 'DEBUG',
             rotation: str = '1 day',
             retention: str = '7 days',
             compression: str = 'zip',
             enqueue: bool = True,
             file: bool = True,
-            console: bool = False
+            console: bool = True
     ):
         super().__init__()
 

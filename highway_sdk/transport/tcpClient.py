@@ -135,7 +135,7 @@ class TcpClient(Protocol):
         logger.success(f"Connection is established {self.log_addr}.")
 
     def dataReceived(self, data: bytes) -> None:
-        logger.debug(f'Receive from {self.log_addr}: {data.hex(" ")}')
+        logger.debug(f'Receive from {self.log_addr} - {data.hex(" ")}')
 
     @property
     def log_addr(self) -> str:
@@ -205,7 +205,7 @@ class TcpClient(Protocol):
         :return:
         """
         if self.connected:
-            logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
+            logger.debug(f'{log_prefix} - Send to {self.log_addr} - {data.hex(" ")}')
             self.transport.write(data)
         else:
             logger.error(f'{log_prefix} - Send failed, self.connected is 0.')
@@ -231,14 +231,10 @@ class TcpClientFactory(ReconnectingClientFactory):
     """
 
     protocol = TcpClient
-    # 如果设备过多，重连时间过长的话会导致再某个时间点对reactor压力变大
-    # maxDelay = 10
     # 延时因子
     factor = 1.6180339887498948
     # 用于维护活动的客户端
     clients: Dict[IPv4Address, TcpClient] = {}
-    # 最大延迟时间常数
-    MAX_DELAY = 3600
 
     @property
     def current_clients_count(self) -> int:
@@ -281,6 +277,7 @@ class TcpClientFactory(ReconnectingClientFactory):
         return cls.forProtocol(protocol, *args, **kwargs)
 
     def buildProtocol(self, addr: IAddress) -> "Optional[Protocol]":
+        self.resetDelay()
         p = self.protocol()
         p.factory = self
         self.clients[addr] = p

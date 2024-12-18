@@ -105,7 +105,7 @@ class Protocol:
             return packet.data
 
     @classmethod
-    def lazy_parser(cls, recv_buffer) -> Union["NowPlayContentTags", "NowBrightnessTags", "NowPlayAllContentTags"]:
+    def lazy_parser(cls, recv_buffer: bytes) -> Union["NowPlayContentTags", "NowBrightnessTags", "NowPlayAllContentTags"]:
         """
         如果你很懒的话，那就一键使用这个函数解析吧！
 
