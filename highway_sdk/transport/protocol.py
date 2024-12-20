@@ -11,14 +11,108 @@
 :Time: 2024/12/17 20:20
 """
 import random
-from dataclasses import dataclass
-from typing import Dict, Optional, Callable
+import inspect
 
-from highway_sdk.core.logx import logger
+from dataclasses import dataclass
+from typing import Dict, Optional, Callable, Type, List, Final
+
 from twisted.internet.interfaces import IAddress
 from twisted.internet.protocol import ClientFactory, Protocol
+from twisted.internet.task import LoopingCall
 from twisted.internet.tcp import Connector
 from twisted.python.failure import Failure
+
+from highway_sdk.core.logx import logger
+from highway_sdk.transport.strategy import RecvStrategy
+
+
+@dataclass
+class DeviceProperty:
+    series: str = None
+    sn: str = None
+
+
+class ClientProtocol(Protocol):
+    """
+    Handing the data transfer and protocol logic on the network connection.
+
+    The functional points are as follows
+    1. scheduled communication.
+    2. logs of sending and receiving.
+    """
+    DEFAULT_ENCODING: Final[str] = 'utf-8'
+    DEFAULT_INTERVAL: Final[float] = 5.0
+
+    interval: float = DEFAULT_INTERVAL
+
+    encoding: str = DEFAULT_ENCODING
+
+    humanize: bool = False
+
+    recv_strategy: Optional[RecvStrategy] = None
+
+    factory: Optional['ClusterReconnectClientFactory'] = None
+
+    def connectionMade(self) -> None:
+        logger.success(f"Connection is established {self.log_addr}.")
+
+    def dataReceived(self, data: bytes) -> None:
+        logger.debug(f'Receive from {self.log_addr} - {self.data_format(data)}')
+
+    def data_format(self, data: bytes) -> str:
+
+        if self.humanize:
+            msg = data.decode(self.encoding, 'ignore')
+        else:
+            msg = data.hex(" ").upper()
+        return msg
+
+    @property
+    def log_addr(self) -> str:
+        if self.transport is None:
+            msg = f'[None:None]'
+        else:
+            addr = self.transport.getPeer()
+            msg = f'[{addr.host}:{addr.port}]'
+        return msg
+
+    def looping_call_tasks(self, tasks: List[Callable[[], None]]) -> None:
+
+        for task in tasks:
+            self.looping_call_task(task)
+
+    def looping_call_task(self, task: Callable[[], None]) -> None:
+
+        if self.interval <= 0:
+            self.interval = self.DEFAULT_INTERVAL
+
+        interval = self.interval
+        jitter = self.factory.JITTER
+        if jitter is not None:
+            interval = random.normalvariate(interval,
+                                            interval * jitter)
+        loop_deferred = LoopingCall(task).start(interval, now=False)
+        loop_deferred.addErrback(self.eb_loop_failed)
+        loop_deferred.addCallback(self.cb_loop_done)
+
+    @staticmethod
+    def eb_loop_failed(failure: Failure) -> None:
+
+        logger.error(f"Looping call failed: {failure}")
+
+    @staticmethod
+    def cb_loop_done(result) -> None:
+
+        logger.info(f"Looping call done: {result}")
+
+    def send(self, data: bytes) -> None:
+
+        caller_name = inspect.stack()[1].function
+        if self.connected:
+            logger.debug(f'{caller_name} - Send to {self.log_addr} - {self.data_format(data)}')
+            self.transport.write(data)
+        else:
+            logger.error(f'{caller_name} - Send failed, self.connected is 0.')
 
 
 @dataclass
@@ -34,12 +128,14 @@ class ClusterReconnectClientFactory(ClientFactory):
     2. A device corresponds to a delay state.
     3. log optimization.
     """
+    protocol: Optional[Callable[[], Protocol]] = None
+
     max_delay: float = 3600.0
     max_retries: Optional[int] = None
     initial_delay: float = 1.0
 
-    factor: float = 1.6180339887498948
-    jitter: float = 0.119626565582
+    FACTOR: Final[float] = 1.6180339887498948
+    JITTER: Final[float] = 0.119626565582
 
     delay_pool: Dict[IAddress, DelayState] = {}
 
@@ -62,7 +158,7 @@ class ClusterReconnectClientFactory(ClientFactory):
         return p
 
     @classmethod
-    def set_protocol(cls, protocol: Callable[[], Protocol], *args, **kwargs):
+    def set_protocol(cls, protocol: Type[Protocol], *args, **kwargs):
         return cls.forProtocol(protocol, *args, **kwargs)
 
     def retry(self, connector: Connector) -> None:
@@ -84,9 +180,9 @@ class ClusterReconnectClientFactory(ClientFactory):
             logger.warning(f"Abandoning {addr} after {rm.retries} retries.")
             return
 
-        rm.delay = min(rm.delay * self.factor, self.max_delay)
-        if self.jitter is not None:
-            rm.delay = random.normalvariate(rm.delay, rm.delay * self.jitter)
+        rm.delay = min(rm.delay * self.FACTOR, self.max_delay)
+        if self.JITTER is not None:
+            rm.delay = random.normalvariate(rm.delay, rm.delay * self.JITTER)
 
         logger.info(f"{addr} will retry in {rm.delay} seconds.")
         self.reconnect_later(rm.delay, connector)
