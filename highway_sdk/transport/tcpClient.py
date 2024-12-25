@@ -175,25 +175,15 @@ class TcpClient(Protocol):
         loop_deferred.addErrback(self.eb_loop_failed)
         loop_deferred.addCallback(self.cb_loop_done)
 
-    def eb_loop_failed(self, failure: Failure) -> None:
-        """
-        循环任务失败时候调用
+    @staticmethod
+    def eb_loop_failed(failure: Failure) -> None:
 
-        :rtype: None
-        :param failure:
-        :return:
-        """
-        pass
+        logger.error(f"Looping call failed: {failure}")
 
-    def cb_loop_done(self, result) -> None:
-        """
-        在循环任务完成时调用
+    @staticmethod
+    def cb_loop_done(result) -> None:
 
-        :rtype: None
-        :param result:
-        :return:
-        """
-        pass
+        logger.info(f"Looping call done: {result}")
 
     def send(self, data: bytes, log_prefix: str = '') -> None:
         """
