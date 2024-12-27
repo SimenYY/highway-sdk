@@ -33,6 +33,7 @@ class MqttClient:
                  port: int = 1883,
                  client_id: str | None = None,
                  auth: tuple[str, str] = None,
+                 userdata: Any = None,
                  qos: int = 0):
         """
 
@@ -55,6 +56,9 @@ class MqttClient:
 
         if auth is not None:
             self._client.username_pw_set(username=auth[0], password=auth[1])
+
+        if userdata is not None:
+            self._client.user_data_set(userdata)
 
         def on_log(client, userdata, paho_log_level, messages):
             match paho_log_level:
@@ -87,20 +91,30 @@ class MqttClient:
     def log_address(self) -> str:
         return f'{self._host}:{self._port}'
 
-    def connect(self) -> None:
+    def connect(self, is_async: bool = False) -> None:
         def on_connect(client, userdata, flags, reason_code, properties):
             if reason_code.is_failure:
                 logger.critical(f'Failed to connect {self.log_address}: {reason_code}.')
             else:
-                logger.success(f'Connected to MQTT Broker {self.log_address}')
+                logger.success(f'Connected to MQTT Broker {self.log_address}, client id {self._client_id}.')
+
+        def on_disconnect(client, userdata, disconnect_flags, reason_code, properties):
+            logger.error(f'Disconnected from MQTT Broker {self.log_address}: {reason_code}.')
 
         self._client.on_connect = on_connect
+        self._client.on_disconnect = on_disconnect
         try:
-            self._client.connect(self._host, self._port)
+            if is_async:
+                self._client.connect_async(host=self._host, port=self._port)
+            else:
+                self._client.connect(host=self._host, port=self._port)
         except ConnectionRefusedError as e:
             logger.error(f'Failed to connect {self.log_address}: {e}')
+        except Exception as e:
+            logger.error(e)
         # 启动守护线程，主线程退出，则线程退出
         self._client.loop_start()
+
 
     def disconnect(self) -> None:
         def on_disconnect(client, userdata, disconnect_flags, reason_code, properties):

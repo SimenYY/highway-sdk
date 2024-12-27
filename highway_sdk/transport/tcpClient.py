@@ -155,7 +155,7 @@ class TcpClient(Protocol):
         else:
             return 'None:None'
 
-    def looping_call_tasks(self, tasks: List[Callable[[], None]]) -> None:
+    def looping_call_tasks(self, tasks: List[Callable[[], None]], now: bool = False) -> None:
         """
         执行定时任务
 
@@ -165,9 +165,9 @@ class TcpClient(Protocol):
         """
 
         for task in tasks:
-            self.looping_call_task(task)
+            self.looping_call_task(task, now=now)
 
-    def looping_call_task(self, task: Callable[[], None]) -> None:
+    def looping_call_task(self, task: Callable[[], None], now: bool = False) -> None:
         # 验证轮询时间的合法性，否则设置为默认值
         if self.polling_interval <= 0:
             self.polling_interval = self.DEFAULT_INTERVAL
@@ -176,7 +176,7 @@ class TcpClient(Protocol):
         if self.jitter:
             interval = random.normalvariate(self.polling_interval,
                                             self.polling_interval * self.jitter)
-        loop_deferred = LoopingCall(task).start(interval, now=False)
+        loop_deferred = LoopingCall(task).start(interval, now=now)
         loop_deferred.addErrback(self.eb_loop_failed)
         loop_deferred.addCallback(self.cb_loop_done)
 
@@ -293,6 +293,4 @@ class IotMqttClientFactory(TcpClientFactory):
     增加了mqtt_client，使之于mqtt broker保持通信
     """
     mqtt_client = IotMqttClient()
-
-    def __init__(self):
-        self.mqtt_client.connect()
+    mqtt_client.connect()
