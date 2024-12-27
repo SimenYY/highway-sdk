@@ -32,7 +32,16 @@ class MqttClient:
                  host: str = 'localhost',
                  port: int = 1883,
                  client_id: str | None = None,
+                 auth: tuple[str, str] = None,
                  qos: int = 0):
+        """
+
+        :param host:
+        :param port:
+        :param client_id:
+        :param auth: (username, password)
+        :param qos:
+        """
         self._host = host
         self._port = port
         self._qos = qos
@@ -43,6 +52,9 @@ class MqttClient:
 
         self._client: mqtt.Client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,
                                                 client_id=self._client_id)
+
+        if auth is not None:
+            self._client.username_pw_set(username=auth[0], password=auth[1])
 
         def on_log(client, userdata, paho_log_level, messages):
             match paho_log_level:
@@ -58,6 +70,10 @@ class MqttClient:
                     logger.info(messages)
 
         self._client.on_log = on_log
+
+    @property
+    def client(self):
+        return self._client
 
     def __enter__(self):
         self.connect()
