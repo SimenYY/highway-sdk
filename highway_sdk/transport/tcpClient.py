@@ -35,6 +35,9 @@ __all__ = [
 
 
 class _IotControlClientMixin:
+    """
+    物联智控控制混入
+    """
     def iot_subscribe(self, on_message: Callable[..., None]):
         if not hasattr(self.factory, 'mqtt_client'):
             logger.error(f"mqtt_client not found in {self.factory.__name__}")
@@ -52,6 +55,9 @@ class _IotControlClientMixin:
 
 
 class _IotClientMixin:
+    """
+    物联智控mqtt客户端混入
+    """
     factory: Optional['IotMqttClientFactory'] = None
 
     @classmethod
@@ -106,7 +112,6 @@ class _IotClientMixin:
 class TcpClient(Protocol):
     """
     用于基于TCP协议的设备的客户端，具备与设备通信交互的功能
-
     """
     # 默认轮询时间
     DEFAULT_INTERVAL = 5
@@ -203,13 +208,15 @@ class TcpClient(Protocol):
 
 
 class IotTcpClient(_IotClientMixin, TcpClient):
+    """
+    上层平台为物联智控的设备客户端
+    """
     pass
 
 
 class IotControlTcpClient(_IotControlClientMixin, TcpClient):
     """
     在TcpClient的基础之上，增加了对物联智控的mqtt控制的支持以及相关的工具函数
-
     """
     pass
 
@@ -217,7 +224,6 @@ class IotControlTcpClient(_IotControlClientMixin, TcpClient):
 class TcpClientFactory(ReconnectingClientFactory):
     """
     基础tcp client的工厂类
-
     """
 
     protocol = TcpClient
@@ -285,7 +291,6 @@ class TcpClientFactory(ReconnectingClientFactory):
 class IotMqttClientFactory(TcpClientFactory):
     """
     增加了mqtt_client，使之于mqtt broker保持通信
-
     """
     mqtt_client = IotMqttClient()
 
