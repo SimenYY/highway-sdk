@@ -5,7 +5,7 @@
 :Project:
 :Brand:
 :Version:
-:Description: 
+:Description: 基于protocol重写工厂函数，以及客户端
 :Author: He YinYu
 :Link:
 :Time: 2024/12/17 20:20
