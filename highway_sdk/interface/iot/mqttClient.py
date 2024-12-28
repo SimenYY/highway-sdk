@@ -33,7 +33,7 @@ class MqttClient:
                  port: int = 1883,
                  client_id: str | None = None,
                  auth: tuple[str, str] = None,
-                 userdata: Any = None,
+                 user_data: Any = None,
                  qos: int = 0):
         """
 
@@ -41,6 +41,7 @@ class MqttClient:
         :param port:
         :param client_id:
         :param auth: (username, password)
+        :param user_data:
         :param qos:
         """
         self._host = host
@@ -57,7 +58,7 @@ class MqttClient:
         if auth is not None:
             self._client.username_pw_set(username=auth[0], password=auth[1])
 
-        if userdata is not None:
+        if user_data is not None:
             self._client.user_data_set(userdata)
 
         def on_log(client, userdata, paho_log_level, messages):
@@ -79,6 +80,11 @@ class MqttClient:
     def client(self):
         return self._client
 
+    @property
+    def client_id(self) -> str:
+        return self._client_id
+
+
     def __enter__(self):
         self.connect()
         return self
@@ -91,7 +97,18 @@ class MqttClient:
     def log_address(self) -> str:
         return f'{self._host}:{self._port}'
 
-    def connect(self, is_async: bool = False) -> None:
+    def connect(
+            self,
+            is_async: bool = False,
+    ) -> None:
+        """
+        订阅需要在连接之后在有效
+
+        :param is_async:
+        :param on_connect:
+        :param on_disconnect:
+        :return:
+        """
         def on_connect(client, userdata, flags, reason_code, properties):
             if reason_code.is_failure:
                 logger.critical(f'Failed to connect {self.log_address}: {reason_code}.')
@@ -101,8 +118,12 @@ class MqttClient:
         def on_disconnect(client, userdata, disconnect_flags, reason_code, properties):
             logger.error(f'Disconnected from MQTT Broker {self.log_address}: {reason_code}.')
 
-        self._client.on_connect = on_connect
-        self._client.on_disconnect = on_disconnect
+        if self._client.on_connect is None:
+            self._client.on_connect = on_connect
+
+        if self._client.on_disconnect is None:
+            self._client.on_disconnect = on_disconnect
+
         try:
             if is_async:
                 self._client.connect_async(host=self._host, port=self._port)
@@ -117,10 +138,6 @@ class MqttClient:
 
 
     def disconnect(self) -> None:
-        def on_disconnect(client, userdata, disconnect_flags, reason_code, properties):
-            logger.error(f'Disconnected from MQTT Broker {self.log_address}')
-
-        self._client.on_disconnect = on_disconnect
         self._client.disconnect()
         self._client.loop_stop()
 
@@ -150,6 +167,8 @@ class MqttClient:
             ...
 
 
+        一般写在on_connect函数中
+
         :param topic: 订阅主题
         :param callback: 消息回调函数
         :return:
@@ -158,10 +177,10 @@ class MqttClient:
         def on_message(client, userdata, message):
             logger.debug(f'Received "{message.payload}" from "{message.topic}" topic')
 
-        if callback is None:
-            self._client.on_message = on_message
-        else:
+        if callback is not None:
             self._client.on_message = callback
+        elif self._client.on_message is None:
+            self._client.on_message = on_message
 
         self._client.subscribe(topic=topic, qos=self._qos)
 
