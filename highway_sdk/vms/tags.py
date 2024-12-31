@@ -11,7 +11,7 @@
 :Time: 2024/9/27 10:52
 """
 from dataclasses import dataclass, asdict, field
-from typing import List, Union, Literal
+from typing import List, Union, Literal, Callable, Any
 
 from highway_sdk.vms.SanSi.v4_21_0.internet.utils.constants import SansiTagsConvertor
 from highway_sdk.vms.nova.v3_11_5.internet.utils.constants import NovaTagsConvertor
@@ -27,6 +27,7 @@ class BaseTags:
 class NowPlayContentTags(BaseTags):
     """
     当前显示点位
+
     """
     raw_str: str = None
     font: str = None
@@ -69,10 +70,12 @@ class VmsTagConvert:
             self,
             tags: Union["NowPlayContentTags", "NowBrightnessTags", "NowPlayAllContentTags"],
             vms_brand: Literal['nova', 'sansi'],
+            ct_process: Callable[[Any, ...], Any] = None
     ):
         self.tags = tags
-        self.vms_brand = None if vms_brand is None else vms_brand.lower()
+        self.vms_brand = vms_brand
         self.convertor = self.get_convertor()
+        self.ct_process = ct_process
 
     def get_convertor(self):
         match self.vms_brand:
@@ -81,7 +84,7 @@ class VmsTagConvert:
             case 'sansi':
                 return SansiTagsConvertor
             case _:
-                return None
+                raise NotImplementedError(f'{self.vms_brand} is not supported')
 
     def apply_convert(self) -> dict | None:
         """
@@ -97,22 +100,34 @@ class VmsTagConvert:
             if tags_type is NowPlayAllContentTags:
                 for i, item in enumerate(self.tags.items):
                     i += 1
+
+                    if self.ct_process is not None:
+                        ct = self.ct_process(item.text, item.image_name)
+                    else:
+                        ct = item.text or item.image_name
+
                     new_tags.update({
                         # 字体
                         f'FO{i}': self.convertor.FONT_TO_PLATFORM.get(item.font, item.font),
                         # 字体颜色
                         f'FC{i}': self.convertor.COLOR_TO_PLATFORM.get(item.text_color, item.text_color),
                         # 文字或者图片编号
-                        f'ZCT{i}': item.text or item.image_name,
+                        f'ZCT{i}': ct,
                         # 停留时间
                         f'TI{i}': item.duration,
                         # 入屏方式
                         f'SH{i}': item.screen_in
                     })
             elif tags_type is NowPlayContentTags:
+
+                if self.ct_process is not None:
+                    ct = self.ct_process(self.tags.text, self.tags.image_name)
+                else:
+                    ct = self.tags.text or self.tags.image_name
+
                 new_tags = {
                     # 文字或者图片编号
-                    'CT': self.tags.text or self.tags.image_name,
+                    'CT': ct,
                     # 字体颜色
                     'FC': self.convertor.COLOR_TO_PLATFORM.get(self.tags.text_color, self.tags.text_color),
                     # 入屏方式
