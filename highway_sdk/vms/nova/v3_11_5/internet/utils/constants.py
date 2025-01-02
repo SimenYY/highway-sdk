@@ -92,7 +92,7 @@ class NovaTagsConvertor:
     COLOR_TO_PLATFORM = {
         '4': '1',  # 黄
         '1': '2',  # 红
-        '2': '4',  # 绿
+        '2': '3',  # 绿
     }
 
     PLATFORM_TO_COLOR = {

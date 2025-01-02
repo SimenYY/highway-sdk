@@ -40,6 +40,9 @@ class NowPlayContentTags(BaseTags):
     # 入屏方式
     screen_in: str = None
 
+    area_width: int = None
+    area_height: int = None
+
 
 @dataclass
 class NowPlayAllContentTags(BaseTags):
@@ -72,6 +75,13 @@ class VmsTagConvert:
             vms_brand: Literal['nova', 'sansi'],
             ct_process: Callable[[Any, ...], Any] = None
     ):
+        """
+        若需要对内容进行额外的处理，则自定义ct_process
+
+        :param tags:
+        :param vms_brand:
+        :param ct_process:
+        """
         self.tags = tags
         self.vms_brand = vms_brand
         self.convertor = self.get_convertor()
