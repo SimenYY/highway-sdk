@@ -16,7 +16,6 @@ from loguru import logger
 
 
 class BaseLoggerConfig:
-
     def __init__(self):
         self._logger = logger
         self._logger.remove()
@@ -83,7 +82,7 @@ class ApiLoggerConfig(BaseLoggerConfig):
     ):
         super().__init__()
         self._logger.add(
-            f'logs/Api/' + f'{log_file}' + '_{time: YYYY-MM-DD}.log',
+            f'logs/api/' + f'{log_file}' + '_{time: YYYY-MM-DD}.log',
             level=level,
             rotation=rotation,
             retention=retention,
