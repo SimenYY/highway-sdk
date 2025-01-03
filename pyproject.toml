@@ -15,7 +15,10 @@ shortuuid = "^1.0.13"
 twisted = "^24.7.0"
 click = "^8.1.7"
 requests = "^2.32.3"
-deprecated = "^1.2.15"
+colorlog = "^6.9.0"
+flask = "^3.1.0"
+python-json-logger = "^3.2.1"
+elasticsearch = "^8.17.0"
 
 
 [[tool.poetry.source]]
