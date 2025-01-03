@@ -7,7 +7,7 @@
 :Version:
 :Description: 
 :Author: He YinYu
-:Link:
+:Link:s
 :Time: 2024/8/8 10:52
 """
 from highway_sdk.vms.base.vmsClient import VmsClient
@@ -17,7 +17,7 @@ from highway_sdk.core.exceptions import (HostResponseTimeoutError,
                                          InvalidSocketError)
 from .protocol import Protocol
 from highway_sdk.vms.constants import DeviceReturnCode
-from loguru import logger
+from highway_sdk import logger
 
 
 class SanSiClient(VmsClient):

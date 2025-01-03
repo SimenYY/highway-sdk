@@ -11,8 +11,7 @@
 :Time: 2024/8/20 13:54
 """
 
-from loguru import logger
-
+from highway_sdk import logger
 from highway_sdk.core.client import Client
 from highway_sdk.core.exceptions import ProtocolParserError
 from .protocol import Protocol
@@ -30,7 +29,6 @@ class DmClient(Client):
         super().__init__(host, port)
         # todo 增加使用协议属性，可以灵活更改协议的参数
 
-    @logger.catch
     def set_play_list(self, content: str, play_id: int = 0) -> int:
         """
         发送播放表，并立即播放
@@ -80,7 +78,6 @@ class DmClient(Client):
                     logger.error(f'{self.log_addr} 响应未知错误 - {data}')
                     return DmReturnCode.UNKNOWN_ERROR
 
-    @logger.catch
     def get_now_play_content(self) -> str | None:
         """
         当前页面字符串：“\C000000\Fs3232\T255000000000\K000000000000\WHello World”

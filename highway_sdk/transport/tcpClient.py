@@ -20,9 +20,10 @@ from twisted.internet.protocol import Protocol, ReconnectingClientFactory
 from twisted.internet.task import LoopingCall
 from twisted.python.failure import Failure
 
+from highway_sdk import logger
 from .strategy import RecvStrategy
 from ..core.client import Client
-from ..core.logx import logger
+
 from ..interface.iot import IotMqttClient
 
 __all__ = [
@@ -137,7 +138,7 @@ class TcpClient(Protocol):
 
     def connectionMade(self) -> None:
         self.addr = self.transport.getPeer()
-        logger.success(f"Connection is established {self.log_addr}.")
+        logger.info(f"Connection is established {self.log_addr}.")
 
     def dataReceived(self, data: bytes) -> None:
         logger.debug(f'Receive from {self.log_addr} - {data.hex(" ")}')

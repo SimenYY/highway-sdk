@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 
-from loguru import logger
+from highway_sdk import logger
 
 from highway_sdk.vms.base.vmsClient import VmsClient, VmsAsyncClient
 from highway_sdk.core.exceptions import (

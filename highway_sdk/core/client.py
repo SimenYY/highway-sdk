@@ -13,7 +13,7 @@
 import socket
 from typing import Optional
 
-from loguru import logger
+from highway_sdk import logger
 from highway_sdk.core.validators import (
     validate_ipv4_address,
     validate_port,

@@ -10,13 +10,11 @@
 :Link:
 :Time: 2024/9/4 10:22
 """
-import logging
 from datetime import datetime
 from typing import List, Dict, Any, Callable
 
 import paho.mqtt.client as mqtt
 import shortuuid
-from loguru import logger
 
 from ._models import (
     PublishRealMqttModel,
@@ -24,6 +22,8 @@ from ._models import (
     PublishControlResMqttModel,
     SubscribeControlReqModel
 )
+
+from highway_sdk import logger
 
 
 class MqttClient:
@@ -52,14 +52,16 @@ class MqttClient:
         else:
             self._client_id = client_id
 
-        self._client: mqtt.Client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,
-                                                client_id=self._client_id)
+        self._client: mqtt.Client = mqtt.Client(
+            mqtt.CallbackAPIVersion.VERSION2,
+            client_id=self._client_id
+        )
 
         if auth is not None:
             self._client.username_pw_set(username=auth[0], password=auth[1])
 
         if user_data is not None:
-            self._client.user_data_set(userdata)
+            self._client.user_data_set(user_data)
 
         def on_log(client, userdata, paho_log_level, messages):
             match paho_log_level:
@@ -70,7 +72,7 @@ class MqttClient:
                 case mqtt.MQTT_LOG_WARNING:
                     logger.warning(messages)
                 case mqtt.MQTT_LOG_ERR:
-                    logging.error(messages)
+                    logger.error(messages)
                 case _:
                     logger.info(messages)
 
@@ -83,7 +85,6 @@ class MqttClient:
     @property
     def client_id(self) -> str:
         return self._client_id
-
 
     def __enter__(self):
         self.connect()
@@ -109,11 +110,12 @@ class MqttClient:
         :param on_disconnect:
         :return:
         """
+
         def on_connect(client, userdata, flags, reason_code, properties):
             if reason_code.is_failure:
                 logger.critical(f'Failed to connect {self.log_address}: {reason_code}.')
             else:
-                logger.success(f'Connected to MQTT Broker {self.log_address}, client id {self._client_id}.')
+                logger.info(f'Connected to MQTT Broker {self.log_address}, client id {self._client_id}.')
 
         def on_disconnect(client, userdata, disconnect_flags, reason_code, properties):
             logger.error(f'Disconnected from MQTT Broker {self.log_address}: {reason_code}.')
@@ -135,7 +137,6 @@ class MqttClient:
             logger.error(e)
         # 启动守护线程，主线程退出，则线程退出
         self._client.loop_start()
-
 
     def disconnect(self) -> None:
         self._client.disconnect()
