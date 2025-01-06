@@ -17,6 +17,9 @@ from highway_sdk.core.log.handlers import ColoredStreamHandler
 
 logger = logging.getLogger(__name__)
 
-logger.addHandler(ColoredStreamHandler())
-logger.setLevel(logging.DEBUG)
 
+def get_lib_name():
+    return __name__
+
+# logger.addHandler(ColoredStreamHandler())
+# logger.setLevel(logging.DEBUG)
