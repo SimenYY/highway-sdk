@@ -39,6 +39,7 @@ class _IotControlClientMixin:
     """
     物联智控控制混入
     """
+
     def iot_subscribe(self, on_message: Callable[..., None]):
         if not hasattr(self.factory, 'mqtt_client'):
             logger.error(f"mqtt_client not found in {self.factory.__name__}")
@@ -135,6 +136,12 @@ class TcpClient(Protocol):
     @property
     def sn(self) -> str:
         return f'{self.series}_{self.addr.host}'
+
+    def makeConnection(self, transport):
+        if hasattr(self.factory, 'mqtt_client'):
+            self.factory.mqtt_client.connect()
+
+        return super().makeConnection(transport)
 
     def connectionMade(self) -> None:
         self.addr = self.transport.getPeer()
@@ -293,5 +300,4 @@ class IotMqttClientFactory(TcpClientFactory):
     """
     增加了mqtt_client，使之于mqtt broker保持通信
     """
-    mqtt_client = IotMqttClient()
-    mqtt_client.connect()
+    mqtt_client: IotMqttClient = IotMqttClient()

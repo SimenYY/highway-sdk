@@ -106,8 +106,6 @@ class MqttClient:
         订阅需要在连接之后在有效
 
         :param is_async:
-        :param on_connect:
-        :param on_disconnect:
         :return:
         """
 
