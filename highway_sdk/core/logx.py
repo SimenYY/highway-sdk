@@ -106,8 +106,8 @@ class ApiLoggerConfig(BaseLoggerConfig):
 
 
 def get_driver_loger(
-        series: str = 'none',
-        sn: str = 'none',
+        name: str = 'none',
+        brand: str = 'none',
         level: str = 'DEBUG',
         rotation: str = '00:00',
         retention: str = '3 days',
@@ -119,8 +119,8 @@ def get_driver_loger(
     """
     loguru按照天分割文件，不够精确
 
-    :param series: 种类
-    :param sn: 品牌
+    :param name: 种类
+    :param brand: 品牌
     :param level:
     :param rotation:
     :param retention:
@@ -135,7 +135,7 @@ def get_driver_loger(
 
     if file:
         logger.add(
-            f'logs/{series}/' + f'{sn}' + '_{time: YYYY-MM-DD}.log',
+            f'logs/{name}/' + f'{brand}' + '_{time: YYYY-MM-DD}.log',
             level=level,
             rotation=rotation,
             retention=retention,
