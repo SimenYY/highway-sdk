@@ -119,7 +119,6 @@ class NovaClient(VmsClient):
             if data != b'\x01':
                 raise ResponseError('__play_list_by_id response error')
 
-    @logger.catch
     def set_play_list(self, content: str, play_id: int = 1) -> int:
         """
         组合指令，发送文件名，发送文件内容，指定播放
@@ -161,7 +160,6 @@ class NovaClient(VmsClient):
 
         return DeviceReturnCode.SUCCESS
 
-    @logger.catch
     def get_device_size(self) -> tuple[int, int] | None:
         """
         获取屏幕点阵大小
@@ -186,7 +184,6 @@ class NovaClient(VmsClient):
 
         return None
 
-    @logger.catch
     def get_now_play_content(self) -> str | None:
         """
         获取当前播放内容
@@ -209,7 +206,6 @@ class NovaClient(VmsClient):
 
         return None
 
-    @logger.catch
     def get_now_play_all_content(self) -> str | None:
         """
         获取当前播放全部内容

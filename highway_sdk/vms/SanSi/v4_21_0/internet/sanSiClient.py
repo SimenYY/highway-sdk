@@ -65,7 +65,6 @@ class SanSiClient(VmsClient):
                 error_msg = data[1:].decode(Protocol.ENCODING, 'ignore')
                 raise ResponseError(error_msg)
 
-    @logger.catch
     def set_play_list(self, content: str = '', play_id: int = 0) -> int:
         """
         发送播放表，并立即播放
@@ -103,7 +102,6 @@ class SanSiClient(VmsClient):
         else:
             return DeviceReturnCode.SUCCESS
 
-    @logger.catch
     def get_now_play_content(self) -> str | None:
         if self.sock is None:
             logger.error('socket is None')
