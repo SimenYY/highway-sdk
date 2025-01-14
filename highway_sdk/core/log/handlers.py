@@ -64,6 +64,8 @@ class ColoredStreamHandler(logging.StreamHandler):
             "%(red)s | "
             "%(cyan)s%(name)s"
             "%(red)s:"
+            "%(cyan)s%(module)s"
+            "%(red)s:"
             "%(cyan)s%(funcName)s"
             "%(red)s:"
             "%(cyan)s%(lineno)d"
