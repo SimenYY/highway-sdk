@@ -87,7 +87,7 @@ class ClientProtocol(Protocol):
             self.interval = self.DEFAULT_INTERVAL
 
         interval = self.interval
-        jitter = self.factory.JITTER
+        jitter = self.factory.jitter
         if jitter is not None:
             interval = random.normalvariate(interval,
                                             interval * jitter)
@@ -134,8 +134,8 @@ class ClusterReconnectClientFactory(ClientFactory):
     max_retries: Optional[int] = None
     initial_delay: float = 1.0
 
-    FACTOR: Final[float] = 1.6180339887498948
-    JITTER: Final[float] = 0.119626565582
+    factor: Final[float] = 1.6180339887498948
+    jitter: Final[float] = 0.119626565582
 
     delay_pool: Dict[IAddress, DelayState] = {}
 
@@ -180,9 +180,9 @@ class ClusterReconnectClientFactory(ClientFactory):
             logger.warning(f"Abandoning {addr} after {rm.retries} retries.")
             return
 
-        rm.delay = min(rm.delay * self.FACTOR, self.max_delay)
-        if self.JITTER is not None:
-            rm.delay = random.normalvariate(rm.delay, rm.delay * self.JITTER)
+        rm.delay = min(rm.delay * self.factor, self.max_delay)
+        if self.jitter is not None:
+            rm.delay = random.normalvariate(rm.delay, rm.delay * self.jitter)
 
         logger.info(f"{addr} will retry in {rm.delay} seconds.")
         self.reconnect_later(rm.delay, connector)
