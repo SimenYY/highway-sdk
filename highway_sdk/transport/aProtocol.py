@@ -11,6 +11,7 @@
 :Time: 2025/1/13 9:27
 """
 import asyncio
+import inspect
 import random
 from dataclasses import dataclass
 from typing import Optional, Callable, Dict, Final
@@ -46,12 +47,15 @@ class DelayState:
 
 
 class AsyncTcpProtocol(asyncio.Protocol):
-
+    default_encoding: Final[str] = 'utf-8'
     default_interval: Final[float] = 1.0
     # polling interval
     interval: float = default_interval
 
+    encoding: str = default_encoding
     factory: Optional['AsyncTcpFactory'] = None
+
+    humanize: bool = False
 
     def __init__(self):
         self.addr: Optional[Address] = None
@@ -69,15 +73,35 @@ class AsyncTcpProtocol(asyncio.Protocol):
 
         self.transport = transport
 
-    def send(self, data: bytes) -> None:
+    def send(self, data: bytes, auto_log_caller: bool = True) -> None:
+        """
+
+        :param data:
+        :param auto_log_caller: 自动打印调用者
+        :return:
+        """
+        _f = "{}Send to {} - {}".format
+
+        if auto_log_caller:
+            caller = f'{inspect.stack()[1].function} - '
+        else:
+            caller = ''
+
         if self.transport:
             self.transport.write(data)
-            logger.debug(f'Send to {self.addr} - {data.hex(" ")}')
+
+            logger.debug(_f(caller, self.addr, data.hex(" ")))
+            if self.humanize:
+                logger.debug(_f(caller, self.addr, data.decode(self.encoding, errors="ignore")))
         else:
-            ValueError("transport is None")
+            ValueError(f"transport is None")
 
     def data_received(self, data) -> None:
-        logger.debug(f'Receive from {self.addr} - {data.hex(" ")}')
+        _f = "Received from {} - {}".format
+
+        logger.debug(_f(self.addr, data.hex(" ")))
+        if self.humanize:
+            logger.debug(_f(self.addr, data.decode(self.encoding, errors="ignore")))
 
     def connection_lost(self, exc) -> None:
         self.transport = None
