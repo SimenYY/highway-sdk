@@ -40,12 +40,12 @@ class ClientProtocol(Protocol):
     1. scheduled communication.
     2. logs of sending and receiving.
     """
-    DEFAULT_ENCODING: Final[str] = 'utf-8'
-    DEFAULT_INTERVAL: Final[float] = 5.0
+    default_encoding: Final[str] = 'utf-8'
+    default_interval: Final[float] = 5.0
 
-    interval: float = DEFAULT_INTERVAL
+    interval: float = default_interval
 
-    encoding: str = DEFAULT_ENCODING
+    encoding: str = default_encoding
 
     humanize: bool = False
 
@@ -84,7 +84,7 @@ class ClientProtocol(Protocol):
     def looping_call_task(self, task: Callable[[], None]) -> None:
 
         if self.interval <= 0:
-            self.interval = self.DEFAULT_INTERVAL
+            self.interval = self.default_interval
 
         interval = self.interval
         jitter = self.factory.jitter
