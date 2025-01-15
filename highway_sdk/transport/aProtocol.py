@@ -120,7 +120,13 @@ class AsyncTcpFactory:
         rm.continue_trying = True
         logger.debug(f"Reset delay state for {rm}.")
 
-    def retry(self, addr: Address):
+    @classmethod
+    def set_protocol(cls, protocol: Callable[[], AsyncTcpProtocol]) -> 'AsyncTcpFactory':
+        factory = cls()
+        factory.protocol = protocol
+        return factory
+
+    def retry(self, addr: Address) -> None:
         rm = self.delay_pool.get(addr)
 
         # Didn't connect in the first place.
