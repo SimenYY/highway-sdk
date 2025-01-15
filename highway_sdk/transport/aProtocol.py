@@ -12,9 +12,10 @@
 """
 import asyncio
 import random
-from typing import Tuple, Optional, Callable, Dict
+from dataclasses import dataclass
+from typing import Optional, Callable, Dict, Final
+
 from highway_sdk import logger
-from dataclasses import dataclass, astuple
 
 
 @dataclass
@@ -45,10 +46,10 @@ class DelayState:
 
 
 class AsyncTcpProtocol(asyncio.Protocol):
-    # 默认轮询时间
-    DEFAULT_INTERVAL: float = 1.0
-    # 轮询时间
-    interval: float = DEFAULT_INTERVAL
+
+    default_interval: Final[float] = 1.0
+    # polling interval
+    interval: float = default_interval
 
     factory: Optional['AsyncTcpFactory'] = None
 
@@ -79,11 +80,12 @@ class AsyncTcpProtocol(asyncio.Protocol):
         logger.debug(f'Receive from {self.addr} - {data.hex(" ")}')
 
     def connection_lost(self, exc) -> None:
+        self.transport = None
+
         if exc is None:
             self.factory.connection_lost(self.addr)
         else:
             self.factory.connection_abort(exc, self.addr)
-        self.transport = None
 
 
 class AsyncTcpFactory:
@@ -91,7 +93,7 @@ class AsyncTcpFactory:
 
     max_delay: float = 3600.0
     max_retries: Optional[int] = None
-    initial_delay: float = 1.0
+    initial_delay: Final[float] = 1.0
 
     factor: float = 1.6180339887498948
     jitter: float = 0.119626565582

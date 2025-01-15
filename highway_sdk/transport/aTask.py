@@ -17,12 +17,15 @@ from typing import Optional, Callable
 
 
 class LoopingCallTask:
-    jitter = 0.119626565582
+    """
+    Task must be non-blocking
+    """
+    jitter: float = 0.119626565582
 
     def __init__(self, task: Callable[[], None], is_jittery: bool = False,
                  loop: Optional[asyncio.AbstractEventLoop] = None):
         self._task = task
-        # 是否需要抖动时间间隔
+
         self._is_jittery = is_jittery
         self._task_handle: Optional[asyncio.TimerHandle] = None
 
@@ -56,4 +59,3 @@ class LoopingCallTask:
         if self._task_handle is not None:
             self._task_handle.cancel()
             self._task_handle = None
-
