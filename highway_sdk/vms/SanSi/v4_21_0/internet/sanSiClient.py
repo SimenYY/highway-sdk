@@ -17,7 +17,7 @@ from highway_sdk.core.exceptions import (HostResponseTimeoutError,
                                          InvalidSocketError)
 from .protocol import Protocol
 from highway_sdk.vms.constants import DeviceReturnCode
-from highway_sdk import logger
+from highway_sdk.core.log import logger
 
 
 class SanSiClient(VmsClient):

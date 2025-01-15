@@ -23,7 +23,7 @@ from ._models import (
     SubscribeControlReqModel
 )
 
-from highway_sdk import logger
+from highway_sdk.core.log import logger
 
 
 class MqttClient:

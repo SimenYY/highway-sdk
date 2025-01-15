@@ -16,7 +16,7 @@ import random
 from dataclasses import dataclass
 from typing import Optional, Callable, Dict, Final
 
-from highway_sdk import logger
+from highway_sdk.core.log import logger
 
 
 @dataclass

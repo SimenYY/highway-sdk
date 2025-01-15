@@ -10,3 +10,7 @@
 :Link:
 :Time: 2025/1/3 15:22
 """
+
+import logging
+
+logger = logging.getLogger('highway_sdk')

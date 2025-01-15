@@ -22,7 +22,7 @@ from twisted.internet.task import LoopingCall
 from twisted.internet.tcp import Connector
 from twisted.python.failure import Failure
 
-from highway_sdk import logger
+from highway_sdk.core.log import logger
 from highway_sdk.transport.strategy import RecvStrategy
 
 

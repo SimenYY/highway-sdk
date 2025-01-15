@@ -16,14 +16,7 @@ import loguru
 from loguru import logger
 import logging
 from highway_sdk.core.log.handlers import InterceptHandler
-from highway_sdk import get_lib_name
 from deprecated import deprecated
-
-# 将本库的日志记录器转发到loguru中
-lib_logger = logging.getLogger(get_lib_name())
-lib_logger.setLevel(logging.DEBUG)
-lib_logger.addHandler(InterceptHandler())
-lib_logger.propagate = False
 
 
 @deprecated(reason="脱裤子放屁，多此一举的一个类， 用【get_driver_loger】代替", version='1.19.1')
@@ -132,6 +125,12 @@ def get_driver_loger(
     """
     # 防止多余的handlers重复打印
     logger.remove()
+
+    # 将本库的日志记录器转发到loguru中
+    lib_logger = logging.getLogger('highway_sdk')
+    lib_logger.setLevel(logging.DEBUG)
+    lib_logger.addHandler(InterceptHandler())
+    lib_logger.propagate = False
 
     if file:
         logger.add(

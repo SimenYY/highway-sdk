@@ -20,7 +20,7 @@ from twisted.internet.protocol import Protocol, ReconnectingClientFactory
 from twisted.internet.task import LoopingCall
 from twisted.python.failure import Failure
 
-from highway_sdk import logger
+from highway_sdk.core.log import logger
 from .strategy import RecvStrategy
 from ..core.client import Client
 
