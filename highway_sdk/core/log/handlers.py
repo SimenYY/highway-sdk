@@ -58,7 +58,7 @@ class ColoredStreamHandler(logging.StreamHandler):
         from colorlog import ColoredFormatter
 
         self.setFormatter(ColoredFormatter(
-            "%(green)s%(asctime)s"
+            "%(green)s%(asctime)s.%(msecs)03d"
             "%(red)s | "
             "%(log_color)s%(levelname)-8s"
             "%(red)s | "
