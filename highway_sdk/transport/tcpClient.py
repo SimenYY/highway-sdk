@@ -16,14 +16,14 @@ from typing import Type, List, Callable, Optional, Dict
 
 from twisted.internet.address import IPv4Address
 from twisted.internet.interfaces import IAddress
-from twisted.internet.protocol import Protocol, ReconnectingClientFactory
+from twisted.internet.protocol import Protocol, ReconnectingClientFactory, connectionDone
 from twisted.internet.task import LoopingCall
+from twisted.python import failure
 from twisted.python.failure import Failure
 
 from highway_sdk.core.log import logger
 from .strategy import RecvStrategy
 from ..core.client import Client
-
 from ..interface.iot import IotMqttClient
 
 __all__ = [
@@ -132,6 +132,7 @@ class TcpClient(Protocol):
 
     def __init__(self):
         self.addr: Optional[IPv4Address] = None
+        self.lc_list: List[LoopingCall] = []
 
     @property
     def sn(self) -> str:
@@ -167,8 +168,8 @@ class TcpClient(Protocol):
         """
         执行定时任务
 
-        :rtype: None
         :param tasks:
+        :param now:
         :return:
         """
 
@@ -184,21 +185,37 @@ class TcpClient(Protocol):
         if self.jitter:
             interval = random.normalvariate(self.polling_interval,
                                             self.polling_interval * self.jitter)
-        loop_deferred = LoopingCall(task).start(interval, now=now)
-        loop_deferred.addErrback(self.eb_loop_failed)
-        loop_deferred.addCallback(self.cb_loop_done)
 
-    @staticmethod
-    def eb_loop_failed(failure: Failure) -> None:
+        lc = LoopingCall(task)
+        self.lc_list.append(lc)
+        ld = lc.start(interval, now=now)
+        ld.addErrback(self.eb_loop_failed)
+        ld.addCallback(self.cb_loop_done)
 
-        logger.error(f"Looping call failed: {failure}")
+    def connectionLost(self, reason: failure.Failure = connectionDone) -> None:
+        self.stop_looping_call()
 
-    @staticmethod
-    def cb_loop_done(result) -> None:
+    def stop_looping_call(self) -> None:
+        """
+        连接断开再连接，会叠加任务调用，因此断开时需要主动停止
+        :return:
+        """
+        if len(self.lc_list) == 0:
+            return
 
-        logger.info(f"Looping call done: {result}")
+        for lc in self.lc_list:
+            lc.stop()
+        self.lc_list.clear()
 
-    def send(self, data: bytes, log_prefix: str = '') -> None:
+    def eb_loop_failed(self, _failure: Failure) -> None:
+
+        logger.error(f"Host({self.log_addr})'s looping call failed: {_failure}")
+
+    def cb_loop_done(self, result) -> None:
+
+        logger.info(f"Host({self.log_addr})'s looping call done: {result}")
+
+    def send(self, data: bytes, log_prefix: Optional[str] = None) -> None:
         """
         发送数据
 
