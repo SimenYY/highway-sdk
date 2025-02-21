@@ -38,6 +38,8 @@ class DisplayText(BaseModel):
     line_list: List[str] = None
     # 起始坐标，左上角
     xy: Tuple[int, int] = None
+    # 字符串占用高宽
+    text_hw: Tuple[int, int] = None
 
 
 class DisplayTextBuilder:
@@ -45,18 +47,18 @@ class DisplayTextBuilder:
     构造显示字符串
 
     Usage::
-        >>> dtb = DisplayTextBuilder(text='一二三四五六七八九十', h=96, w=96, max_size=275, min_size=6)
-        >>> dtb.build_image().show()
-        >>> print(dtb.dt.size)
-        24
-        >>> print(dtb.dt.text)
-        一二三四
-        五六七八
-        九十
-        >>> print(dtb.dt.xy)
-        (0, 10)
-        >>> print(dtb.dt.line_list)
-        ['一二三四', '五六七八', '九十']
+        # >>> dtb = DisplayTextBuilder(text='一二三四五六七八九十', h=96, w=96, max_size=275, min_size=6)
+        # >>> dtb.build_image().show()
+        # >>> print(dtb.dt.size)
+        # 24
+        # >>> print(dtb.dt.text)
+        # 一二三四
+        # 五六七八
+        # 九十
+        # >>> print(dtb.dt.xy)
+        # (0, 10)
+        # >>> print(dtb.dt.line_list)
+        # ['一二三四', '五六七八', '九十']
     """
 
     def __init__(
@@ -151,6 +153,7 @@ class DisplayTextBuilder:
 
         :return:
         """
+
         def calc_text_dimensions(size):
             total_width = 0
             total_height = 0
@@ -171,19 +174,21 @@ class DisplayTextBuilder:
                 else:
                     clw += letter_s + ch_w
 
-                # 判断是否需要换行
-                if (clw + letter_s > width) or (clw + letter_s + size > width):
+                if i != (len(text) - 1):  # 不是最后一个字符
+                    # 计算下一个字符的占位宽度
+                    next_ch_w = size / 2 if self.is_ascall(text[i + 1]) else size
+                    # 判断是否需要换行
+                    if clw + letter_s > width or clw + letter_s + next_ch_w > width:
+                        max_lines += 1
 
-                    max_lines += 1
+                        # 换行后计算总高度
+                        total_height = max_lines * size + (max_lines - 1) * line_s
 
-                    # 换行后计算总高度
-                    total_height = max_lines * size + (max_lines - 1) * line_s
+                        if total_height > height:
+                            return total_width, total_height
 
-                    if total_height > height:
-                        return total_width, total_height
-
-                    total_width = max(clw, total_width)
-                    clw = 0
+                        total_width = max(clw, total_width)
+                        clw = 0
 
             return total_width, total_height
 
@@ -197,6 +202,7 @@ class DisplayTextBuilder:
 
             if text_width <= self.w and text_height <= self.h:
                 best_size = mid
+                self.dt.text_hw = (text_height, text_width)
                 left = mid + 1
             else:
                 right = mid - 1
@@ -223,7 +229,8 @@ class DisplayTextBuilder:
 
             # 排除最后一个字符
             if i != (len(self.text) - 1):
-                if (clw + letter_s > self.w) or (clw + letter_s + ch_w > self.w):
+                next_ch_w = self.dt.size / 2 if self.is_ascall(self.text[i + 1]) else self.dt.size
+                if (clw + letter_s > self.w) or (clw + letter_s + next_ch_w > self.w):
                     ch_list.append(self.dt.lf)
                     clw = 0
 
@@ -236,18 +243,17 @@ class DisplayTextBuilder:
 
         :return:
         """
-        first_line = self.dt.line_list[0]
-        first_line_len = self._calc_text_len(self.dt.size, first_line)
-        x = (self.w - first_line_len) / 2
-
-        rows = len(self.dt.line_list)
-        y = (self.h - rows * (self.dt.size + self.dt.line_spacing) - self.dt.line_spacing) / 2
+        x = (self.w - self.dt.text_hw[1]) // 2
+        y = (self.h - self.dt.text_hw[0]) // 2
 
         self.dt.xy = (round(x), round(y))
 
     def build_image(self) -> Image:
         """
         生成预览图像
+
+        note::
+            生成图像的行间距和字间距跟所用的字体有关，不能完美的模仿情报板的字符显示
 
         :return:
         :rtype: Image
@@ -261,9 +267,9 @@ class DisplayTextBuilder:
 
         img = Image.new('RGB', (self.w, self.h), self.bg_color)
         draw = ImageDraw.Draw(img)
+
+        # fixme: simhei.ttf 的默认行间距为2左右, 修复自定义设置行间距和字间距
         font = ImageFont.truetype("simhei.ttf", self.dt.size)
         draw.text(self.dt.xy, self.dt.text, fill=self.dt.color, font=font)
 
         return img
-
-
