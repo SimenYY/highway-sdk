@@ -150,19 +150,20 @@ class AsyncClient(BaseClient):
             ret = False
         return ret
 
-    async def send(self, data: bytes, debug: bool = False, log_prefix: str = '') -> None:
+    async def send(self, data: bytes, debug: bool = True, log_prefix: str = '') -> None:
         """
 
         :param data:
         :param debug:
         :param log_prefix:
-        :raise IOError
         :return:
         """
         if self.writer is None:
             raise IOError(f"Not connected to {self.log_addr} server")
         self.writer.write(data)
         await self.writer.drain()
+
+        # ？？？这个debug在这脱裤子放屁
         if debug:
             logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
 
@@ -177,6 +178,13 @@ class AsyncClient(BaseClient):
         return data
 
     async def read_timeout(self) -> bytes:
+        """
+        带有超时的读取函数
+
+        :raise TimeoutError
+        :raise IOError
+        :return:
+        """
         if self.reader is None:
             raise IOError(f"Not connected to {self.log_addr} server")
         try:
