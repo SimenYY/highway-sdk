@@ -52,29 +52,30 @@ class _Address(ConfigModel):
 
 class DriverConfigModel(ConfigModel):
     """
-    示例
-    {
-      'log': {
-        'name': 'none',
-        'brand': 'none',
-        'level': 'ERROR',
-        'rotation': '1 day',
-        'retention': '7 days',
-        'compression': 'zip',
-        'enqueue': True,
-        'file': True,
-        'console': False
-      },
-      'comm': {
-        'polling_interval': 5
-      },
-      'address': {
-        'port': 28888,
-        'ip_list': [
-          '127.0.0.1'
-        ]
-      }
-    }
+    usage::
+
+        {
+            'log': {
+                'name': 'none',
+                'brand': 'none',
+                'level': 'ERROR',
+                'rotation': '1 day',
+                'retention': '7 days',
+                'compression': 'zip',
+                'enqueue': True,
+                'file': True,
+                'console': False
+            },
+            'comm': {
+                'polling_interval': 5
+            },
+            'address': {
+                'port': 28888,
+                'ip_list': [
+                    '127.0.0.1'
+                ]
+            }
+        }
 
     """
     log: _Log = _Log()
@@ -116,9 +117,7 @@ class DriverConfigModel(ConfigModel):
 
 def get_settings_path(driver_file: str, config_name: str = 'settings') -> str:
     """
-    获取统一放置在配置文件夹中的驱动配置文件
-
-    如果设置本地测试配置local.json，则会被识别
+    获取统一放置在配置文件夹中的驱动配置文件，如果设置本地测试配置local.json，则会被识别
 
     :param driver_file: 默认填__file__
     :param config_name:
