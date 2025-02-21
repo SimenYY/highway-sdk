@@ -21,6 +21,7 @@ class DeviceReturnCode:
     HOST_RESPONSE_ERROR = -3
     PROTOCOL_PARSER_ERROR = -4
     CLIENT_REQUEST_ERROR = -5
+    INVALID_INPUT = -98
     UNKNOWN_ERROR = -99
 
     # 映射返回码到描述
@@ -31,6 +32,7 @@ class DeviceReturnCode:
         HOST_RESPONSE_ERROR: "主机响应错误",
         PROTOCOL_PARSER_ERROR: "协议解析错误",
         CLIENT_REQUEST_ERROR: "客户端请求错误",
+        INVALID_INPUT: "无效输入",
         UNKNOWN_ERROR: "未知错误"
     }
 
