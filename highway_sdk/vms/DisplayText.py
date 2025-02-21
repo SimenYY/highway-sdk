@@ -45,19 +45,6 @@ class DisplayTextBuilder:
     构造显示字符串
 
     Usage::
-
-    >>>dtb = DisplayTextBuilder(text='一二三四五六七八九十', h=96, w=96, max_size=96, min_size=8)
-    >>>dt = dtb.build()
-    >>>print(dt.text)
-    一二三四
-    五六七八
-    九十
-    >>>print(dt.xy)
-    (0, 10)
-    >>>print(dt.size)
-    24
-    >>>image = dtb.build_image()
-    >>>image.show()
     """
 
     def __init__(
@@ -79,8 +66,10 @@ class DisplayTextBuilder:
         self.text = text
         self.h = h
         self.w = w
-        self.max_size = max_size
-        self.min_size = min_size
+        # 合理的最大字号最大不超过h和w的最小值
+        self.max_size = min(max_size, min(h, w))
+        # 合理的最小字号最小不小过8
+        self.min_size = max(min_size, 8)
         self.bg_color = bg_color
         # 如果设备仅支持部分字库，则传入支持的字库列表
         if size_list is None:
@@ -150,35 +139,57 @@ class DisplayTextBuilder:
 
         :return:
         """
-        size = self.max_size
-        rows = 1
-        while size > self.min_size:
-            # 计算当前行数的最小字号，例如只有一行字，那字号的范围便是h ~ h/2
-            curr_rows_min_size = (self.h - (rows * self.dt.line_spacing)) / (rows + 1)
-            # 在当前行数时，判断最合适字号是否在该字号范围内
-            while size >= curr_rows_min_size:
-                # 计算当前字号时，下发字符总长度
-                length = self._calc_text_len(size=size, text=self.text)
-                # 如果一行显示长度超过了显示区域宽度，则减少字号，否则就是找到
-                if length / rows > self.w:
-                    size -= 1
+        def calc_text_dimensions(size):
+            total_width = 0
+            total_height = 0
+            max_lines = 1  # 默认至少一行
+            clw = 0  # 当前行宽度
+
+            letter_s = self.dt.letter_spacing
+            line_s = self.dt.line_spacing
+            text = self.text
+            width = self.w
+            height = self.h
+
+            for i, ch in enumerate(text):
+                ch_w = size / 2 if self.is_ascall(ch) else size
+
+                if ch_w == 0:
+                    ch_w += ch_w
                 else:
-                    # 判断是否超出显示高度
-                    if math.ceil(len(self.text) / math.floor(self.w / size)) * size > self.h:
-                        size -= 1
-                    else:
-                        break
-            if size >= curr_rows_min_size:
-                break
+                    clw += letter_s + ch_w
+
+                # 判断是否需要换行
+                if (clw + letter_s > width) or (clw + letter_s + size > width):
+
+                    max_lines += 1
+
+                    # 换行后计算总高度
+                    total_height = max_lines * size + (max_lines - 1) * line_s
+
+                    if total_height > height:
+                        return total_width, total_height
+
+                    total_width = max(clw, total_width)
+                    clw = 0
+
+            return total_width, total_height
+
+        left, right = self.min_size, self.max_size
+        best_size = self.min_size
+
+        while left <= right:
+            mid = (left + right) // 2
+
+            text_width, text_height = calc_text_dimensions(mid)
+
+            if text_width <= self.w and text_height <= self.h:
+                best_size = mid
+                left = mid + 1
             else:
-                rows += 1
+                right = mid - 1
 
-        target_size = self.max_less_than(size, self.size_list)
-
-        if target_size is None:
-            target_size = size
-
-        self.dt.size = target_size
+        self.dt.size = best_size
 
     def _build_line_list(self) -> None:
         """
@@ -186,17 +197,23 @@ class DisplayTextBuilder:
 
         :return:
         """
-        length = 0
-        ch_list = list(self.text)
+        clw = 0  # 当前行宽
+        letter_s = self.dt.letter_spacing
+        ch_list = []
         for i, ch in enumerate(self.text):
-            if self.is_ascall(ch):
-                length += self.dt.size / 2 + self.dt.letter_spacing
-            else:
-                length += self.dt.size + self.dt.letter_spacing
+            ch_list.append(ch)
 
-            if length > self.w:
-                ch_list.insert(i, self.lf)
-                length = 0
+            ch_w = self.dt.size / 2 if self.is_ascall(ch) else self.dt.size
+            if clw == 0:
+                clw += ch_w
+            else:
+                clw += letter_s + ch_w
+
+            # 排除最后一个字符
+            if i != (len(self.text) - 1):
+                if (clw + letter_s > self.w) or (clw + letter_s + ch_w > self.w):
+                    ch_list.append(self.dt.lf)
+                    clw = 0
 
         self.dt.text = ''.join(ch_list)
         self.dt.line_list = self.dt.text.split(self.lf)
@@ -236,3 +253,11 @@ class DisplayTextBuilder:
         draw.text(self.dt.xy, self.dt.text, fill=self.dt.color, font=font)
 
         return img
+
+
+# dtb = DisplayTextBuilder(text='一二三四五六七八九十', h=960, w=96, max_size=96, min_size=6)
+# dtb.build_image().show()
+# print(dtb.dt.size)
+# print(dtb.dt.text)
+# print(dtb.dt.xy)
+# print(dtb.dt.line_list)
