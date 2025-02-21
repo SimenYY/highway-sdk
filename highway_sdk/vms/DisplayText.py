@@ -45,6 +45,7 @@ class DisplayTextBuilder:
     构造显示字符串
 
     Usage::
+
     >>>dtb = DisplayTextBuilder(text='一二三四五六七八九十', h=96, w=96, max_size=96, min_size=8)
     >>>dt = dtb.build()
     >>>print(dt.text)
@@ -218,9 +219,10 @@ class DisplayTextBuilder:
 
     def build_image(self) -> Image:
         """
-        生成预览接口
+        生成预览图像
 
         :return:
+        :rtype: Image
         """
         if self.dt.size is None:
             self._build_adjusted_size()
@@ -229,10 +231,9 @@ class DisplayTextBuilder:
         if self.dt.xy is None:
             self._build_xy()
 
-        img = Image.new('RGB', (self.h, self.w), self.bg_color)
+        img = Image.new('RGB', (self.w, self.h), self.bg_color)
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype("simhei.ttf", self.dt.size)
         draw.text(self.dt.xy, self.dt.text, fill=self.dt.color, font=font)
 
         return img
-
