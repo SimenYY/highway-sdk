@@ -82,21 +82,22 @@ class DmClient(Client):
         """
         当前页面字符串：“\C000000\Fs3232\T255000000000\K000000000000\WHello World”
 
-        re参考
-        pattern = r"\\W(.*?)(?:\\|$)"
-        text_match = re.search(pattern, current_str)
-        if text_match:
-            return text_match.group(1)
+        re参考::
 
-        pattern = r"\\T(\d+)"
-        color_match = re.search(pattern, current_str)
-        if color_match:
-            return color_match.group(1)
+            pattern = r"\\W(.*?)(?:\\|$)"
+            text_match = re.search(pattern, current_str)
+            if text_match:
+                return text_match.group(1)
 
-        pattern = r"\\F([a-zA-Z])\d+"
-        font_match = re.search(pattern, current_str)
-        if font_match:
-            return font_match.group(1)
+            pattern = r"\\T(\d+)"
+            color_match = re.search(pattern, current_str)
+            if color_match:
+                return color_match.group(1)
+
+            pattern = r"\\F([a-zA-Z])\d+"
+            font_match = re.search(pattern, current_str)
+            if font_match:
+                return font_match.group(1)
 
         :return:
         """
