@@ -56,7 +56,6 @@ class DisplayTextBuilder:
     (0, 10)
     >>>print(dt.size)
     24
-    >>>dtb.build_image()
     >>>image = dtb.build_image()
     >>>image.show()
     """
