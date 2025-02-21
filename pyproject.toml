@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "highway-sdk"
-version = "1.20.3"
+version = "1.21.0"
 description = "Python SDK for Highway commonly used mechanical and electrical device and intelligent device."
 authors = ["AdzLovelace <heyinyu.sensi@foxmail.com>"]
 license = "GPL-3.0"
@@ -20,6 +20,12 @@ flask = "^3.1.0"
 python-json-logger = "^3.2.1"
 elasticsearch = "^8.17.0"
 deprecated = "^1.2.15"
+sphinx-rtd-theme = "^3.0.2"
+furo = "^2024.8.6"
+sphinx-autobuild = "^2024.10.3"
+sphinx-copybutton = "^0.5.2"
+sphinx-tabs = "^3.4.7"
+pillow = "^11.1.0"
 
 
 [[tool.poetry.source]]
