@@ -10,9 +10,10 @@
 :Link:
 :Time: 2024/8/22 9:59
 """
-from typing import List, Literal
+from typing import List
 
 from pydantic import BaseModel
+
 from .item import Item
 from .win import Win
 
