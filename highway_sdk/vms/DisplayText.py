@@ -45,6 +45,18 @@ class DisplayTextBuilder:
     构造显示字符串
 
     Usage::
+        >>> dtb = DisplayTextBuilder(text='一二三四五六七八九十', h=96, w=96, max_size=275, min_size=6)
+        >>> dtb.build_image().show()
+        >>> print(dtb.dt.size)
+        24
+        >>> print(dtb.dt.text)
+        一二三四
+        五六七八
+        九十
+        >>> print(dtb.dt.xy)
+        (0, 10)
+        >>> print(dtb.dt.line_list)
+        ['一二三四', '五六七八', '九十']
     """
 
     def __init__(
@@ -255,9 +267,3 @@ class DisplayTextBuilder:
         return img
 
 
-# dtb = DisplayTextBuilder(text='一二三四五六七八九十', h=960, w=96, max_size=96, min_size=6)
-# dtb.build_image().show()
-# print(dtb.dt.size)
-# print(dtb.dt.text)
-# print(dtb.dt.xy)
-# print(dtb.dt.line_list)
