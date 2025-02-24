@@ -90,7 +90,7 @@ class DisplayTextBuilder:
         if size_list is None:
             self.size_list = []
         else:
-            self.size_list = size_list
+            self.size_list = sorted(size_list)
         self.lf = lf
 
         self.dt: DisplayText = DisplayText()
@@ -214,7 +214,10 @@ class DisplayTextBuilder:
                 right = mid - 1
 
         if self.size_list:
-            self.dt.size = self.max_less_than(self.dt.size, self.size_list)
+            suited_size= self.max_less_than(self.dt.size, self.size_list)
+            if suited_size is None:
+                self.dt.size = self.size_list[0]
+
             self.dt.text_hw = calc_text_dimensions(self.dt.size)
 
     def _build_line_list(self) -> None:
@@ -282,3 +285,8 @@ class DisplayTextBuilder:
 
         return img
 
+
+dtb = DisplayTextBuilder(text='text: 测test试\':",./<>?文本 !@#$%^&*()_+=-`~[]\\{}', h=50, w=50, max_size=50, min_size=1, size_list=[10, 30, 20])
+dtb.build_image().show()
+print(dtb.size_list)
+print(dtb.dt.size)
