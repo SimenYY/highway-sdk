@@ -194,24 +194,19 @@ class DisplayTextBuilder:
             return total_width, total_height
 
         left, right = self.min_size, self.max_size
-        best_size = self.min_size
+        self.dt.size = self.min_size
+        self.dt.text_hw = (self.h, self.w)
         while left <= right:
             mid = (left + right) // 2
 
             text_width, text_height = calc_text_dimensions(mid)
 
             if text_width <= self.w and text_height <= self.h:
-                best_size = mid
                 self.dt.text_hw = (text_height, text_width)
+                self.dt.size = mid
                 left = mid + 1
             else:
                 right = mid - 1
-
-        if left > right:
-            self.dt.size = self.MIN_SIZE
-            self.dt.text_hw = (self.h, self.w)
-        else:
-            self.dt.size = best_size
 
     def _build_line_list(self) -> None:
         """
@@ -279,10 +274,4 @@ class DisplayTextBuilder:
         return img
 
 
-dtb = DisplayTextBuilder(
-    text='这是一段很长的测试文本，用于测试自动换行功能。这是一段很长的测试文本，用于测试自动换行功能。这是一段很长的测试文本，用于测试自动换行功能。',
-    h=100, w=50, max_size=100, min_size=1)
-dtb.build_image().show()
-print(dtb.dt.size)
-print(dtb.dt.line_list)
-print(dtb.dt.text_hw)
+
