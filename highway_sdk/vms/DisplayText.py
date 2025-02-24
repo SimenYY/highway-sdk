@@ -188,7 +188,7 @@ class DisplayTextBuilder:
                         total_height = max_lines * size + (max_lines - 1) * line_s
 
                         if total_height > height:
-                            return total_width, total_height
+                            return total_height, total_width
 
                         total_width = max(clw, total_width)
                         clw = 0
@@ -196,7 +196,7 @@ class DisplayTextBuilder:
                     total_width = max(clw, total_width)
                     total_height = max_lines * size + (max_lines - 1) * line_s
 
-            return total_width, total_height
+            return total_height, total_width
 
         left, right = self.min_size, self.max_size
         self.dt.size = self.min_size
@@ -204,7 +204,7 @@ class DisplayTextBuilder:
         while left <= right:
             mid = (left + right) // 2
 
-            text_width, text_height = calc_text_dimensions(mid)
+            text_height, text_width = calc_text_dimensions(mid)
 
             if text_width <= self.w and text_height <= self.h:
                 self.dt.text_hw = (text_height, text_width)
@@ -214,10 +214,11 @@ class DisplayTextBuilder:
                 right = mid - 1
 
         if self.size_list:
-            suited_size= self.max_less_than(self.dt.size, self.size_list)
+            suited_size = self.max_less_than(self.dt.size, self.size_list)
             if suited_size is None:
                 self.dt.size = self.size_list[0]
-
+            else:
+                self.dt.size = suited_size
             self.dt.text_hw = calc_text_dimensions(self.dt.size)
 
     def _build_line_list(self) -> None:
@@ -285,3 +286,10 @@ class DisplayTextBuilder:
 
         return img
 
+
+if __name__ == '__main__':
+    dtb = DisplayTextBuilder(text='测试文本', h=200, w=300, max_size=300, min_size=8, size_list=[10, 20, 30])
+    dtb.build_image().show()
+    print(dtb.dt.size)
+    print(dtb.dt.text_hw)
+    print(dtb.dt.xy)
