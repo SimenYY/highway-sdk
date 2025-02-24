@@ -211,6 +211,12 @@ class DisplayTextBuilder:
             else:
                 right = mid - 1
 
+        if self.size_list:
+            self.dt.size = self.max_less_than(self.dt.size, self.size_list)
+            self.dt.text_hw = calc_text_dimensions(self.dt.size)
+
+
+
     def _build_line_list(self) -> None:
         """
         获取换行调整的文本
