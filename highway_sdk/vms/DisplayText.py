@@ -89,6 +89,8 @@ class DisplayTextBuilder:
         # 如果设备仅支持部分字库，则传入支持的字库列表
         if size_list is None:
             self.size_list = []
+        else:
+            self.size_list = size_list
         self.lf = lf
 
         self.dt: DisplayText = DisplayText()
@@ -215,8 +217,6 @@ class DisplayTextBuilder:
             self.dt.size = self.max_less_than(self.dt.size, self.size_list)
             self.dt.text_hw = calc_text_dimensions(self.dt.size)
 
-
-
     def _build_line_list(self) -> None:
         """
         获取换行调整的文本
@@ -281,3 +281,4 @@ class DisplayTextBuilder:
         draw.text(self.dt.xy, self.dt.text, fill=self.dt.color, font=font)
 
         return img
+
