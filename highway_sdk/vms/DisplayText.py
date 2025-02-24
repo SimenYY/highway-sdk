@@ -190,6 +190,9 @@ class DisplayTextBuilder:
 
                         total_width = max(clw, total_width)
                         clw = 0
+                else:
+                    total_width = max(clw, total_width)
+                    total_height = max_lines * size + (max_lines - 1) * line_s
 
             return total_width, total_height
 
