@@ -285,11 +285,3 @@ class DisplayTextBuilder:
         draw.text(self.dt.xy, self.dt.text, fill=self.dt.color, font=font)
 
         return img
-
-
-if __name__ == '__main__':
-    dtb = DisplayTextBuilder(text='测试文本', h=200, w=300, max_size=300, min_size=8, size_list=[10, 20, 30])
-    dtb.build_image().show()
-    print(dtb.dt.size)
-    print(dtb.dt.text_hw)
-    print(dtb.dt.xy)
