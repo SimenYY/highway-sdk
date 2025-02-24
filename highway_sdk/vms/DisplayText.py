@@ -60,6 +60,7 @@ class DisplayTextBuilder:
         # >>> print(dtb.dt.line_list)
         # ['一二三四', '五六七八', '九十']
     """
+    MIN_SIZE: int = 8
 
     def __init__(
             self,
@@ -83,7 +84,7 @@ class DisplayTextBuilder:
         # 合理的最大字号最大不超过h和w的最小值
         self.max_size = min(max_size, min(h, w))
         # 合理的最小字号最小不小过8
-        self.min_size = max(min_size, 8)
+        self.min_size = max(min_size, self.MIN_SIZE)
         self.bg_color = bg_color
         # 如果设备仅支持部分字库，则传入支持的字库列表
         if size_list is None:
@@ -194,7 +195,6 @@ class DisplayTextBuilder:
 
         left, right = self.min_size, self.max_size
         best_size = self.min_size
-
         while left <= right:
             mid = (left + right) // 2
 
@@ -207,7 +207,11 @@ class DisplayTextBuilder:
             else:
                 right = mid - 1
 
-        self.dt.size = best_size
+        if left > right:
+            self.dt.size = self.MIN_SIZE
+            self.dt.text_hw = (self.h, self.w)
+        else:
+            self.dt.size = best_size
 
     def _build_line_list(self) -> None:
         """
@@ -273,3 +277,12 @@ class DisplayTextBuilder:
         draw.text(self.dt.xy, self.dt.text, fill=self.dt.color, font=font)
 
         return img
+
+
+dtb = DisplayTextBuilder(
+    text='这是一段很长的测试文本，用于测试自动换行功能。这是一段很长的测试文本，用于测试自动换行功能。这是一段很长的测试文本，用于测试自动换行功能。',
+    h=100, w=50, max_size=100, min_size=1)
+dtb.build_image().show()
+print(dtb.dt.size)
+print(dtb.dt.line_list)
+print(dtb.dt.text_hw)
