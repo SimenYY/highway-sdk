@@ -285,8 +285,3 @@ class DisplayTextBuilder:
 
         return img
 
-
-dtb = DisplayTextBuilder(text='text: 测test试\':",./<>?文本 !@#$%^&*()_+=-`~[]\\{}', h=50, w=50, max_size=50, min_size=1, size_list=[10, 30, 20])
-dtb.build_image().show()
-print(dtb.size_list)
-print(dtb.dt.size)
