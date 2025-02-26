@@ -42,11 +42,11 @@ class _IotControlClientMixin:
 
     def iot_subscribe(self, on_message: Callable[..., None]):
         if not hasattr(self.factory, 'mqtt_client'):
-            logger.error(f"mqtt_client not found in {self.factory.__name__}")
+            logger.error("mqtt_client not found in %s", self.factory.__name__)
             return
 
         if self.factory.mqtt_client is None:
-            logger.error(f"{self.factory.__name__} mqtt_client is None.")
+            logger.error("%s mqtt_client is None.", self.factory.__name__)
             return
 
         self.factory.mqtt_client.subscribe_control_req(
@@ -75,7 +75,7 @@ class _IotClientMixin:
             host = parts[3].split('_')[1]
             ipaddress.IPv4Address(host)
         except Exception as e:
-            logger.error(f'get_topic_host failed, {e}')
+            logger.error('get_topic_host failed, %s', e)
             host = None
         return host
 
@@ -91,7 +91,7 @@ class _IotClientMixin:
         :param message:
         :return:
         """
-        logger.info(f'接受到控制指令 - topic={message.topic}, payload={message.payload}')
+        logger.info('接受到控制指令 - topic=%s, payload=%s', message.topic, message.payload)
 
     @classmethod
     def single_send(cls, host, port, data: bytes, log_prefix: str = '') -> None:
@@ -108,7 +108,7 @@ class _IotClientMixin:
             with Client(host=host, port=port) as client:
                 client.send(data=data, log_prefix=log_prefix)
         except Exception as e:
-            logger.error(f'{log_prefix} - Send failed, {e}.')
+            logger.error('%s - Send failed, %s.', log_prefix, e)
 
 
 class TcpClient(Protocol):
@@ -146,15 +146,14 @@ class TcpClient(Protocol):
 
     def connectionMade(self) -> None:
         self.addr = self.transport.getPeer()
-        logger.info(f"Connection is established {self.log_addr}.")
+        logger.info("Connection is established %s.", self.log_addr)
 
     def dataReceived(self, data: bytes) -> None:
-        logger.debug(f'Receive from {self.log_addr} - {data.hex(" ")}')
+        logger.debug('Receive from %s - %s', self.log_addr, data.hex(" "))
 
     @property
     def log_addr(self) -> str:
-        """
-        日志地址
+        """日志地址
 
         :rtype: str
         :return
@@ -165,8 +164,7 @@ class TcpClient(Protocol):
             return 'None:None'
 
     def looping_call_tasks(self, tasks: List[Callable[[], None]], now: bool = False) -> None:
-        """
-        执行定时任务
+        """执行定时任务
 
         :param tasks:
         :param now:
@@ -208,12 +206,11 @@ class TcpClient(Protocol):
         self.lc_list.clear()
 
     def eb_loop_failed(self, _failure: Failure) -> None:
-
-        logger.error(f"Host({self.log_addr})'s looping call failed: {_failure}")
+        logger.error("Host(%s)'s looping call failed: %s", self.log_addr, _failure)
 
     def cb_loop_done(self, result) -> None:
 
-        logger.info(f"Host({self.log_addr})'s looping call done: {result}")
+        logger.info("Host(%s)'s looping call done: %s", self.log_addr, result)
 
     def send(self, data: bytes, log_prefix: Optional[str] = None) -> None:
         """
@@ -225,10 +222,10 @@ class TcpClient(Protocol):
         :return:
         """
         if self.connected:
-            logger.debug(f'{log_prefix} - Send to {self.log_addr} - {data.hex(" ")}')
+            logger.debug('%s - Send to %s - %s', log_prefix, self.log_addr, data.hex(" "))
             self.transport.write(data)
         else:
-            logger.error(f'{log_prefix} - Send failed, self.connected is 0.')
+            logger.error('%s - Send failed, self.connected is 0.', log_prefix)
             return
 
 
@@ -272,7 +269,7 @@ class TcpClientFactory(ReconnectingClientFactory):
         addr = connector.getDestination()
         removed = self.remove_client(addr)
         condition = 'Lost' if removed else 'Failed'
-        logger.critical(f"Connection is {condition} {addr.host}:{addr.port}. reason: {reason}")
+        logger.critical("Connection is %s %s:%s. reason: %s", condition, addr.host, addr.port, reason)
 
     def remove_client(self, addr: IAddress) -> bool:
         """

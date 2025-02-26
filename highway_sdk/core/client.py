@@ -13,16 +13,20 @@
 import socket
 from typing import Optional
 
+import asyncio
+from asyncio import StreamReader, StreamWriter
+
+
 from highway_sdk.core.log import logger
 from highway_sdk.core.validators import (
     validate_ipv4_address,
     validate_port,
 )
-import asyncio
-from asyncio import StreamReader, StreamWriter
 
 
 class BaseClient:
+    """基础类
+    """
     # 接受字节流大小单位
     buffer_size: int = 1024
     # 超时时间
@@ -37,10 +41,17 @@ class BaseClient:
 
     @property
     def log_addr(self) -> str:
+        """日志地址
+
+        :return: 
+        :rtype: str
+        """
         return f'{self.host}:{self.port}'
 
 
 class Client(BaseClient):
+    """TCP客户端
+    """
     # 响应超时时间
     rsp_timeout: int = 3
 
@@ -56,12 +67,16 @@ class Client(BaseClient):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
         if exc_type is not None:
-            logger.error(f'{self.log_addr} {exc_type} {exc_val} {exc_tb}')
-        # 抑制异常
+            logger.error('%s %s %s %s', self.log_addr, exc_type, exc_val, exc_tb)
         return True
 
     @property
     def sock(self) -> socket.socket:
+        """获取套接字
+
+        :return: 
+        :rtype: socket.socket
+        """
         return self._sock
 
     @sock.setter
@@ -84,11 +99,14 @@ class Client(BaseClient):
             self._sock.connect((self.host, self.port))
             self._connected = True
         except socket.error as e:
-            logger.error(f'{self.log_addr} {e}')
+            logger.error('%s %s', self.log_addr, e)
             self.close()
             raise e
 
     def close(self):
+        """连接关闭
+
+        """
         if self._sock is not None:
             self._sock.close()
             self._sock = None
@@ -109,7 +127,7 @@ class Client(BaseClient):
         self._sock.sendall(data)
 
         if debug:
-            logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
+            logger.debug('%s - Send to %s: %s', log_prefix, self.log_addr, data.hex(" "))
 
     def recv(self, buffer_size: int, debug: bool = False, log_prefix: str = '') -> bytes:
         """
@@ -128,29 +146,49 @@ class Client(BaseClient):
             raise socket.error(f'{self.log_addr} No data received')
 
         if debug:
-            logger.debug(f'{log_prefix} - Received from {self.log_addr}: {data.hex(" ")}')
+            logger.debug('%s - Received from %s: %s', log_prefix, self.log_addr, data.hex(" "))
 
         return data
 
 
 class AsyncClient(BaseClient):
+    """异步TCP客户端
+
+    :param BaseClient: 
+    :type BaseClient: 
+    """
 
     def __init__(self, host: str, port: int):
         super().__init__(host, port)
         self.reader: Optional[StreamReader] = None
         self.writer: Optional[StreamWriter] = None
 
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+        if exc_type is not None:
+            logger.error('%s %s %s %s', self.log_addr, exc_type, exc_val, exc_tb)
+        return True
+
     async def connect(self) -> bool:
+        """连接函数
+
+        :return: 
+        :rtype: bool
+        """
         ret = True
         try:
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
         except ConnectionRefusedError as e:
-            logger.error(f'{self.log_addr} {e}')
+            logger.error('%s %s', self.log_addr, e)
             await self.close()
             ret = False
         return ret
 
-    async def send(self, data: bytes, debug: bool = True, log_prefix: str = '') -> None:
+    async def send(self, data: bytes, **kwargs) -> None:
         """
 
         :param data:
@@ -162,10 +200,9 @@ class AsyncClient(BaseClient):
             raise IOError(f"Not connected to {self.log_addr} server")
         self.writer.write(data)
         await self.writer.drain()
-
-        # ？？？这个debug在这脱裤子放屁
-        if debug:
-            logger.debug(f'{log_prefix} - Send to {self.log_addr}: {data.hex(" ")}')
+        
+        log_prefix = kwargs.get('log_prefix', '')
+        logger.debug('%s - Send to %s: %s', log_prefix, self.log_addr, data.hex(" "))
 
     async def recv(self) -> bytes:
         """
@@ -192,12 +229,14 @@ class AsyncClient(BaseClient):
                 self.reader.read(self.buffer_size),
                 self.timeout
             )
-        except asyncio.TimeoutError:
-            raise asyncio.TimeoutError(f'read_timeout timeout >{self.timeout}s !')
+        except asyncio.TimeoutError as exc:
+            raise asyncio.TimeoutError(f'read_timeout timeout >{self.timeout}s !') from exc
 
         return res
 
     async def close(self):
+        """连接关闭
+        """
         if self.writer is not None:
             self.writer.close()
             await self.writer.wait_closed()
