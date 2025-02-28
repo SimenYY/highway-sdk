@@ -1,47 +1,48 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-e.g. following
 
-from typing import Optional
+usage::
 
-from highway_sdk.transport.aProtocol import AsyncTcpProtocol, AsyncTcpFactory, connect_tcp
-from highway_sdk.transport.aTask import LoopingCallTask
-import asyncio
+    from typing import Optional
 
-from highway_sdk.core.log import logger
-from highway_sdk.core.log.handlers import ColoredStreamHandler
+    from highway_sdk.transport.aProtocol import AsyncTcpProtocol, AsyncTcpFactory, connect_tcp
+    from highway_sdk.transport.aTask import LoopingCallTask
+    import asyncio
 
-logger.addHandler(ColoredStreamHandler())
-logger.setLevel('DEBUG')
+    from highway_sdk.core.log import logger
+    from highway_sdk.core.log.handlers import ColoredStreamHandler
 
-
-class DemoProtocol(AsyncTcpProtocol):
-    humanize = True
-
-    def connection_made(self, transport: Optional[asyncio.Transport]) -> None:
-        super().connection_made(transport)
-
-        LoopingCallTask(self.task_hello).start(1.0)
-        LoopingCallTask(self.task_fuck).start(2.0, soon=True)
-
-    def task_hello(self):
-        self.send(b'Hello, world!')
-
-    def task_fuck(self):
-        self.send(b'Fuck, world!')
-
-    def data_received(self, data) -> None:
-        super().data_received(data)
-        self.send(data)
+    logger.addHandler(ColoredStreamHandler())
+    logger.setLevel('DEBUG')
 
 
-class DemoFactory(AsyncTcpFactory):
-    protocol = DemoProtocol
+    class DemoProtocol(AsyncTcpProtocol):
+        humanize = True
+
+        def connection_made(self, transport: Optional[asyncio.Transport]) -> None:
+            super().connection_made(transport)
+
+            LoopingCallTask(self.task_hello).start(1.0)
+            LoopingCallTask(self.task_fuck).start(2.0, soon=True)
+
+        def task_hello(self):
+            self.send(b'Hello, world!')
+
+        def task_fuck(self):
+            self.send(b'Fuck, world!')
+
+        def data_received(self, data) -> None:
+            super().data_received(data)
+            self.send(data)
 
 
-if __name__ == '__main__':
-    asyncio.run(connect_tcp('127.0.0.1', 8888, DemoFactory()))
+    class DemoFactory(AsyncTcpFactory):
+        protocol = DemoProtocol
+
+
+    if __name__ == '__main__':
+        asyncio.run(connect_tcp('127.0.0.1', 8888, DemoFactory()))
 """
 import asyncio
 import inspect

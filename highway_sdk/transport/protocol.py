@@ -15,7 +15,6 @@ import inspect
 
 from dataclasses import dataclass
 from typing import Dict, Optional, Callable, Type, List, Final
-
 from twisted.internet.interfaces import IAddress
 from twisted.internet.protocol import ClientFactory, Protocol
 from twisted.internet.task import LoopingCall

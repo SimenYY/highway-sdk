@@ -17,6 +17,8 @@ from .constants import XianKeWhat
 
 
 class Protocol:
+    """协议类
+    """
     # 报文最小长度
     min_length: int = 9
     # 报文编码
@@ -24,8 +26,7 @@ class Protocol:
 
     @classmethod
     def play_list(cls, file_name: str = r'000.xkl') -> bytes:
-        """
-        播放列表
+        """播放列表
 
         :param file_name:
         :return:
@@ -63,8 +64,7 @@ class Protocol:
 
     @classmethod
     def get_now_play_content(cls) -> bytes:
-        """
-        获取当前显示内容
+        """获取当前显示内容
 
         :return:
         """
@@ -74,8 +74,7 @@ class Protocol:
 
     @classmethod
     def get_now_play_all_content(cls) -> bytes:
-        """
-        获取当前显示列表
+        """获取当前显示列表
 
         :return:
         """
@@ -85,8 +84,7 @@ class Protocol:
 
     @classmethod
     def get_now_brightness(cls) -> bytes:
-        """
-        获取当前显示亮度
+        """获取当前显示亮度
 
         :return:
         """
@@ -96,8 +94,7 @@ class Protocol:
 
     @classmethod
     def set_now_brightness(cls, brightness: int) -> bytes:
-        """
-        设置当前显示亮度
+        """设置当前显示亮度
 
         :param brightness:
         :return:
@@ -106,6 +103,8 @@ class Protocol:
 
 
 class ProtocolParser:
+    """协议解析
+    """
 
     def __init__(self, raw_data: bytes):
         self.raw_data = raw_data
@@ -121,13 +120,19 @@ class ProtocolParser:
         try:
             p = XianKePacket.unpack(self.raw_data)
         except CrcError as e:
-            raise ProtocolParserError(f'Crc error: {e}')
+            raise ProtocolParserError(f'Crc error: {e}') from e
         except Exception as e:
-            raise ProtocolParserError(f'unpack error: {e}')
+            raise ProtocolParserError(f'unpack error: {e}') from e
 
         return p
 
     def lazy_parse(self) -> NowPlayContentTags | NowPlayAllContentTags:
+        """一键解析
+
+        :raises ProtocolParserError: 解析错误
+        :return: 当前显示内容或当前显示列表
+        :rtype: NowPlayContentTags | NowPlayAllContentTags
+        """
 
         p = self.parse()
         match p.what:
@@ -140,8 +145,7 @@ class ProtocolParser:
 
     @staticmethod
     def parse_now_play_content(data: bytes) -> NowPlayContentTags:
-        """
-        解析当前显示内容
+        """解析当前显示内容
 
         :param data:
         :return:
