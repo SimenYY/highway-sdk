@@ -49,7 +49,7 @@ class PlayBuilder:
         >>> ib.media = mb.build()
         >>> pb = PlayBuilder()
         >>> pb.add_item_builder(ib)
-        >>> print(repr(pb.build().__str__()))
+        >>> print(str(pb.build()))
         [LIST]
         ItemCount=001
         Item00=10,1,0,1,1,\\C000000\\Fh16\\T255255000000\\B000000000000\\U文本测试
