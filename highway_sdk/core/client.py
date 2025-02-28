@@ -16,7 +16,6 @@ from typing import Optional
 import asyncio
 from asyncio import StreamReader, StreamWriter
 
-
 from highway_sdk.core.log import logger
 from highway_sdk.core.validators import (
     validate_ipv4_address,
@@ -164,7 +163,10 @@ class AsyncClient(BaseClient):
         self.writer: Optional[StreamWriter] = None
 
     async def __aenter__(self):
-        await self.connect()
+        connected = await self.connect()
+        # 连接不上还是需要抛出异常的。
+        if not connected:
+            raise ConnectionRefusedError(f"Not connected to {self.log_addr} server")
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -200,7 +202,7 @@ class AsyncClient(BaseClient):
             raise IOError(f"Not connected to {self.log_addr} server")
         self.writer.write(data)
         await self.writer.drain()
-        
+
         log_prefix = kwargs.get('log_prefix', '')
         logger.debug('%s - Send to %s: %s', log_prefix, self.log_addr, data.hex(" "))
 
