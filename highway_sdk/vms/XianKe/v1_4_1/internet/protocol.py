@@ -54,7 +54,7 @@ class Protocol:
         data = b'\x31'  # reserved
         data += b'\x30'  # 默认文件帧标记
 
-        data += str(len(file_path)).encode('ascall').rjust(3, b'\x30')
+        data += str(len(file_path)).encode('ascii').rjust(3, b'\x30')
         data += file_path.encode(cls.encoding)
         data += b'\x30\x30\x30\x30'  # 文件偏移地址
         data += content.encode(cls.encoding)
