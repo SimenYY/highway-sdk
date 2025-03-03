@@ -31,7 +31,7 @@ class XianKeAsyncClient(VmsAsyncClient):
                 logger.error(f'{self.log_addr} play_id must be between 0 and 999')
                 return DeviceReturnCode.INVALID_INPUT
 
-            file_name = f'{play_id: 03}.xkl'
+            file_name = f'{play_id: 03d}.xkl'
             file_type = 'list'
 
             # 上传文件
