@@ -13,6 +13,7 @@
 import ipaddress
 import random
 from typing import Type, List, Callable, Optional, Dict
+import redis
 
 from twisted.internet.address import IPv4Address
 from twisted.internet.interfaces import IAddress
@@ -25,13 +26,18 @@ from highway_sdk.core.log import logger
 from .strategy import RecvStrategy
 from ..core.client import Client
 from ..interface.iot import IotMqttClient
+from highway_sdk.interface.database.redisClient import RedisClient
 
 __all__ = [
-    'TcpClient',
-    'IotTcpClient',
-    'IotControlTcpClient',
-    'TcpClientFactory',
-    'IotMqttClientFactory',
+    "TcpClient",
+    "IotTcpClient",
+    "TcpClientFactory",
+
+    "IotControlTcpClient",
+    "IotMqttClientFactory",
+
+    "RedisClientFactory",
+    "RedisTcpClient",
 ]
 
 
@@ -139,8 +145,7 @@ class TcpClient(Protocol):
         return f'{self.series}_{self.addr.host}'
 
     def makeConnection(self, transport):
-        if hasattr(self.factory, 'mqtt_client'):
-            self.factory.mqtt_client.connect()
+        self.factory.preprocess()
 
         return super().makeConnection(transport)
 
@@ -229,20 +234,6 @@ class TcpClient(Protocol):
             return
 
 
-class IotTcpClient(_IotClientMixin, TcpClient):
-    """
-    上层平台为物联智控的设备客户端
-    """
-    pass
-
-
-class IotControlTcpClient(_IotControlClientMixin, TcpClient):
-    """
-    在TcpClient的基础之上，增加了对物联智控的mqtt控制的支持以及相关的工具函数
-    """
-    pass
-
-
 class TcpClientFactory(ReconnectingClientFactory):
     """
     基础tcp client的工厂类
@@ -284,8 +275,7 @@ class TcpClientFactory(ReconnectingClientFactory):
 
     @classmethod
     def set_protocol(cls, protocol: Callable[[], Protocol], *args, **kwargs) -> 'TcpClientFactory':
-        """
-        设置protocol参数
+        """设置protocol参数
 
         :param protocol:
         :param args:
@@ -309,9 +299,68 @@ class TcpClientFactory(ReconnectingClientFactory):
         self.before_reconnect(connector, reason)
         return super().clientConnectionLost(connector, reason)
 
+    def preprocess(self):
+        """预处理
+        一般放在make_connection中
+
+        :return:
+        """
+        pass
+
+
+"""**************************************************
+                    Mqtt
+**************************************************"""
+
+
+class IotTcpClient(_IotClientMixin, TcpClient):
+    """
+    上层平台为物联智控的设备客户端
+    """
+    pass
+
+
+class IotControlTcpClient(_IotControlClientMixin, TcpClient):
+    """
+    在TcpClient的基础之上，增加了对物联智控的mqtt控制的支持以及相关的工具函数
+    """
+    pass
+
 
 class IotMqttClientFactory(TcpClientFactory):
     """
     增加了mqtt_client，使之于mqtt broker保持通信
     """
     mqtt_client: IotMqttClient = IotMqttClient()
+
+    def preprocess(self):
+        self.mqtt_client.connect()
+
+
+"""**************************************************
+                    Redis
+**************************************************"""
+
+
+class RedisClientFactory(TcpClientFactory):
+    """
+    发送设备数据要redis
+    """
+    redis_client = RedisClient()
+
+    def preprocess(self):
+        self.redis_client.noblock_start()
+
+
+class _RedisClientMixin:
+    """
+    redis客户端混入
+    """
+    factory: Optional['RedisClientFactory'] = None
+
+
+class RedisTcpClient(_RedisClientMixin, TcpClient):
+    """
+    数据发送到redis的设备客户端
+    """
+    pass
