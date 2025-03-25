@@ -29,8 +29,8 @@ class _Log(ConfigModel):
     name: str = 'none'
     brand: str = 'none'
     level: str = 'DEBUG'
-    rotation: str = '1 day'
-    retention: str = '7 days'
+    rotation: str = '00:00'
+    retention: str = '3 days'
     compression: str = 'zip'
     enqueue: bool = True
     file: bool = True
