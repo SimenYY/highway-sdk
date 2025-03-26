@@ -24,6 +24,7 @@ redis_client = redis.Redis()
 class RedisClient:
     factor: float = 1.6180339887498948
     default_delay: float = 1.0
+
     def __init__(
             self,
             host: str = "localhost",
@@ -89,14 +90,16 @@ class RedisClient:
         self.connect()
 
         loop = True
+        check_interval = 1.0
 
         while loop:
 
             if self._thread_terminate:
                 break
 
+            # 检查网络连接状态
             if self.is_connected():
-                pass
+                time.sleep(check_interval)
             else:
                 continue_trying = True
                 self.reset_delay()
@@ -117,7 +120,7 @@ class RedisClient:
         try:
             self.block_start()
         finally:
-            self._thread = True
+            self._thread = None
 
     def noblock_start(self):
         """非阻塞启动

@@ -13,7 +13,6 @@
 import ipaddress
 import random
 from typing import Type, List, Callable, Optional, Dict
-import redis
 
 from twisted.internet.address import IPv4Address
 from twisted.internet.interfaces import IAddress
@@ -23,10 +22,10 @@ from twisted.python import failure
 from twisted.python.failure import Failure
 
 from highway_sdk.core.log import logger
+from highway_sdk.interface.database.redisClient import RedisClient
 from .strategy import RecvStrategy
 from ..core.client import Client
 from ..interface.iot import IotMqttClient
-from highway_sdk.interface.database.redisClient import RedisClient
 
 __all__ = [
     "TcpClient",
@@ -143,11 +142,6 @@ class TcpClient(Protocol):
     @property
     def sn(self) -> str:
         return f'{self.series}_{self.addr.host}'
-
-    def makeConnection(self, transport):
-        self.factory.preprocess()
-
-        return super().makeConnection(transport)
 
     def connectionMade(self) -> None:
         self.addr = self.transport.getPeer()
@@ -299,14 +293,6 @@ class TcpClientFactory(ReconnectingClientFactory):
         self.before_reconnect(connector, reason)
         return super().clientConnectionLost(connector, reason)
 
-    def preprocess(self):
-        """预处理
-        一般放在make_connection中
-
-        :return:
-        """
-        pass
-
 
 """**************************************************
                     Mqtt
@@ -333,7 +319,8 @@ class IotMqttClientFactory(TcpClientFactory):
     """
     mqtt_client: IotMqttClient = IotMqttClient()
 
-    def preprocess(self):
+    def startFactory(self):
+
         self.mqtt_client.connect()
 
 
@@ -348,7 +335,7 @@ class RedisClientFactory(TcpClientFactory):
     """
     redis_client = RedisClient()
 
-    def preprocess(self):
+    def startFactory(self):
         self.redis_client.noblock_start()
 
 
