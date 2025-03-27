@@ -14,6 +14,7 @@ from dataclasses import dataclass, asdict, field
 from typing import List, Union, Literal, Callable, Any
 
 from highway_sdk.vms.SanSi.v4_21_0.internet.utils.constants import SansiTagsConvertor
+from highway_sdk.vms.XianKe.v1_4_1.internet.constants import XianKeTagsConvertor
 from highway_sdk.vms.nova.v3_11_5.internet.utils.constants import NovaTagsConvertor
 
 
@@ -35,6 +36,7 @@ class NowPlayContentTags(BaseTags):
     text_color: str = None
     text: str = None
     image_name: str = None
+    image_type: str = None
     # 单位秒
     duration: int = None
     # 入屏方式
@@ -72,7 +74,7 @@ class VmsTagConvert:
     def __init__(
             self,
             tags: Union["NowPlayContentTags", "NowBrightnessTags", "NowPlayAllContentTags"],
-            vms_brand: Literal['nova', 'sansi'],
+            vms_brand: Literal["nova", "sansi", "xianke"],
             ct_process: Callable[[Any, ...], Any] = None
     ):
         """
@@ -89,10 +91,12 @@ class VmsTagConvert:
 
     def get_convertor(self):
         match self.vms_brand:
-            case 'nova':
+            case "nova":
                 return NovaTagsConvertor
-            case 'sansi':
+            case "sansi":
                 return SansiTagsConvertor
+            case "xianke":
+                return XianKeTagsConvertor
             case _:
                 raise NotImplementedError(f'{self.vms_brand} is not supported')
 
