@@ -184,6 +184,24 @@ class ProtocolMessage:
 
         return p.pack()
 
+    def get_now_play_content(self) -> bytes:
+        """获取当前显示内容
+
+        :return:
+        """
+        p = XianKePacket(what=XianKeWhat.GET_NOW_PLAY_CONTENT,
+                         data=b'')
+        return p.pack()
+
+    def get_now_play_all_content(self) -> bytes:
+        """获取当前显示列表
+
+        :return:
+        """
+        p = XianKePacket(what=XianKeWhat.GET_NOW_PLAY_ALL_CONTENT,
+                         data=b'')
+        return p.pack()
+
     def get_now_brightness(self) -> bytes:
         """获取当前显示亮度
 
