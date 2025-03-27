@@ -15,11 +15,17 @@ from highway_sdk.core.log import logger
 from highway_sdk.core.exceptions import ResponseError, HostResponseTimeoutError, ProtocolParserError
 from highway_sdk.vms.base.vmsClient import VmsAsyncClient
 from highway_sdk.vms.constants import DeviceReturnCode
-from .protocol import Protocol, ProtocolParser
+from .protocol import ProtocolMessage, ProtocolParser
 from .constants import XianKeResCode
 
 
 class XianKeAsyncClient(VmsAsyncClient):
+
+    def __init__(self,  host: str, port: int):
+        super().__init__(host, port)
+
+        self.pm = ProtocolMessage()
+
     async def set_play_list(self, content: str, play_id: int = 0) -> int:
 
         try:
@@ -60,12 +66,12 @@ class XianKeAsyncClient(VmsAsyncClient):
             file_name: str = r'list\000.xkl'
     ) -> None:
 
-        send_buffer = Protocol.upload_file(content, file_type, file_name)
+        send_buffer = self.pm.upload_file(content, file_type, file_name)
         try:
             await self.send(send_buffer, log_prefix='upload_file')
             recv_buffer = await self.recv()
             pp = ProtocolParser(recv_buffer)
-            data = pp.parse().data
+            data = pp.parse_packet().data
         except asyncio.TimeoutError as e:
             raise HostResponseTimeoutError(f"upload_file timed out: {e}")
         except ProtocolParserError as e:
@@ -76,13 +82,13 @@ class XianKeAsyncClient(VmsAsyncClient):
 
     async def _play_list(self, file_name: str = "000.xkl") -> None:
 
-        send_buffer = Protocol.play_list(file_name)
+        send_buffer = self.pm.play_list(file_name)
 
         try:
             await self.send(send_buffer, log_prefix='play_list')
             recv_buffer = await self.recv()
             pp = ProtocolParser(recv_buffer)
-            data = pp.parse().data
+            data = pp.parse_packet().data
         except asyncio.TimeoutError as e:
             raise HostResponseTimeoutError(f"play_list timed out: {e}")
         except ProtocolParserError as e:
