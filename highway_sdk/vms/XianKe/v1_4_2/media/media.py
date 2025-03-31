@@ -70,7 +70,7 @@ class MediaBuilder:
         self.text_size: int = TextSizeEnum.SIZE_16.value
         self.text_color: str = ColorEnum.YELLOW.value
         self.background_color: str = ColorEnum.BLACK.value
-        self.text: str = '文本测试'
+        self.text: str = ''
         self.bmg_file_name: str = ''
 
     def build(self) -> Media:
