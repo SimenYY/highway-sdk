@@ -105,7 +105,7 @@ class ProtocolParser:
             tags.text_color = text_color_search_result.group(1)
 
         # 图片
-        image_search_result = re.search(r"\\(GI)(\d{3})", tags.raw_str)
+        image_search_result = re.search(r"\\([GI])(\d{3})", tags.raw_str)
         if image_search_result:
             image_type_map = {
                 "G": "gif",

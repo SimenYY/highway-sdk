@@ -13,7 +13,7 @@
 from pydantic import BaseModel, Field
 from enum import Enum
 
-from highway_sdk.vms.XianKe.v1_4_1.media.media import Media, MediaBuilder
+from highway_sdk.vms.XianKe.v1_4_2.media.media import Media, MediaBuilder
 
 
 class ScreenInOutEnum(int, Enum):

@@ -14,7 +14,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from highway_sdk.vms.XianKe.v1_4_1.media.item import Item, ItemBuilder
+from highway_sdk.vms.XianKe.v1_4_2.media.item import Item, ItemBuilder
 
 
 class Play(BaseModel):
