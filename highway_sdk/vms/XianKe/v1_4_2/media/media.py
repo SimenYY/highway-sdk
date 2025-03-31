@@ -44,8 +44,8 @@ class Media(BaseModel):
     text_size: TextSizeEnum
     text_color: ColorEnum
     background_color: ColorEnum
-    text: str | None
-    bmg_file_name: str | None
+    text: str
+    bmg_file_name: str
 
     def __str__(self):
         protocol = (f"\\C{self.x:03d}{self.y:03d}"
@@ -53,7 +53,7 @@ class Media(BaseModel):
                     f"\\T{self.text_color}"
                     f"\\B{self.background_color}")
 
-        if self.text_size:
+        if self.text:
             protocol += f"\\U{self.text}"
         else:
             protocol += f"\\I{self.bmg_file_name.rjust(3, '0')}"
@@ -70,8 +70,8 @@ class MediaBuilder:
         self.text_size: int = TextSizeEnum.SIZE_16.value
         self.text_color: str = ColorEnum.YELLOW.value
         self.background_color: str = ColorEnum.BLACK.value
-        self.text: str | None = None
-        self.bmg_file_name: str | None = None
+        self.text: str = ''
+        self.bmg_file_name: str = ''
 
     def build(self) -> Media:
         """
