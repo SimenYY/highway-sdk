@@ -70,8 +70,8 @@ class MediaBuilder:
         self.text_size: int = TextSizeEnum.SIZE_16.value
         self.text_color: str = ColorEnum.YELLOW.value
         self.background_color: str = ColorEnum.BLACK.value
-        self.text: str = ''
-        self.bmg_file_name: str = ''
+        self.text: str | None = None
+        self.bmg_file_name: str | None = None
 
     def build(self) -> Media:
         """
@@ -80,4 +80,3 @@ class MediaBuilder:
         :return:
         """
         return Media(**self.__dict__)
-
