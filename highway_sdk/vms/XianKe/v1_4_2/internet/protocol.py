@@ -14,7 +14,7 @@ import re
 
 from highway_sdk.core import exceptions
 from highway_sdk.vms.tags import NowPlayContentTags, NowPlayAllContentTags
-from .constants import XianKeWhat
+from .constants import XianKeWhat, XianKeResCode
 from .structs import XianKePacket
 
 
@@ -81,7 +81,7 @@ class ProtocolParser:
 
         # 00异常/01正常
         flag = data[0:1]
-        if flag != b'\x01':
+        if flag != XianKeResCode.SUCCESS:
             raise exceptions.ResponseError(f"查询当前内容响应异常")
 
         tags = NowPlayContentTags()
