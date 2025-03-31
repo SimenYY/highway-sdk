@@ -184,7 +184,7 @@ class AsyncClient(BaseClient):
         ret = True
         try:
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
-        except ConnectionRefusedError as e:
+        except (ConnectionRefusedError, OSError) as e:
             logger.error('%s %s', self.log_addr, e)
             await self.close()
             ret = False
