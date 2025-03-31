@@ -44,8 +44,8 @@ class Media(BaseModel):
     text_size: TextSizeEnum
     text_color: ColorEnum
     background_color: ColorEnum
-    text: str
-    bmg_file_name: str
+    text: str | None
+    bmg_file_name: str | None
 
     def __str__(self):
         protocol = (f"\\C{self.x:03d}{self.y:03d}"
