@@ -18,7 +18,13 @@ import tempfile
 
 
 class SingleInstance:
-    """通过文件锁，防止应用二次启动"""
+    """应用二次启动文件锁
+
+    Usage:
+        with SingleInstance(lock_name="your_app.lock") as instance:
+            print("your func")
+
+    """
     def __init__(
             self,
             lock_name: str = 'single_instance.lock'):
