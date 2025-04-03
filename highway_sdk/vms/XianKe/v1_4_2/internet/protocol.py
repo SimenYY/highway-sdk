@@ -23,6 +23,8 @@ class ProtocolConfig:
     encoding: str = 'gbk'
     # 报文最小长度
     min_length: int = 9
+    # 换行符
+    line_break: str = "\\N"
 
 
 class ProtocolParser:
@@ -68,13 +70,17 @@ class ProtocolParser:
             case _:
                 raise exceptions.ProtocolParserError(f'Unknown what: {p.what}')
 
-    def _parse_now_play_content(self, data: bytes) -> NowPlayContentTags:
+    def _parse_now_play_content(self, data: bytes, remove_line_break: bool = False) -> NowPlayContentTags:
         """解析当前显示内容
+
+        ps:
+            换行符是有意义字符，对于解析应当保留，如果需要去除可以保留到客户端层面进行
 
         e.g.
             3,1,0,1,1,\\C000000\\Fs32\\T255255000000\\B000000000000\\U安全第一\\N预防为主
 
         :param data:
+        :param remove_line_break:是否暴露换行符
         :return:
         :rtype: NowPlayContentTags
         """
@@ -119,7 +125,10 @@ class ProtocolParser:
         text_search_result = re.search(r"\\U(.*)", tags.raw_str)
         if text_search_result:
             text = text_search_result.group(1)
-            text = text.replace("\\N", "")
+            # svg可以识别换行符，需要将换行符暴露出去
+            if remove_line_break:
+                text = text.replace(self.config.line_break, "")
+
             text = text.replace("\r", "")
             text = text.replace("\n", "")
             tags.text = text
