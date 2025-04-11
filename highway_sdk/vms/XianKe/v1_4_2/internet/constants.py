@@ -26,7 +26,9 @@ class XianKeWhat:
     # 获取当前列表
     GET_NOW_PLAY_ALL_CONTENT = b'\x32\x33'
     # 发送文件内容
-    upload_file = b'\x32\x30'
+    UPLOAD_FILE = b'\x32\x30'
+    # 下载文件内容
+    DOWNLOAD_FILE = b'\x32\x31'
     # 播放播放表
     PLAY_LIST = b'\x32\x32'
     # 获取当前亮度

@@ -38,10 +38,10 @@ class XianKeAsyncClient(VmsAsyncClient):
                 return DeviceReturnCode.INVALID_INPUT
 
             file_name = f'{play_id:03d}.xkl'
-            file_type = 'list'
+            file_path = f"list\\{file_name}"
 
             # 上传文件
-            await self._upload_file(content, file_type, file_name)
+            await self._upload_file(content, file_path)
             # 显示播放列表
             await self._play_list(file_name)
         except HostResponseTimeoutError as e:
@@ -62,11 +62,10 @@ class XianKeAsyncClient(VmsAsyncClient):
     async def _upload_file(
             self,
             content: str,
-            file_type: str = 'list',
-            file_name: str = r'list\000.xkl'
+            file_path: str = "list\\000.xkl",
     ) -> None:
 
-        send_buffer = self.pm.upload_file(content, file_type, file_name)
+        send_buffer = self.pm.upload_file(content, file_path)
         try:
             await self.send(send_buffer, log_prefix='upload_file')
             recv_buffer = await self.recv()

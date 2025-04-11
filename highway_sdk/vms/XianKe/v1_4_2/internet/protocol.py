@@ -10,6 +10,7 @@
 :Link:
 :Time: 2025/2/17 10:19
 """
+import configparser
 import re
 
 from highway_sdk.core import exceptions
@@ -67,35 +68,26 @@ class ProtocolParser:
                 return self._parse_now_play_content(p.data)
             case XianKeWhat.GET_NOW_PLAY_ALL_CONTENT:
                 return self._parse_now_play_all_content(p.data)
+            case XianKeWhat.DOWNLOAD_FILE:
+                return self._parse_download_file(p.data)
             case _:
                 raise exceptions.ProtocolParserError(f'Unknown what: {p.what}')
 
-    def _parse_now_play_content(self, data: bytes, remove_line_break: bool = False) -> NowPlayContentTags:
-        """解析当前显示内容
-
-        ps:
-            换行符是有意义字符，对于解析应当保留，如果需要去除可以保留到客户端层面进行
+    def _parse_item(self, data_str: str) -> NowPlayContentTags:
+        """解析目标item内容
 
         e.g.
             3,1,0,1,1,\\C000000\\Fs32\\T255255000000\\B000000000000\\U安全第一\\N预防为主
 
-        :param data:
-        :param remove_line_break:是否暴露换行符
+        :param data_str:
         :return:
-        :rtype: NowPlayContentTags
         """
-
-        # 00异常/01正常
-        flag = data[0:1]
-        if flag != XianKeResCode.SUCCESS:
-            raise exceptions.ResponseError(f"查询当前内容响应异常")
 
         tags = NowPlayContentTags()
 
-        data_str = data[1:].decode(self.config.encoding)
         params = data_str.split(",", maxsplit=5)
 
-        tags.duration = params[0]
+        tags.duration = int(params[0])
         tags.screen_in = params[1]
         tags.raw_str = params[-1]
 
@@ -125,27 +117,72 @@ class ProtocolParser:
         text_search_result = re.search(r"\\U(.*)", tags.raw_str)
         if text_search_result:
             text = text_search_result.group(1)
-            # svg可以识别换行符，需要将换行符暴露出去
-            if remove_line_break:
-                text = text.replace(self.config.line_break, "")
-
             text = text.replace("\r", "")
             text = text.replace("\n", "")
             tags.text = text
 
         return tags
 
-    @staticmethod
-    def _parse_now_play_all_content(data: bytes) -> NowPlayAllContentTags:
+    def _parse_now_play_content(self, data: bytes, remove_line_break: bool = False) -> NowPlayContentTags:
+        """解析当前显示内容
+
+        ps:
+            换行符是有意义字符，对于解析应当保留，如果需要去除可以保留到客户端层面进行
+
+        e.g.
+            3,1,0,1,1,\\C000000\\Fs32\\T255255000000\\B000000000000\\U安全第一\\N预防为主
+
+        :param data:
+        :param remove_line_break:是否暴露换行符
+        :return:
+        :rtype: NowPlayContentTags
         """
-        解析当前显示列表
+
+        # 00异常/01正常
+        flag = data[0:1]
+        if flag != XianKeResCode.SUCCESS:
+            raise exceptions.ResponseError(f"查询当前内容响应异常")
+
+        tags = self._parse_item(data[1:].decode(self.config.encoding))
+
+        return tags
+
+    def _parse_now_play_all_content(self, data: bytes) -> NowPlayAllContentTags:
+        """
+        解析当前显示列表, 协议这部分只返回列表文件名
 
         :param data:
         :return:
         :rtype: NowPlayAllContentTags
         """
-        # todo
-        pass
+
+    def _parse_download_file(self, data: bytes) -> NowPlayAllContentTags:
+        """
+        获取的显示文件
+
+        :param data:
+        :return:
+        """
+        # 00异常/01正常
+        flag = data[0:1]
+        if flag != XianKeResCode.SUCCESS:
+            raise exceptions.ResponseError(f"查询当前内容响应异常")
+
+        tags = NowPlayAllContentTags()
+        play_content = data[20:].decode(self.config.encoding)
+        play_list = configparser.ConfigParser()
+        play_list.read_string(play_content)
+
+        section = "LIST"
+        items_count = int(play_list.get(section, "ItemCount"))
+
+        for i in range(items_count):
+            option = f"Item{i:02d}"
+            item_content = play_list.get(section, option)
+            item_tags = self._parse_item(item_content)
+            tags.items.append(item_tags)
+
+        return tags
 
 
 class ProtocolMessage:
@@ -169,18 +206,15 @@ class ProtocolMessage:
 
     def upload_file(self,
                     content: str,
-                    file_type: str = 'list',
-                    file_name: str = r'list\000.xkl'
+                    file_path: str = "list\\000.xkl"
                     ) -> bytes:
         """
         data组成：【reserved 1B】【文件帧标记 1B】【文件名长度 3B】【文件名 nB】【文件偏移地址 4B】【数据 nB】
 
+        :param file_path:
         :param content:
-        :param file_type:
-        :param file_name:
         :return:
         """
-        file_path = f"{file_type}\\{file_name}"
 
         data = b'\x31'  # reserved
         data += b'\x30'  # 默认文件帧标记
@@ -189,7 +223,23 @@ class ProtocolMessage:
         data += file_path.encode(self.config.encoding)
         data += b'\x30\x30\x30\x30'  # 文件偏移地址
         data += content.encode(self.config.encoding)
-        p = XianKePacket(what=XianKeWhat.upload_file, data=data)
+        p = XianKePacket(what=XianKeWhat.UPLOAD_FILE, data=data)
+
+        return p.pack()
+
+    def download_file(self, file_path: str = "list\\000.xkl") -> bytes:
+        """
+        data组成：【文件名长度 3B】【文件名 nB】【文件偏移地址 4B】
+
+        :param file_path:
+        :return:
+        """
+
+        data = b""
+        data += str(len(file_path)).encode("ascii").rjust(3, b'\x30')
+        data += file_path.encode(self.config.encoding)
+        data += b'\x30\x30\x30\x30'
+        p = XianKePacket(what=XianKeWhat.DOWNLOAD_FILE, data=data)
 
         return p.pack()
 
@@ -203,7 +253,7 @@ class ProtocolMessage:
         return p.pack()
 
     def get_now_play_all_content(self) -> bytes:
-        """获取当前显示列表
+        """获取当前显示列表（文件名）
 
         :return:
         """
