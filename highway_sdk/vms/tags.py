@@ -102,8 +102,11 @@ class VmsTagConvert:
 
     def apply_convert(self) -> dict | None:
         """
-        如果转换器为None，则返回为None
-        如果没有对应的tags类型，则返回空字典
+        ps:
+            如果转换器为None，则返回为None
+            如果没有对应的tags类型，则返回空字典
+            点位统一转为字符串
+
 
         :return:
         """
@@ -128,7 +131,7 @@ class VmsTagConvert:
                         # 文字或者图片编号
                         f'ZCT{i}': ct,
                         # 停留时间
-                        f'TI{i}': item.duration,
+                        f'TI{i}': str(item.duration),
                         # 入屏方式
                         f'SH{i}': item.screen_in
                     })
@@ -147,7 +150,7 @@ class VmsTagConvert:
                     # 入屏方式
                     'SH': self.tags.screen_in,
                     # 停留时间
-                    'TI': self.tags.duration,
+                    'TI': str(self.tags.duration),
                     # 字体
                     'FO': self.convertor.FONT_TO_PLATFORM.get(self.tags.font, self.tags.font)
                 }
