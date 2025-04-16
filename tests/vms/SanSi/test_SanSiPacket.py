@@ -11,7 +11,7 @@
 :Time: 2024/8/23 11:36
 """
 import pytest
-from highway_sdk.vms.SanSi.v4_21_0.internet.utils.structs import SanSiPacketReq, SanSiPacketRsp
+from highway_sdk.vms.SanSi.v4_21_0.internet.structs import SanSiPacketReq, SanSiPacketRsp
 from highway_sdk.core.exceptions import CrcError
 
 class TestSanSiPacket:

@@ -13,7 +13,7 @@
 from dataclasses import dataclass, asdict, field
 from typing import List, Union, Literal, Callable, Any
 
-from highway_sdk.vms.SanSi.v4_21_0.internet.utils.constants import SansiTagsConvertor
+from highway_sdk.vms.SanSi.v4_21_0.internet.constants import SansiTagsConvertor
 from highway_sdk.vms.XianKe.v1_4_2.internet.constants import XianKeTagsConvertor
 from highway_sdk.vms.nova.v3_11_5.internet.utils.constants import NovaTagsConvertor
 

@@ -12,7 +12,7 @@
 """
 from dataclasses import dataclass
 from highway_sdk.vms.crc import CrcUtils
-from .escape import SanSiEscape
+from highway_sdk.vms.SanSi.v4_21_0.internet.escape import SanSiEscape
 from highway_sdk.core.exceptions import CrcError
 
 
@@ -34,6 +34,7 @@ class SanSiPacketRsp:
         """
         解包
         :param message:
+        :raise CrcError
         :return:
         """
         data_crc = message[3:-1]

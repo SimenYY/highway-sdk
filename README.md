@@ -268,6 +268,7 @@ cli.disconnect()
 ```
 ## 传输驱动
 ### tcp驱动
+
 ```python
 from highway_sdk.core.config import DriverConfigModel
 from highway_sdk.core.logx import DriverLoggerConfig
@@ -275,7 +276,7 @@ from highway_sdk.transport import driver
 from highway_sdk.transport.strategy import HeaderFooterStrategy
 from highway_sdk.transport.tcpClient import TcpClient, IotMqttClientFactory
 from highway_sdk.vms.SanSi.v4_21_0.internet.protocol import Protocol
-from highway_sdk.vms.SanSi.v4_21_0.internet.utils.structs import SanSiPacketRsp
+from highway_sdk.vms.SanSi.v4_21_0.internet.structs import SanSiPacketRsp
 
 settings = DriverConfigModel.load('settings/driver_vms_ss_settings.json')
 
