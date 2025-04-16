@@ -18,8 +18,14 @@ class SanSiWhat:
     # 获取当前内容
     GET_NOW_PLAY_CONTENT = b'\x39\x37'
 
+    # 获取当前播放列表
+    GET_NOW_PLAY_ALL_CONTENT = b''
+
     # 上载文件
-    SEND_FILE_NAME_AND_CONTENT = b'\x31\x30'
+    UPLOAD_FILE = b'\x31\x30'
+
+    # 下载文件
+    DOWNLOAD_FILE = b'\x30\x39'
 
     # 播放播放表
     PLAY_LIST = b'\x39\x38'
