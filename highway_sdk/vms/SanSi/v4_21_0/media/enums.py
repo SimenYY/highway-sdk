@@ -8,14 +8,12 @@
 :Description: 
 :Author: He YinYu
 :Link:
-:Time: 2024/8/22 9:51
+:Time: 2025/4/17 10:13
 """
 from enum import Enum
 
 
 class ScreenInEnum(int, Enum):
-    # 清屏
-    CLS = 0
     NORMAL = 1
 
 

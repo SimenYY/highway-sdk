@@ -41,18 +41,18 @@ class PlayBuilder:
     """
     Usage::
 
-        >>> from highway_sdk.vms.XianKe.v1_4_1.media.media import MediaBuilder
-        >>> from highway_sdk.vms.XianKe.v1_4_1.media.item import ItemBuilder
+        >>> from highway_sdk.vms.XianKe.v1_4_2.media.media import MediaBuilder
+        >>> from highway_sdk.vms.XianKe.v1_4_2.media.item import ItemBuilder
         >>> mb = MediaBuilder()
         >>> mb.text = "文本测试"
         >>> ib = ItemBuilder()
         >>> ib.media = mb.build()
-        >>> pb = PlayBuilder()
-        >>> pb.add_item_builder(ib)
-        >>> print(str(pb.build()))
+        >>> pb = PlayBuilder().add_item_builder(ib)
+        >>> print(str(pb.build()).replace("\\r\\n", "\\n")[:-1])
         [LIST]
         ItemCount=001
         Item00=10,1,0,1,1,\\C000000\\Fh16\\T255255000000\\B000000000000\\U文本测试
+
     """
 
     def __init__(self):
@@ -76,3 +76,9 @@ class PlayBuilder:
         :return: Play
         """
         return Play(**self.__dict__)
+
+
+if __name__ == '__main__':
+    import doctest
+
+    doctest.testmod()

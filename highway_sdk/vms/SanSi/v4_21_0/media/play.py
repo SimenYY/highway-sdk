@@ -8,57 +8,59 @@
 :Description: 
 :Author: He YinYu
 :Link:
-:Time: 2024/8/22 9:59
+:Time: 2025/4/16 16:34
 """
 from typing import List
 
 from pydantic import BaseModel
 
-from .item import Item
 from .win import Win
 
 
 class Play(BaseModel):
-    win_or_item_list: List[Win | Item]
+    pass
 
-    def create_msg(self):
-        if not self.win_or_item_list:
-            raise ValueError('win_or_item_list is empty')
 
-        win_or_item = self.win_or_item_list[0]
+class MultipleWinPlay(Play):
+    """
+    多窗口 playlist
+    """
 
-        if isinstance(win_or_item, Win):
-            return self._create_multiple_msg()
-        elif isinstance(win_or_item, Item):
-            return self._create_single_msg()
-        else:
-            raise TypeError('win_or_item_list must be Win or Item')
+    win_list: List[Win]
 
-    def _create_multiple_msg(self) -> str:
-        protocol = '[playlist]'
-        protocol += '\n'
-        protocol += f'nwindows={len(self.win_or_item_list)}'
-        protocol += '\n'
-        for i, win in enumerate(self.win_or_item_list):
+    def __str__(self):
+        line_break = "\r\n"
+        protocol = "[playlist]"
+        protocol += line_break
+        protocol += f"nwindows={len(self.win_list)}"
+        protocol += line_break
+        for i, win in enumerate(self.win_list):
             protocol += f'windows{i}_x={win.x}'
-            protocol += '\n'
+            protocol += line_break
             protocol += f'windows{i}_y={win.y}'
-            protocol += '\n'
+            protocol += line_break
             protocol += f'windows{i}_w={win.w}'
-            protocol += '\n'
+            protocol += line_break
             protocol += f'windows{i}_h={win.h}'
-            protocol += '\n'
-            protocol += win.create_msg()
-            protocol += '\n'
-        return protocol.rstrip('\n')
+            protocol += line_break
+            protocol += f"{win}"
 
-    def _create_single_msg(self) -> str:
-        protocol = '[playlist]'
-        protocol += '\n'
-        protocol += f'item_no={len(self.win_or_item_list)}'
-        protocol += '\n'
-        for i, item in enumerate(self.win_or_item_list):
-            protocol += f'item{i}={item.create_msg()}'
-            protocol += '\n'
+        return protocol
 
-        return protocol.rstrip('\n')
+
+class SingleWinPlay(Play):
+    """
+    单窗口 playlist
+    """
+
+    win: Win
+
+    def __str__(self):
+        line_break = "\r\n"
+        protocol = "[playlist]"
+        protocol += line_break
+        protocol += f"{self.win}"
+
+        return protocol
+
+

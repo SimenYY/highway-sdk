@@ -8,141 +8,100 @@
 :Description: 
 :Author: He YinYu
 :Link:
-:Time: 2024/8/22 9:58
+:Time: 2025/4/17 10:22
 """
-from .media import Media
-from .baseBuilder import BaseBuilder
+from abc import abstractmethod, ABC
+
+from .enums import ColorEnum, FontEnum, TextSizeEnum
+from .media import Media, Text, Bmp, Jpg, Gif, Mpg, Png
+
+__all__ = [
+    "TextBuilder",
+    "BmpBuilder",
+    "GifBuilder",
+    "MpgBuilder",
+    "PngBuilder",
+    "JpgBuilder",
+]
 
 
-class MediaBuilder(BaseBuilder):
+class MediaBuilder(ABC):
+
     def __init__(self):
-        # 增加使用性，增加的属性
-        self._x: int = 0
-        self._y: int = 0
-        # bmp 图片文件
-        self._bmp_file_name: str = ''
-        # png 图片文件
-        self._png_file_name: str = ''
-        # jpg 图片文件
-        self._jpg_file_name: str = ''
-        # gif 图片文件
-        self._gif_file_name: str = ''
-        # mpg 视频文件
-        self._mpg_file_name: str = ''
-        self._text_color: str = '255255000000'  # yellow
-        self._background_color: str = '000000000000'  # black
-        # 字间距
-        self._word_space: int = 0
-        # 输入示例 h
-        self._font: str = 'h'
-        # 输入示例 16
-        self._text_size: int = 1616
-        self._text: str = ''
+        self.x: int = 0
+        self.y: int = 0
 
+    @abstractmethod
     def build(self) -> Media:
-        return Media(**self.to_dict())
+        """建造函数
+        :return:
+        """
 
-    @property
-    def x(self) -> int:
-        return self._x
 
-    @x.setter
-    def x(self, x: int) -> None:
-        self._x = x
+class TextBuilder(MediaBuilder):
 
-    @property
-    def y(self) -> int:
-        return self._y
+    def __init__(self, text: str):
+        super().__init__()
 
-    @y.setter
-    def y(self, y: int) -> None:
-        self._y = y
+        # 文本
+        self.text = text
+        self.text_color: str = ColorEnum.YELLOW.value
+        self.background_color: str = ColorEnum.BLACK.value
+        # 字间距
+        self.word_space: int = 0
+        # 输入示例 h
+        self.font: str = FontEnum.HEI_TI.value
+        # 输入示例 16
+        self.text_size: int = TextSizeEnum.SIZE_16.value
 
-    @property
-    def bmp_file_name(self) -> str:
-        return self._bmp_file_name
+    def build(self) -> Text:
+        return Text(**self.__dict__)
 
-    @bmp_file_name.setter
-    def bmp_file_name(self, bmp_file_name: str) -> None:
-        self._bmp_file_name = bmp_file_name
 
-    @property
-    def png_file_name(self) -> str:
-        return self._png_file_name
+class BmpBuilder(MediaBuilder):
 
-    @png_file_name.setter
-    def png_file_name(self, png_file_name: str) -> None:
-        self._png_file_name = png_file_name
+    def __init__(self, bmp_file_name: str):
+        super().__init__()
+        self.bmp_file_name = bmp_file_name
 
-    @property
-    def jpg_file_name(self) -> str:
-        return self._jpg_file_name
+    def build(self) -> Bmp:
+        return Bmp(**self.__dict__)
 
-    @jpg_file_name.setter
-    def jpg_file_name(self, jpg_file_name: str) -> None:
-        self._jpg_file_name = jpg_file_name
 
-    @property
-    def gif_file_name(self) -> str:
-        return self._gif_file_name
+class JpgBuilder(MediaBuilder):
+    def __init__(self, jpg_file_name: str):
+        super().__init__()
+        self.jpg_file_name = jpg_file_name
 
-    @gif_file_name.setter
-    def gif_file_name(self, gif_file_name: str) -> None:
-        self._gif_file_name = gif_file_name
+    def build(self) -> Jpg:
+        return Jpg(**self.__dict__)
 
-    @property
-    def mpg_file_name(self) -> str:
-        return self._mpg_file_name
 
-    @mpg_file_name.setter
-    def mpg_file_name(self, mpg_file_name: str) -> None:
-        self._mpg_file_name = mpg_file_name
+class PngBuilder(MediaBuilder):
 
-    @property
-    def text_color(self) -> str:
-        return self._text_color
+    def __init__(self, png_file_name: str):
+        super().__init__()
+        self.png_file_name = png_file_name
 
-    @text_color.setter
-    def text_color(self, text_color: str) -> None:
-        self._text_color = text_color
+    def build(self) -> Png:
+        return Png(**self.__dict__)
 
-    @property
-    def background_color(self) -> str:
-        return self._background_color
 
-    @background_color.setter
-    def background_color(self, background_color: str) -> None:
-        self._background_color = background_color
+class GifBuilder(MediaBuilder):
 
-    @property
-    def word_space(self) -> int:
-        return self._word_space
+    def __init__(self, gif_file_name: str):
+        super().__init__()
+        self.gif_file_name = gif_file_name
 
-    @word_space.setter
-    def word_space(self, word_space: int) -> None:
-        self._word_space = word_space
+    def build(self) -> Gif:
+        return Gif(**self.__dict__)
 
-    @property
-    def font(self) -> str:
-        return self._font
 
-    @font.setter
-    def font(self, font: str) -> None:
-        self._font = font
+class MpgBuilder(MediaBuilder):
 
-    @property
-    def text_size(self) -> int:
-        return self._text_size
+    def __init__(self, Mpg_file_name: str):
+        super().__init__()
+        self.mpg_file_name = Mpg_file_name
 
-    @text_size.setter
-    def text_size(self, text_size: int) -> None:
-        size_str = str(text_size)
-        self._text_size = int(f'{size_str}{size_str}')
-
-    @property
-    def text(self) -> str:
-        return self._text
-
-    @text.setter
-    def text(self, text: str) -> None:
-        self._text = text
+    def build(self) -> Mpg:
+        return Mpg(**self.__dict__)

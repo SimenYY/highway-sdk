@@ -8,7 +8,7 @@
 :Description: 
 :Author: He YinYu
 :Link:
-:Time: 2024/8/22 9:59
+:Time: 2025/4/16 16:34
 """
 
 from pydantic import BaseModel, Field
@@ -20,11 +20,14 @@ class Item(BaseModel):
     media: Media
     duration: int = Field(..., ge=2, le=30000)
     screen_in: int
+    play_speed: int
 
-    def create_msg(self) -> str:
-        protocol = (f'{self.duration},'
-                    f'{self.screen_in},'
-                    f'0,')
-        protocol += self.media.create_msg()
-
+    def __str__(self):
+        protocol = (f"{self.duration},"
+                    f"{self.screen_in},"
+                    f"{self.play_speed},"
+                    f"{self.media}")
         return protocol
+
+
+
