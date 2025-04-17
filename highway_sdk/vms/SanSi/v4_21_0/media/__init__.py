@@ -1,17 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-:FileName: __init__.py.py
-:Project:
-:Brand:
-:Version:
-:Description: 
-:Author: He YinYu
-:Link:
-:Time: 2024/8/8 10:43
-:Department: 公路机电工程技术中心
-:Copyright: ©1993-2023 浙江中控信息产业股份有限公司
+2025年4月17日-这个media模块，是我目前认为是设计的最好的。
 """
+
 from .mediaBuilder import TextBuilder, PngBuilder, JpgBuilder, GifBuilder, MpgBuilder, BmpBuilder
 from .itemBuilder import ItemBuilder
 from .winbuilder import WinBuilder
