@@ -13,6 +13,11 @@
 from dataclasses import dataclass
 
 
+class SanSiResCode:
+    SUCCESS: bytes = b'\x30'
+    FAILURE: bytes = b'\x31'
+
+
 @dataclass(frozen=True)
 class SanSiWhat:
     # 获取当前内容
