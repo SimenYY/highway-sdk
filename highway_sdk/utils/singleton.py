@@ -14,8 +14,11 @@
 import sys
 import tempfile
 from pathlib import Path
+import logging
 
 from filelock import FileLock
+
+logger = logging.getLogger(__name__)
 
 
 class Singleton:
@@ -33,15 +36,16 @@ class Singleton:
     ):
         # 创建锁
         self.lock = FileLock(Path(tempfile.gettempdir()) / lock_name)
+        logger.info(f"lock file path: {str(Path(tempfile.gettempdir()) / lock_name)}")
 
     def __enter__(self):
         try:
             self.lock.acquire(timeout=0)
-            print("The program is started successfully")
+            logger.info("The program is started successfully")
         except TimeoutError:
-            print("The program is already running")
+            logger.info("The program is already running")
             sys.exit(0)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.lock.release()
-        print("The program is exited successfully")
+        logger.info("The program is exited successfully")
