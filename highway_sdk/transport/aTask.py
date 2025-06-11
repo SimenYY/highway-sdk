@@ -13,49 +13,50 @@
 import asyncio
 import random
 
+from dataclasses import dataclass
 from typing import Optional, Callable
 
 
+@dataclass
 class LoopingCallTask:
     """
     Task must be non-blocking
     """
+    task: Callable[[], None]
+
     jitter: float = 0.119626565582
+    is_jittery: bool = False
 
-    def __init__(self, task: Callable[[], None], is_jittery: bool = False,
-                 loop: Optional[asyncio.AbstractEventLoop] = None):
-        self._task = task
+    _task_handle: Optional[asyncio.TimerHandle] = None
+    _loop: Optional[asyncio.AbstractEventLoop] = None
 
-        self._is_jittery = is_jittery
-        self._task_handle: Optional[asyncio.TimerHandle] = None
+    @property
+    def loop(self) -> asyncio.AbstractEventLoop:
+        if self._loop is None:
+            self._loop = asyncio.get_running_loop()
+        return self._loop
 
-        if loop is None:
-            self.loop = asyncio.get_running_loop()
-        else:
-            self.loop = loop
-
-    def start(self, interval: float, soon: bool = False):
-        if self._task_handle is not None:
-            raise RuntimeError('Task is already running')
-
+    def start(self, interval: float, soon: bool = False) -> None:
         if interval < 0:
             raise ValueError('interval must be >= 0')
 
-        if self._is_jittery:
+        if self.is_jittery:
             jittery = random.normalvariate(interval, self.jitter * interval)
         else:
             jittery = interval
 
         def run_task():
-            self._task()
+            self.task()
             self._task_handle = self.loop.call_later(jittery, run_task)
 
         if soon:
-            self._task_handle = self.loop.call_soon(run_task)
+            self._task_handle = self.loop.call_later(0, run_task)
         else:
             self._task_handle = self.loop.call_later(jittery, run_task)
 
-    def stop(self):
+    def stop(self) -> None:
         if self._task_handle is not None:
             self._task_handle.cancel()
             self._task_handle = None
+        else:
+            raise RuntimeError('Task handle is None.')
