@@ -320,8 +320,8 @@ class IotMqttClientFactory(TcpClientFactory):
     mqtt_client: IotMqttClient = IotMqttClient()
 
     def startFactory(self):
-
-        self.mqtt_client.connect()
+        if not self.mqtt_client._client.is_connected(): 
+            self.mqtt_client.connect()
 
 
 """**************************************************
