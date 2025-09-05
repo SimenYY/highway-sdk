@@ -177,6 +177,7 @@ class Protocol:
         if image_search_result:
             tags.image_name = image_search_result.group(2)
 
+    
         return tags
 
     @classmethod
