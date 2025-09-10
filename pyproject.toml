@@ -1,0 +1,19 @@
+[project]
+name = "highway-sdk"
+dynamic = ["version"]
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "deprecated>=1.2.18",
+    "loguru>=0.7.3",
+    "pydantic>=2.11.7",
+    "setuptools-scm>=9.2.0",
+    "twisted>=25.5.0",
+]
+
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
