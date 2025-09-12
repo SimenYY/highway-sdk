@@ -5,11 +5,12 @@
 :Project:
 :Brand:
 :Version:
-:Description: 
+:Description:
 :Author: He YinYu
 :Link:
 :Time: 2024/8/9 11:24
 """
+
 from .baseMedia import BaseMedia
 from .enums import (
     FontEnum,
@@ -28,7 +29,6 @@ from .textPlusMedia import TextPlusMedia
 
 
 class TextPlusMediaBuilder(BaseMediaBuilder):
-
     def __init__(self):
         super().__init__()
 
@@ -44,7 +44,7 @@ class TextPlusMediaBuilder(BaseMediaBuilder):
         self._play_effect: str = PlayEffectEnum.NONE.value
         self._effect_speed: str = EffectSpeedEnum.NORMAL.value
         self._play_count: int = 1
-        self._text: str = ''
+        self._text: str = ""
         self._is_play_text_voice: str = IsPlayTextVoiceEnum.NO.value
         self._is_sync_play: str = IsSyncPlayEnum.NO.value
         self._voice_sound: str = VoiceSoundEnum.COMMON_FEMALE_VOICE.value
@@ -78,6 +78,7 @@ class TextPlusMediaBuilder(BaseMediaBuilder):
         """
         # self._text_size = int(f'{text_size}{text_size}')
         self._text_size = text_size
+
     @property
     def font_style(self) -> str:
         return self._font_style

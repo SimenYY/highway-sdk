@@ -56,7 +56,7 @@ class LoguruConfig:
 
     def setup_file(
             self,
-            log_dir: str = 'logs',
+            log_dir: str | Path = 'logs',
             *,
             rotation: str = '00:00',
             retention: str = '3 days',

@@ -5,10 +5,17 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "colorlog>=6.9.0",
     "deprecated>=1.2.18",
+    "filelock>=3.19.1",
     "loguru>=0.7.3",
+    "paho-mqtt>=2.1.0",
     "pydantic>=2.11.7",
+    "pytest>=8.4.2",
+    "redis>=6.4.0",
+    "requests>=2.32.5",
     "setuptools-scm>=9.2.0",
+    "shortuuid>=1.0.13",
     "twisted>=25.5.0",
 ]
 

@@ -30,11 +30,11 @@ class TextMediaBuilder(BaseMediaBuilder):
         # 闪烁
         self._flash: str = '0'
         # 字体风格
-        self._font_style: int = FontStyleEnum.NORMAL.value
+        self._font_style: str = FontStyleEnum.NORMAL.value
         # 字符间距
         self._world_space: int = 0
         # 字符排列方向
-        self._alignment_direction: int = AlignEnum.HORIZONTAL.value
+        self._alignment_direction: str = AlignEnum.HORIZONTAL.value
 
     def build(self) -> BaseMedia:
         return TextMedia(**self.to_dict())
