@@ -5,15 +5,16 @@
 :Project:
 :Brand:
 :Version:
-:Description: 
+:Description:
 :Author: He YinYu
 :Link:
 :Time: 2025/2/18 13:47
 """
+
 from pydantic import BaseModel, Field
 from enum import Enum
 
-from highway_sdk.vms.XianKe.v1_4_2.media.media import Media, MediaBuilder
+from .media import Media, MediaBuilder
 
 
 class ScreenInOutEnum(int, Enum):
@@ -39,17 +40,18 @@ class Item(BaseModel):
     media: Media
 
     def __str__(self):
-        protocol = (f"{self.duration},"
-                    f"{self.screen_in},"
-                    f"{self.play_effect},"
-                    f"{self.screen_out},"
-                    f"{self.play_speed},"
-                    f"{self.media}")
+        protocol = (
+            f"{self.duration},"
+            f"{self.screen_in},"
+            f"{self.play_effect},"
+            f"{self.screen_out},"
+            f"{self.play_speed},"
+            f"{self.media}"
+        )
         return protocol
 
 
 class ItemBuilder:
-
     def __init__(self):
         self.media: Media = MediaBuilder().build()
 
@@ -60,9 +62,5 @@ class ItemBuilder:
         self.play_speed: int = 1
 
     def build(self) -> Item:
-        """
-        构造函数
-
-        :return:
-        """
+        
         return Item(**self.__dict__)

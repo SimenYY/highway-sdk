@@ -5,22 +5,22 @@
 :Project:
 :Brand:
 :Version:
-:Description: 
+:Description:
 :Author: He YinYu
 :Link:
 :Time: 2025/2/18 14:20
 """
+
 from pydantic import BaseModel, Field
 
 from enum import Enum
 
 
 class FontEnum(str, Enum):
-    HEI_TI = 'h'
-    KAI_TI = 'k'
-    SONG_TI = 's'
-    FANG_SONG = 'f'
-
+    HEI_TI = "h"
+    KAI_TI = "k"
+    SONG_TI = "s"
+    FANG_SONG = "f"
 
 class TextSizeEnum(int, Enum):
     SIZE_16 = 16
@@ -31,10 +31,10 @@ class TextSizeEnum(int, Enum):
 
 
 class ColorEnum(str, Enum):
-    RED = '255000000000'
-    GREEN = '000255000000'
-    YELLOW = '255255000000'
-    BLACK = '000000000000'
+    RED = "255000000000"
+    GREEN = "000255000000"
+    YELLOW = "255255000000"
+    BLACK = "000000000000"
 
 
 class Media(BaseModel):
@@ -48,10 +48,12 @@ class Media(BaseModel):
     bmg_file_name: str
 
     def __str__(self):
-        protocol = (f"\\C{self.x:03d}{self.y:03d}"
-                    f"\\F{self.font}{self.text_size}"
-                    f"\\T{self.text_color}"
-                    f"\\B{self.background_color}")
+        protocol = (
+            f"\\C{self.x:03d}{self.y:03d}"
+            f"\\F{self.font}{self.text_size}"
+            f"\\T{self.text_color}"
+            f"\\B{self.background_color}"
+        )
 
         if self.text:
             protocol += f"\\U{self.text}"
@@ -62,7 +64,6 @@ class Media(BaseModel):
 
 
 class MediaBuilder:
-
     def __init__(self):
         self.x: int = 0
         self.y: int = 0
@@ -70,8 +71,8 @@ class MediaBuilder:
         self.text_size: int = TextSizeEnum.SIZE_16.value
         self.text_color: str = ColorEnum.YELLOW.value
         self.background_color: str = ColorEnum.BLACK.value
-        self.text: str = ''
-        self.bmg_file_name: str = ''
+        self.text: str = ""
+        self.bmg_file_name: str = ""
 
     def build(self) -> Media:
         """
