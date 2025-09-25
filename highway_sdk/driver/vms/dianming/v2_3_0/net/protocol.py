@@ -10,7 +10,7 @@
 :Link:
 :Time: 2024/8/20 13:57
 """
-from highway_sdk.core.exceptions import ProtocolParserError, CrcError
+from highway_sdk.core.exceptions import ProtocolParserError, CrcValidationError
 from .utils.structs import DmPacket
 from .utils.constants import DmWhat
 
@@ -53,7 +53,7 @@ class Protocol:
             # 标识符校验
             if packet.what != what:
                 raise ProtocolParserError(f'What error')
-        except CrcError as e:
+        except CrcValidationError as e:
             raise ProtocolParserError(e.message)
         else:
             return packet.data

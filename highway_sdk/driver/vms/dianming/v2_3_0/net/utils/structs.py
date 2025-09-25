@@ -13,7 +13,7 @@
 from dataclasses import dataclass
 from .escape import DmEscape
 from highway_sdk.vms.crc import CrcUtils
-from highway_sdk.core.exceptions import CrcError
+from highway_sdk.core.exceptions import CrcValidationError
 
 
 @dataclass
@@ -74,11 +74,11 @@ class DmPacket:
 
         crc_16 = CrcUtils.DianMing_crc_16_table(dst_src_what_and_data)
         if crc_16.get_bytes() != crc:
-            raise CrcError('crc check failed')
+            raise CrcValidationError('crc check failed')
         elif start != cls.start:
-            raise CrcError('start error')
+            raise CrcValidationError('start error')
         elif end != cls.end:
-            raise CrcError('end error')
+            raise CrcValidationError('end error')
         else:
             dst_addr = dst_src_what_and_data[:2]
             src_addr = dst_src_what_and_data[2:4]

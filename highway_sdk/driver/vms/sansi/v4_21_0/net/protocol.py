@@ -16,7 +16,7 @@ from typing import Union
 from deprecated import deprecated
 
 from highway_sdk.core import exceptions
-from highway_sdk.core.exceptions import CrcError, ProtocolParserError
+from highway_sdk.core.exceptions import CrcValidationError, ProtocolParserError
 from highway_sdk.vms.SanSi.v4_21_0.internet.constants import SanSiWhat
 from highway_sdk.vms.SanSi.v4_21_0.internet.structs import SanSiPacketReq, SanSiPacketRsp
 from highway_sdk.vms.tags import NowBrightnessTags
@@ -114,7 +114,7 @@ class Protocol:
                 raise ProtocolParserError('Length is less than the minimum length')
             # crc 校验
             packet = SanSiPacketRsp.unpack(recv_buffer)
-        except CrcError as e:
+        except CrcValidationError as e:
             raise ProtocolParserError(e.message)
         else:
             return packet.data
@@ -365,7 +365,7 @@ class ProtocolParser:
                                                  f'{self.config.min_length}: {self.raw_data.hex()}')
         try:
             p = SanSiPacketRsp.unpack(self.raw_data)
-        except exceptions.CrcError as e:
+        except exceptions.CrcValidationError as e:
             raise exceptions.ProtocolParserError(f'Crc error: {e}') from e
         except Exception as e:
             raise exceptions.ProtocolParserError(f'unpack error: {e}') from e

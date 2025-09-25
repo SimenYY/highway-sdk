@@ -19,7 +19,7 @@ from highway_sdk.core.exceptions import (HostResponseTimeoutError,
                                          InvalidSocketError)
 from .protocol import Protocol, ProtocolMessage, ProtocolParser
 from highway_sdk.vms.constants import DeviceReturnCode
-from highway_sdk.core.log import logger
+from highway_sdk.core._log import logger
 from .constants import SanSiResCode
 
 

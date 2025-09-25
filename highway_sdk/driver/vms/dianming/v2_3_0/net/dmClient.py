@@ -11,8 +11,8 @@
 :Time: 2024/8/20 13:54
 """
 
-from highway_sdk.core.log import logger
-from highway_sdk.core.client import Client
+from highway_sdk.core._log import logger
+from highway_sdk.deprecated.client import Client
 from highway_sdk.core.exceptions import ProtocolParserError
 from .protocol import Protocol
 from .utils.constants import DmReturnCode

@@ -13,7 +13,7 @@
 from dataclasses import dataclass
 from highway_sdk.vms.crc import CrcUtils
 from highway_sdk.vms.SanSi.v4_21_0.internet.escape import SanSiEscape
-from highway_sdk.core.exceptions import CrcError
+from highway_sdk.core.exceptions import CrcValidationError
 
 
 @dataclass
@@ -47,11 +47,11 @@ class SanSiPacketRsp:
 
         crc_16 = CrcUtils.SanSi_crc_16_table(address + data)
         if crc_16.get_bytes() != crc:
-            raise CrcError('crc check failed')
+            raise CrcValidationError('crc check failed')
         elif start != cls.start:
-            raise CrcError('start error')
+            raise CrcValidationError('start error')
         elif end != cls.end:
-            raise CrcError('end error')
+            raise CrcValidationError('end error')
         else:
             return cls(start=start,
                        address=address,
