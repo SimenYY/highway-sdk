@@ -15,7 +15,7 @@ import time
 from typing import Any
 
 import redis
-from highway_sdk.core.log import logger
+from highway_sdk.core._log import logger
 from contextlib import suppress
 
 redis_client = redis.Redis()

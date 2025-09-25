@@ -53,7 +53,7 @@ class ScreenInOutEnum(IntEnum):
     MOVE_RIGHT = 9
 
 
-class Esc(StrEnum):
+class EscEnum(StrEnum):
     """转义字符
 
     Args:
@@ -87,16 +87,16 @@ class _Media(BaseModel):
     video_file_name: str
     def __str__(self):
         protocol = (
-            f"{Esc.XY.value}{self.x:03d}{self.y:03d}"
-            f"{Esc.FONT.value}{self.font.value}{self.text_size}"
-            f"{Esc.FONT_COLOR.value}{self.text_color.value}"
-            f"{Esc.BACKGROUND_COLOR.value}{self.background_color.value}"
+            f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
+            f"{EscEnum.FONT.value}{self.font.value}{self.text_size}"
+            f"{EscEnum.FONT_COLOR.value}{self.text_color.value}"
+            f"{EscEnum.BACKGROUND_COLOR.value}{self.background_color.value}"
         )
 
         if self.text:
-            protocol += f"{Esc.TEXT.value}{self.text}"
+            protocol += f"{EscEnum.TEXT.value}{self.text}"
         else:
-            protocol += f"{Esc.IMAGE.value}{self.bmg_file_name.rjust(3, '0')}"
+            protocol += f"{EscEnum.IMAGE.value}{self.bmg_file_name.rjust(3, '0')}"
 
         return protocol
 
@@ -305,7 +305,7 @@ class ItemParser(BaseParser):
             text_res = cls.TEXT_PATTERN.search(media)
             if text_res:
                 text = text_res.group(1)
-                text = text.replace(Esc.LF.value, "")
+                text = text.replace(EscEnum.LF.value, "")
                 media_builder.text = text
             else:
                 # 只有在无文本时才检查图片/GIF/视频（互斥）
