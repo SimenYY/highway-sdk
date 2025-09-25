@@ -63,9 +63,9 @@ class Text(Media):
     def __str__(self):
         protocol = (
             f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
-            f"{EscEnum.FONT.value}{self.font}{self.text_size}"
-            f"{EscEnum.FONT_COLOR.value}{self.text_color}"
-            f"{EscEnum.BACKGROUND_COLOR.value}{self.background_color}"
+            f"{EscEnum.FONT.value}{self.font.value}{self.text_size.value}"
+            f"{EscEnum.FONT_COLOR.value}{self.text_color.value}"
+            f"{EscEnum.BACKGROUND_COLOR.value}{self.background_color.value}"
             f"{EscEnum.WORD_SPACE.value}{self.word_space:02d}"
             f"{self.text}"
         )
@@ -276,20 +276,20 @@ class MultipleWinPlay(Play):
     win_list: List[Win]
 
     def __str__(self):
-        line_break = "\r\n"
+        CRLF = "\r\n"
         protocol = "[playlist]"
-        protocol += line_break
+        protocol += CRLF
         protocol += f"nwindows={len(self.win_list)}"
-        protocol += line_break
+        protocol += CRLF
         for i, win in enumerate(self.win_list):
             protocol += f"windows{i}_x={win.x}"
-            protocol += line_break
+            protocol += CRLF
             protocol += f"windows{i}_y={win.y}"
-            protocol += line_break
+            protocol += CRLF
             protocol += f"windows{i}_w={win.w}"
-            protocol += line_break
+            protocol += CRLF
             protocol += f"windows{i}_h={win.h}"
-            protocol += line_break
+            protocol += CRLF
             protocol += f"{win}"
 
         return protocol
@@ -303,9 +303,9 @@ class SingleWinPlay(Play):
     win: Win
 
     def __str__(self):
-        line_break = "\r\n"
+        CRLF = "\r\n"
         protocol = "[playlist]"
-        protocol += line_break
+        protocol += CRLF
         protocol += f"{self.win}"
 
         return protocol
