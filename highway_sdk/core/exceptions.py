@@ -5,68 +5,50 @@
 :Project:
 :Brand:
 :Version:
-:Description: 
+:Description:
 :Author: He YinYu
 :Link:
 :Time: 2024/8/8 11:22
 """
 
 
-class ValidationError(Exception):
-    """
-    数据校验引发的异常信息
-    """
+class HighwaySDKException(Exception):
+    """HighwaySDK异常基类"""
 
-    def __init__(self, message: str):
-        super().__init__(message)
-        self.message = message
-
-
-class ResponseError(Exception):
-    """
-    响应异常
-    """
-
-    def __init__(self, message: str):
-        super().__init__(message)
-        self.message = message
+#-----------------------------------------------------------------------------
+# 校验异常
+#-----------------------------------------------------------------------------
+class ValidationError(HighwaySDKException, ValueError):
+    """数据校验引发的异常信息"""
 
 
-class CrcError(Exception):
-    """
-    校验异常
-    """
-
-    def __init__(self, message: str):
-        super().__init__(message)
-        self.message = message
+class CrcValidationError(ValidationError):
+    """crc校验异常"""
 
 
-class ProtocolParserError(Exception):
-    """
-    协议解析异常
-    """
+#-----------------------------------------------------------------------------
+# 主机响应异常
+#-----------------------------------------------------------------------------
 
-    def __init__(self, message: str):
-        super().__init__(message)
-        self.message = message
+class ResponseError(HighwaySDKException, OSError):
+    """响应异常"""
 
+class HostResponseTimeoutError(ResponseError):
+    """主机响应超时"""
 
-class HostResponseTimeoutError(Exception):
-    """
-    主机响应超时
-    """
-
-    def __init__(self, message: str):
-        super().__init__(message)
-        self.message = message
+class HostResponseIncompleteError(ResponseError):
+    """主机响应不完整"""
 
 
-class InvalidSocketError(Exception):
-    """
-    无效的socket
-    """
+#-----------------------------------------------------------------------------
+# 协议解析异常
+#-----------------------------------------------------------------------------    
+class ProtocolParserError(HighwaySDKException, ValueError):
+    """协议解析异常"""
 
-    def __init__(self, message: str):
-        super().__init__(message)
-        self.message = message
+#-----------------------------------------------------------------------------
+# 套接字错误
+#-----------------------------------------------------------------------------
+
+class InvalidSocketError(HighwaySDKException):
+    """无效的socket"""
