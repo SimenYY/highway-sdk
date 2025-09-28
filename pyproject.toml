@@ -1,29 +1,56 @@
-[project]
+[tool.poetry]
 name = "highway-sdk"
-dynamic = ["version"]
-description = "Add your description here"
+version = "0.0.0"
+description = "Python SDK for Highway commonly used mechanical and electrical device and intelligent device."
+authors = ["AdzLovelace <heyinyu.sensi@foxmail.com>"]
+license = "GPL-3.0"
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "colorlog>=6.9.0",
-    "deprecated>=1.2.18",
-    "filelock>=3.19.1",
-    "loguru>=0.7.3",
-    "paho-mqtt>=2.1.0",
-    "pydantic>=2.11.7",
-    "pytest>=8.4.2",
-    "pytest-asyncio>=1.2.0",
-    "pytest-cov>=7.0.0",
-    "pytest-html>=4.1.1",
-    "redis>=6.4.0",
-    "requests>=2.32.5",
-    "setuptools-scm>=9.2.0",
-    "shortuuid>=1.0.13",
-    "twisted>=25.5.0",
-]
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+# 标准 PEP 440 开发版本格式
+format = "{base}.dev{distance}+{commit}"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+loguru = "^0.7.2"
+pydantic = "^2.8.2"
+paho-mqtt = "^2.1.0"
+shortuuid = "^1.0.13"
+twisted = "^24.7.0"
+click = "^8.1.7"
+requests = "^2.32.3"
+colorlog = "^6.9.0"
+flask = "^3.1.0"
+python-json-logger = "^3.2.1"
+elasticsearch = "^8.17.0"
+deprecated = "^1.2.15"
+sphinx-rtd-theme = "^3.0.2"
+furo = "^2024.8.6"
+sphinx-autobuild = "^2024.10.3"
+sphinx-copybutton = "^0.5.2"
+sphinx-tabs = "^3.4.7"
+pillow = "^11.1.0"
+redis = "^5.2.1"
+filelock = "^3.18.0"
+
+
+[[tool.poetry.source]]
+name = "tsinghua"
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
+priority = "supplemental"
+
+[[tool.poetry.source]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+priority = "supplemental"
+
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
 
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm>=8"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools_scm]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
