@@ -9,8 +9,7 @@ readme = "README.md"
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
-# 标准 PEP 440 开发版本格式
-format = "{base}.dev{distance}+{commit}"
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
