@@ -110,7 +110,7 @@ class MediaBuilder:
         self.text_color: str = ColorEnum.YELLOW.value
         self.background_color: str = ColorEnum.BLACK.value
         self.text: str = ""
-        self.bmg_file_name: str = ""
+        self.bmp_file_name: str = ""
         self.gif_file_name: str = ""
         self.video_file_name: str = ""
     def build(self) -> _Media:
@@ -311,7 +311,7 @@ class ItemParser(BaseParser):
                 # 只有在无文本时才检查图片/GIF/视频（互斥）
                 res = cls.IMAGE_PATTERN.search(media)
                 if res:
-                    media_builder.bmg_file_name = res.group(1)
+                    media_builder.bmp_file_name = res.group(1)
                 else:
                     res = cls.GIF_PATTERN.search(media)
                     if res:
