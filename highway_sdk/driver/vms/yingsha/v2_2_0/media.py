@@ -46,7 +46,7 @@ class FontSizeEnum(IntEnum):
 class EscEnum(StrEnum):
     XY = "\\C"  # XY坐标
     BMP = "\\B"  # BMP图片
-    FONT = "\\F"  # 字体
+    FONT = "\\f"  # 字体
     TEXT_COLOR = "\\c"  # 文本颜色
     WORD_SPACE = "\\S"
     LF = "\\n"
@@ -80,9 +80,10 @@ class _TextMedia(_BaseMedia):
 
     def __str__(self) -> str:
         media = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
-        media += f"{EscEnum.FONT.value}{self.font.value}{self.font_size.value}"
+        media += f"{EscEnum.FONT.value}{self.font.value}{self.font_size.value}{self.font_size.value}"
         media += f"{EscEnum.TEXT_COLOR.value}{self.text_color}"
-        media += f"{EscEnum.WORD_SPACE.value}{self.word_space:02d}"
+        if self.word_space > 0: # 默认为0
+            media += f"{EscEnum.WORD_SPACE.value}{self.word_space:02d}"
         media += self.text
 
         return media
@@ -203,7 +204,7 @@ class PlayBuilder:
         return self
 
     def build(self) -> _Play:
-        play = _Play(**self.__dict__)
+        play = _Play()
         play._item_list = self._item_list
         return play
 
