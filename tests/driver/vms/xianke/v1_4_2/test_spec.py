@@ -1,4 +1,3 @@
-from math import e
 import textwrap
 from highway_sdk.driver.vms.xianke.v1_4_2.spec import XianKeMsg
 
