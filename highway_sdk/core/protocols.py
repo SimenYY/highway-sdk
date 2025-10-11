@@ -31,20 +31,20 @@ class TcpClientProtocol(asyncio.Protocol):
         self.log: PrefixLoggerAdapter = PrefixLoggerAdapter(logger)
 
     @final
-    def connection_made(self, transport: asyncio.BaseTransport) -> None:
+    def connection_made(self, transport: asyncio.Transport) -> None:
         """连接建立时回调
 
         Args:
-            transport (asyncio.BaseTransport): 传输对象
+            transport (asyncio.Transport): 传输对象
 
         """
 
-        self._transport = cast(asyncio.Transport, transport)
+        self._transport = transport
         self.log = PrefixLoggerAdapter(
             logger, prefix=str(list(transport.get_extra_info("peername")))
         )
         self.log.info("Connection made")
-        return self.on_connection_made()
+        return self.on_connected()
 
     @final
     def data_received(self, data: bytes) -> None:
@@ -83,7 +83,7 @@ class TcpClientProtocol(asyncio.Protocol):
         """
         return self._transport is not None and not self._transport.is_closing()
 
-    def transmit_data(self, data: bytes) -> None:
+    def send(self, data: bytes) -> None:
         """发送数据
 
         Args:
@@ -99,18 +99,26 @@ class TcpClientProtocol(asyncio.Protocol):
         else:
             raise ConnectionError("Transport can't be used")
 
-    def on_connection_made(self) -> None:
-        """连接建立时回调，用户调用"""
+    def on_connected(self) -> None:
+        """连接建立后的钩子方法"""
         pass
 
     def on_data_received(self, data: bytes) -> None:
-        """数据接收时回调，用户调用
+        """数据接收时候的钩子方法
 
         Args:
             data (bytes): _description_
         """
         pass
 
-    def on_connection_lost(self) -> None:
-        """连接丢失时回调，用户调用"""
+    def on_disconnected(self) -> None:
+        """连接断开后的钩子方法"""
         pass
+
+
+class TcpSyncClientProtocol(TcpClientProtocol):
+    """TCP同步客户端协议"""
+    
+    
+    
+    
