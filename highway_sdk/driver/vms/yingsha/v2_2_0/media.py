@@ -48,8 +48,8 @@ class EscEnum(StrEnum):
     BMP = "\\B"  # BMP图片
     FONT = "\\f"  # 字体
     TEXT_COLOR = "\\c"  # 文本颜色
-    WORD_SPACE = "\\S"
-    LF = "\\n"
+    WORD_SPACE = "\\S" # 字间距
+    LF = "\\n" # 换行符
 
 
 # ==============================================================================
@@ -82,7 +82,7 @@ class _TextMedia(_BaseMedia):
         media = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
         media += f"{EscEnum.FONT.value}{self.font.value}{self.font_size.value}{self.font_size.value}"
         media += f"{EscEnum.TEXT_COLOR.value}{self.text_color}"
-        if self.word_space > 0: # 默认为0
+        if self.word_space > 0:  # 默认为0
             media += f"{EscEnum.WORD_SPACE.value}{self.word_space:02d}"
         media += self.text
 
@@ -108,6 +108,7 @@ class _Item(BaseModel):
         r"""
             当图形与文字混合显示时，应该在str的开始就定义图形文件的显示起点和文件名，
             如\C000000\B001，即使显示位置是(0, 0)，\C转移序列也不能省略。
+            
         Returns:
             str: _description_
         """
@@ -220,6 +221,14 @@ class BaseParser:
 
 
 class PlayParser(BaseParser):
+    """播放表解析器
+
+    Args:
+        BaseParser (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     @classmethod
     def parse(cls, data: str) -> PlayBuilder:
         play_parser = configparser.ConfigParser()
