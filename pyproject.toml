@@ -33,6 +33,7 @@ sphinx-tabs = "^3.4.7"
 pillow = "^11.1.0"
 redis = "^5.2.1"
 filelock = "^3.18.0"
+httpx = "^0.28.1"
 
 
 [[tool.poetry.source]]
