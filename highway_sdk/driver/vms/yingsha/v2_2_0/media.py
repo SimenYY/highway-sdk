@@ -254,7 +254,7 @@ class ItemParser(BaseParser):
     """
 
     XY_PATTERN = re.compile(r"\\C[0-9]{6}")
-    FONT_PATTERN = re.compile(r"\\F([a-zA-Z])(\d{2})(\d{2})")
+    FONT_PATTERN = re.compile(r"\\f([a-zA-Z])(\d{2})(\d{2})")
     COLOR_PATTERN = re.compile(r"\\c(\d{12})")
     BMP_PATTERN = re.compile(r"\\B(\d{3})")
     WORD_SPACE_PATTERN = re.compile(r"\\S(\d{2})")
