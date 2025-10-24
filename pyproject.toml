@@ -34,6 +34,10 @@ pillow = "^11.1.0"
 redis = "^5.2.1"
 filelock = "^3.18.0"
 httpx = "^0.28.1"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.44"}
+aioodbc = "^0.5.0"
+pyodb = "^0.1.5"
+pydantic-settings = "^2.11.0"
 
 
 [[tool.poetry.source]]
