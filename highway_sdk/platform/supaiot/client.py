@@ -4,7 +4,7 @@ import httpx
 from .models import DeviceListRequest, DeviceRealtimeDataListRequest, SupaiotResponse
 
 
-class SupaiotClient:
+class SupaiotAsyncClient:
     """物联智控API 客户端"""
 
     def __init__(
