@@ -1,3 +1,4 @@
+from typing import List
 from bidict import bidict
 from .client import SupaiotAsyncClient
 
@@ -6,7 +7,7 @@ class SupaiotBusinessService:
     """物联智控业务服务类
     """
     def __init__(self, client: SupaiotAsyncClient) -> None:
-        self.client = client
+        self._client = client
 
     async def get_code_ip_bidict(self, class_id: str) -> bidict:
         """获取物联智控中设备编码与IP的双向映射表
@@ -20,9 +21,8 @@ class SupaiotBusinessService:
         """
         code_ip_dict = {}
         page_num, page_size = 1, 20
-        loop = True
-        while loop:
-            res = await self.client.list_devices(page_num, page_size, class_id=class_id)
+        while True:
+            res = await self._client.list_devices(page_num, page_size, class_id=class_id)
             if isinstance(res.data, dict):
                 device_list = res.data.get("data")
 
@@ -38,5 +38,6 @@ class SupaiotBusinessService:
                         code_ip_dict[ID] = ip
 
                 page_num += 1
-
+            else:
+                break
         return bidict(code_ip_dict)
