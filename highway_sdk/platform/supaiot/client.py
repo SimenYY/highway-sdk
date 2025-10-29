@@ -195,7 +195,21 @@ class SupaiotAsyncClient:
             "/supaiot/api/v2/device/list",
             json=payload.model_dump(by_alias=True, exclude_none=True),
         )
-        
+    
+    async def get_class(self, class_id: str) -> SupaiotResponse:
+        """查询指定设备原型详情
+
+        Args:
+            class_id (str): 原型ID
+
+        Returns:
+            SupaiotResponse: _description_
+        """ 
+        return await self._api_request(
+            "GET",
+            "/supaiot/api/v2/class",
+            params={"classID": class_id},
+        )
     async def list_device_realtime_data(
         self, id_: list = []
     ) -> SupaiotResponse:
@@ -224,3 +238,5 @@ class SupaiotAsyncClient:
             SupaiotResponse: _description_
         """
         return await self._api_request("GET", "/supaiot/api/v2/data/real/device", params={"ID": id_})
+    
+    
