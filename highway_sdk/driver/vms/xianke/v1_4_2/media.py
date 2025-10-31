@@ -88,11 +88,11 @@ class _Media(BaseModel):
     def __str__(self):
         protocol = (
             f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
-            f"{EscEnum.FONT.value}{self.font.value}{self.text_size}" # todo 这个文本大小格式是否有问题
+            f"{EscEnum.FONT.value}{self.font.value}{self.text_size}" # TODO 这个文本大小格式是否有问题
             f"{EscEnum.FONT_COLOR.value}{self.text_color.value}"
             f"{EscEnum.BACKGROUND_COLOR.value}{self.background_color.value}"
         )
-        # todo: 修改判断文本后再添加字体及颜色
+        # TODO: 修改判断文本后再添加字体及颜色
         if self.text:
             protocol += f"{EscEnum.TEXT.value}{self.text}"
         else:
