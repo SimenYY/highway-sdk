@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from typing import final, cast
+from typing import final
 from highway_sdk.core.log import PrefixLoggerAdapter
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,11 @@ __all__ = ["TcpClientProtocol"]
 class TcpClientProtocol(asyncio.Protocol):
     """TCP 客户端协议类
 
-    核心功能包括：自定义协议开发、自动重连机制、简单定时任务（使用call_later)
+    核心功能包括：
+        1. 自定义协议开发、
+        2. 自动重连机制、
+        3. 简单定时任务（使用call_later)
+        4. 完善的日志
 
     Attributes:
         _on_lost_fut (asyncio.Future): 连接丢失的 Future 对象
@@ -30,7 +34,6 @@ class TcpClientProtocol(asyncio.Protocol):
         self._loop = loop or asyncio.get_running_loop()
         self.log: PrefixLoggerAdapter = PrefixLoggerAdapter(logger)
 
-    @final
     def connection_made(self, transport: asyncio.Transport) -> None:
         """连接建立时回调
 
@@ -46,7 +49,6 @@ class TcpClientProtocol(asyncio.Protocol):
         self.log.info("Connection made")
         return self.on_connected()
 
-    @final
     def data_received(self, data: bytes) -> None:
         """数据接收时回调
 
@@ -54,16 +56,21 @@ class TcpClientProtocol(asyncio.Protocol):
             data (bytes): 接收到的数据
         """
         self.log.debug(f"RXD << {data.hex(' ')}")
+
         return self.on_data_received(data)
 
-    @final
     def connection_lost(self, exc: Exception | None) -> None:
         """连接丢失时回调
+
+        exc为None的三种情况：
+            1. 主动断开，例如transport.close()，
+            2. 对端关闭端口，
+            3。对端主动断开客户端
 
         Args:
             exc (Exception | None): 如果时None，则表示主动断开，例如transport.close()，否则含有异常信息
         """
-        # exc为None的三种情况：1. 主动断开，例如transport.close()，2. 对端关闭端口，3对端主动断开客户端
+
         self.log.error(f"Connection lost: {exc}")
 
         on_lost_fut = self._on_lost_fut
@@ -72,7 +79,7 @@ class TcpClientProtocol(asyncio.Protocol):
             self._on_lost_fut = None
 
         self._transport = None
-        return self.on_connection_lost()
+        return self.on_disconnected()
 
     @property
     def is_connected(self) -> bool:
@@ -92,12 +99,12 @@ class TcpClientProtocol(asyncio.Protocol):
         Raises:
             ConnectionError: transpost 不存在或者正在关闭
         """
-        if self.is_connected:
-            assert self._transport is not None
-            self._transport.write(data)
-            self.log.debug(f"TXD >> {data.hex(' ')}")
-        else:
+        if not self.is_connected:
             raise ConnectionError("Transport can't be used")
+
+        assert self._transport is not None
+        self._transport.write(data)
+        self.log.debug(f"TXD >> {data.hex(' ')}")
 
     def on_connected(self) -> None:
         """连接建立后的钩子方法"""
@@ -116,9 +123,75 @@ class TcpClientProtocol(asyncio.Protocol):
         pass
 
 
-class TcpSyncClientProtocol(TcpClientProtocol):
-    """TCP同步客户端协议"""
-    
-    
-    
-    
+class TcpClientSequentialProtocol(TcpClientProtocol):
+    """顺序请求响应协议
+
+    基于发送顺序匹配响应的同步机制：
+    1. 使用队列维护发送命令的顺序
+    2. 使用相同顺序的Future队列等待对应的响应
+    3. 按照先进先出(FIFO)原则匹配响应与请求
+    4. 实现超时机制保证可靠性
+
+    Args:
+        TcpClientProtocol (_type_): _description_
+    """
+
+    def __init__(
+        self,
+        on_lost_fut: asyncio.Future | None = None,
+        loop: asyncio.AbstractEventLoop | None = None,
+    ) -> None:
+        super().__init__(on_lost_fut, loop)
+
+        self._resp_queue = asyncio.Queue()  # 等待响应队列
+        self._lock = asyncio.Lock()
+        self._buffer = bytearray()
+
+    async def request(self, name: str, payload: bytes, timeout: float = 3.0):
+        """请求并等待响应
+
+        Args:
+            name (str): 请求名
+            payload (bytes): 请求负载
+            timeout (float, optional): 请求超时时间. Defaults to 3.0.
+
+        Raises:
+            ConnectionError: _description_
+
+        Returns:
+            _type_: _description_
+        """
+        if not self.is_connected:
+            raise ConnectionError("Transport can't be used")
+
+        async with self._lock:
+            resp_fut = self._loop.create_future()
+            await self._resp_queue.put(resp_fut)
+
+            try:
+                self.send(payload)
+
+                return await asyncio.wait_for(
+                    resp_fut, timeout
+                )  # 超时自动取消传入的Future
+            except asyncio.TimeoutError:
+                self.log.error(f"[REQ] {name}: timeout(>{timeout}s)")
+            finally:
+                if not resp_fut.done():
+                    resp_fut.cancel()
+
+    def data_received(self, data: bytes) -> None:
+        """数据接收时回调
+
+        Args:
+            data (bytes): 接收到的数据
+        """
+        self.log.debug(f"RXD << {data.hex(' ')}")
+        self._buffer.extend(data)
+
+        if not self._resp_queue.empty():
+            resp_future = self._resp_queue.get_nowait()
+            if not resp_future.done():
+                resp_future.set_result(data)
+
+        return self.on_data_received(data)
