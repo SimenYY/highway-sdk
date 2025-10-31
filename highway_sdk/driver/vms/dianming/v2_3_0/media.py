@@ -144,8 +144,8 @@ class TextBuilder(MediaBuilder):
         # 输入示例 16
         self.text_size: int = TextSizeEnum.SIZE_16.value
 
-    def build(self) -> _Media:
-        return _Media(**self.__dict__)
+    def build(self) -> _Text:
+        return _Text(**self.__dict__)
 
 
 class BmpBuilder(MediaBuilder):
@@ -188,7 +188,7 @@ class GifBuilder(MediaBuilder):
 # 播放项类
 # ==============================================================================
 class _Item(BaseModel):
-    media: _Media
+    media_list: list[_Media]
     duration: int = Field(..., ge=2, le=30000)
     screen_in: int = Field(..., ge=0, le=30)
     play_effect: int = Field(..., ge=0, le=15)
@@ -196,14 +196,18 @@ class _Item(BaseModel):
     play_speed: int = Field(..., ge=0, le=49)
 
     def __str__(self) -> str:
-        protocol = f"{self.duration},{self.screen_in},{self.play_effect},{self.screen_out},{self.play_speed},{self.media}"
+        if not self.media_list:
+            raise ValueError("media is empty")
 
+        protocol = f"{self.duration},{self.screen_in},{self.play_effect},{self.screen_out},{self.play_speed},"
+        for media in self.media_list:
+            protocol += str(media)
         return protocol
 
 
 class ItemBuilder:
-    def __init__(self, media: _Media):
-        self.media = media
+    def __init__(self):
+        self.media_list: list[_Media] = []
         # 单位是十分之一s
         self.duration: int = 100
         self.screen_in: int = 0
@@ -211,6 +215,10 @@ class ItemBuilder:
         self.screen_out: int = 0
         self.play_speed: int = 0
 
+    def add_media_builder(self, builder: MediaBuilder) -> Self:
+        self.media_list.append(builder.build())
+        return self
+    
     def build(self) -> _Item:
         return _Item(**self.__dict__)
 
@@ -219,17 +227,17 @@ class ItemBuilder:
 # 播放表类
 # ==============================================================================
 class _Play(BaseModel):
-    _item_list: list[_Item]
+    item_list: list[_Item]
 
     def __str__(self) -> str:
-        if not self._item_list:
+        if not self.item_list:
             raise ValueError("item_list is empty")
 
         protocol = "[PLAYLIST]"
         protocol += CRLF
-        protocol += f"ITEM_NO={len(self._item_list):03d}"
+        protocol += f"ITEM_NO={len(self.item_list):03d}"
         protocol += CRLF
-        for i, item in enumerate(self._item_list):
+        for i, item in enumerate(self.item_list):
             protocol += f"ITEM{i:03d}={item}"
             protocol += CRLF
         return protocol
@@ -237,16 +245,14 @@ class _Play(BaseModel):
 
 class PlayBuilder:
     def __init__(self):
-        self._item_list: list[_Item] = []
+        self.item_list: list[_Item] = []
 
     def add_item_builder(self, builder: ItemBuilder) -> Self:
-        self._item_list.append(builder.build())
+        self.item_list.append(builder.build())
         return self
 
     def build(self) -> _Play:
-        play = _Play(**self.__dict__)
-        play._item_list = self._item_list
-        return play
+        return _Play(**self.__dict__)
 
 
 # ==============================================================================
@@ -292,28 +298,23 @@ class ItemParser(BaseParser):
     def parse(cls, data: str) -> ItemBuilder:
         fields = data.split(",")
 
+        item_builder = ItemBuilder()
+        item_builder.duration = int(fields[0])
+        item_builder.screen_in = int(fields[1])
+        item_builder.play_effect = int(fields[2])
+        item_builder.screen_out = int(fields[3])
+        item_builder.play_speed = int(fields[4])
+        
         # 一般位置转义都在最前面
         media_list = [
             EscEnum.XY.value + part
             for part in fields[5].split(EscEnum.XY.value)
             if part
         ]
+        for media in media_list:
+            media_builder = cls.parse_media(media)
+            item_builder.add_media_builder(media_builder)
 
-        match len(media_list):
-            case 0:
-                raise ValueError("item is empty")
-            case 1:
-                media_builder = cls.parse_media(data)
-            case _:
-                # todo 混合媒体的情况
-                pass
-
-        item_builder = ItemBuilder(media_builder.build())
-        item_builder.duration = int(fields[0])
-        item_builder.screen_in = int(fields[1])
-        item_builder.play_effect = int(fields[2])
-        item_builder.screen_out = int(fields[3])
-        item_builder.play_speed = int(fields[4])
 
         return item_builder
 
@@ -333,14 +334,23 @@ class ItemParser(BaseParser):
             raise ValueError("unknown media type")
 
 
-class TextParser(BaseParser):
-    """文本解析器
+class MediaParser(BaseParser):
+    """媒体解析器
 
     Args:
         BaseParser (_type_): _description_
     """
 
     XY_PATTERN = re.compile(r"\\C(\d{3})(\d{3})")
+
+
+class TextParser(MediaParser):
+    """文本解析器
+
+    Args:
+        BaseParser (_type_): _description_
+    """
+
     COLOR_PATTERN = re.compile(r"\\T(\d{12})")
     BG_COLOR_PATTERN = re.compile(r"\\K(\d{12})")  # 背景颜色
     WORD_SPACE_PATTERN = re.compile(r"\\M(\d{2})")
@@ -387,7 +397,7 @@ class TextParser(BaseParser):
         return text_builder
 
 
-class BmpParser(BaseParser):
+class BmpParser(MediaParser):
     """Bmp解析器
 
     Args:
@@ -397,7 +407,6 @@ class BmpParser(BaseParser):
         _type_: _description_
     """
 
-    XY_PATTERN = re.compile(r"\\C(\d{3})(\d{3})")
     BMP_PATTERN = re.compile(r"\\B(\d{3})")
 
     @classmethod
@@ -420,14 +429,13 @@ class BmpParser(BaseParser):
         return bmp_builder
 
 
-class PngParser(BaseParser):
+class PngParser(MediaParser):
     """png解析器
 
     Args:
         BaseParser (_type_): _description_
     """
 
-    XY_PATTERN = re.compile(r"\\C(\d{3})(\d{3})")
     PNG_PATTERN = re.compile(r"\\P(\d{3})")
 
     @classmethod
@@ -450,14 +458,13 @@ class PngParser(BaseParser):
         return png_builder
 
 
-class JpgParser(BaseParser):
+class JpgParser(MediaParser):
     """jpg解析器
 
     Args:
         BaseParser (_type_): _description_
     """
 
-    XY_PATTERN = re.compile(r"\\C(\d{3})(\d{3})")
     JPG_PATTERN = re.compile(r"\\J(\d{3})")
 
     @classmethod
@@ -477,14 +484,13 @@ class JpgParser(BaseParser):
         return jpg_builder
 
 
-class GifParser(BaseParser):
+class GifParser(MediaParser):
     """gif解析器
 
     Args:
         BaseParser (_type_): _description_
     """
 
-    XY_PATTERN = re.compile(r"\\C(\d{3})(\d{3})")
     GIF_PATTERN = re.compile(r"\\G(\d{3})")
 
     @classmethod

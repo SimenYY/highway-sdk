@@ -78,7 +78,7 @@ class DianMingPacket:
 
 
 class DianMingCrc:
-    """英沙crc校验类"""
+    """电明crc校验类"""
 
     crc_table = [
         0x0000,
@@ -383,12 +383,12 @@ class DianMingWhat:
     """
 
     # 获取当前内容
-    GET_NOW_PLAY_CONTENT_REQ = b"\x37\x33"
-    GET_NOW_PLAY_CONTENT_RSP = b"\x37\x34"
+    GET_PLAY_ITEM_REQ = b"\x37\x33"
+    GET_PLAY_ITEM_RSP = b"\x37\x34"
 
     # 获取播放列表
-    GET_NOW_ALL_PLAY_CONTENT_REQ = b"\x35\x37"
-    GET_NOW_PLAY_ALL_CONTENT_RSP = b"\x35\x38"
+    GET_PLAY_LIST_REQ = b"\x35\x37"
+    GET_PLAY_LIST_RSP = b"\x35\x38"
 
     # 播放列表下发并立即显示
     SET_PLAY_LIST_AND_PLAY_REQ = b"\x37\x31"
@@ -431,13 +431,13 @@ class DianMingMsgBuilder:
         )
 
     @classmethod
-    def build_get_now_play_content(cls):
-        return DianMingPacket.pack(what=DianMingWhat.GET_NOW_PLAY_CONTENT_REQ, data=b"")
+    def build_get_play_item(cls):
+        return DianMingPacket.pack(what=DianMingWhat.GET_PLAY_ITEM_REQ, data=b"")
 
     @classmethod
-    def build_get_now_play_all_content(cls, play_id: int = 0):
+    def build_get_play_list(cls, play_id: int = 0):
         data = b"\x30\x30\x30\x30\x30\x30\x30\x30"
         data += f"play{play_id:02d}.lst".encode(cls.encoding)  # 写死
         return DianMingPacket.pack(
-            what=DianMingWhat.GET_NOW_ALL_PLAY_CONTENT_REQ, data=data
+            what=DianMingWhat.GET_PLAY_LIST_REQ, data=data
         )
