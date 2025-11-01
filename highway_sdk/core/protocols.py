@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from typing import final
+from asyncio.streams import StreamReader
 from highway_sdk.core.log import PrefixLoggerAdapter
 
 logger = logging.getLogger(__name__)
