@@ -13,11 +13,11 @@ class SupaiotResponse(BaseModel):
     result: _ApiResult
 
 
-class _baseSupaiotRequest(BaseModel):
+class BaseSupaiotRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
-class DeviceListRequest(_baseSupaiotRequest):
+class DeviceListRequest(BaseSupaiotRequest):
     """条件查询设备列表的请求体
     对应平台接口 /supaiot/api/v2/device/list 的 body
     """
@@ -25,7 +25,9 @@ class DeviceListRequest(_baseSupaiotRequest):
     page_num: int = Field(..., alias="pageNum", description="请求页码")
     page_size: int = Field(..., alias="pageSize", description="每页条数")
 
-    device_ids: Optional[List[str]] = Field(None, alias="ID", description="设备实例ID列表")
+    device_ids: Optional[List[str]] = Field(
+        None, alias="ID", description="设备实例ID列表"
+    )
     app_id: Optional[str] = Field(None, alias="appId", description="应用ID")
     area_id: Optional[str] = Field(None, alias="areaID", description="区域ID")
     class_id: Optional[str] = Field(None, alias="classID", description="原型ID")
@@ -41,5 +43,22 @@ class DeviceListRequest(_baseSupaiotRequest):
     )
     type_: Optional[str] = Field(None, alias="type", description="类型")
 
-class DeviceRealtimeDataListRequest(_baseSupaiotRequest):
+
+class DeviceRealtimeDataListRequest(BaseSupaiotRequest):
     device_ids: List[str] = Field(..., alias="ID", description="设备ID列表")
+
+
+class ClassListRequest(BaseSupaiotRequest):
+    """条件查询设备原型列表"""
+
+    page_num: int = Field(..., alias="pageNum", description="请求页码")
+    page_size: int = Field(..., alias="pageSize", description="每页条数")
+    detail_level: Optional[int] = Field(
+        None, alias="detailLevel", description="详情等级"
+    )
+    class_id: Optional[str] = Field(None, alias="classID", description="原型ID")
+    class_type: Optional[str] = Field(None, alias="classType", description="设备类型")
+    label: Optional[List[dict]] = Field(None, alias="label", description="标签")
+    name: Optional[str] = Field(None, description="设备名称")
+    project_id: Optional[str] = Field(None, alias="projectID", description="项目ID")
+    type_: Optional[str] = Field(None, alias="type", description="类型")

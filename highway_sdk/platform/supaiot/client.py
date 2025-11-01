@@ -1,7 +1,12 @@
 import asyncio
 from typing import List, Optional
 import httpx
-from .models import DeviceListRequest, DeviceRealtimeDataListRequest, SupaiotResponse
+from .models import (
+    DeviceListRequest,
+    DeviceRealtimeDataListRequest,
+    SupaiotResponse,
+    ClassListRequest,
+)
 
 
 class SupaiotAsyncClient:
@@ -39,6 +44,7 @@ class SupaiotAsyncClient:
             payload["projectID"] = self.project_id
 
         async with httpx.AsyncClient() as client:  # 临时client方式cooikes污染
+            # TODO: 添加错误处理, 例如连接失败
             resp = await client.post(
                 f"{self.base_url}/supaiot/api/v2/app/sec/login",
                 json=payload,
@@ -49,6 +55,9 @@ class SupaiotAsyncClient:
 
             if supaiot_resp.result.resultCode != "0":
                 raise ValueError(f"Login failed: {supaiot_resp.result.resultError}")
+
+            if not isinstance(supaiot_resp.data, dict):
+                raise TypeError("Invalid login response")
 
             token = supaiot_resp.data.get("token")
 
@@ -86,6 +95,7 @@ class SupaiotAsyncClient:
             headers=headers,
             timeout=self.timeout,
         )
+        # TODO: 添加错误处理, 例如连接失败
         resp.raise_for_status()
 
         return SupaiotResponse.model_validate(resp.json())
@@ -128,7 +138,7 @@ class SupaiotAsyncClient:
             if resp.result.resultCode == "401":
                 await self._login()
                 continue
-
+                    
             return resp
 
         raise RuntimeError("Failed to get a vaild response from Supaiot.")
@@ -153,7 +163,7 @@ class SupaiotAsyncClient:
         type_: Optional[str] = None,
     ) -> SupaiotResponse:
         """条件查询多个设备实例列表(简化版)
-        
+
         提供直接传参的方式查询设备列表，无需手动构造DeviceListRequest对象
 
         Args:
@@ -189,13 +199,13 @@ class SupaiotAsyncClient:
             subOff=sub_off,
             type=type_,
         )
-        
+
         return await self._api_request(
             "POST",
             "/supaiot/api/v2/device/list",
             json=payload.model_dump(by_alias=True, exclude_none=True),
         )
-    
+
     async def get_class(self, class_id: str) -> SupaiotResponse:
         """查询指定设备原型详情
 
@@ -204,15 +214,14 @@ class SupaiotAsyncClient:
 
         Returns:
             SupaiotResponse: _description_
-        """ 
+        """
         return await self._api_request(
             "GET",
             "/supaiot/api/v2/class",
             params={"classID": class_id},
         )
-    async def list_device_realtime_data(
-        self, id_: list = []
-    ) -> SupaiotResponse:
+
+    async def list_device_realtime_data(self, id_: list = []) -> SupaiotResponse:
         """多设备实时状态查询
 
         Args:
@@ -223,12 +232,12 @@ class SupaiotAsyncClient:
         """
         payload = DeviceRealtimeDataListRequest(ID=id_)
         return await self._api_request(
-            "POST", "/supaiot/api/v2/data/real/device/list", json=payload.model_dump(by_alias=True, exclude_none=True)
+            "POST",
+            "/supaiot/api/v2/data/real/device/list",
+            json=payload.model_dump(by_alias=True, exclude_none=True),
         )
 
-    async def get_device_realtime_data(
-        self, id_: str
-    ) -> SupaiotResponse:
+    async def get_device_realtime_data(self, id_: str) -> SupaiotResponse:
         """获取设备实时数据
 
         Args:
@@ -237,6 +246,48 @@ class SupaiotAsyncClient:
         Returns:
             SupaiotResponse: _description_
         """
-        return await self._api_request("GET", "/supaiot/api/v2/data/real/device", params={"ID": id_})
-    
-    
+        return await self._api_request(
+            "GET", "/supaiot/api/v2/data/real/device", params={"ID": id_}
+        )
+
+    async def list_class(
+        self,
+        page_num: int = 1,
+        page_size: int = 10,
+        class_id: Optional[str] = None,
+        detail_level: Optional[int] = None,
+        class_type: Optional[str] = None,
+        labels: Optional[List[dict]] = None,
+        name: Optional[str] = None,
+        project_id: Optional[str] = None,
+        type_: Optional[str] = None,
+    ) -> SupaiotResponse:
+        """条件查询设备原型列表
+
+        Args:
+            page_num (int, optional): _description_. Defaults to 1.
+            page_size (int, optional): _description_. Defaults to 10.
+            class_id (Optional[str], optional): _description_. Defaults to None.
+            class_type (Optional[str], optional): _description_. Defaults to None.
+            labels (Optional[List[dict]], optional): _description_. Defaults to None.
+            name (Optional[str], optional): _description_. Defaults to None.
+            project_id (Optional[str], optional): _description_. Defaults to None.
+            type_ (Optional[str], optional): _description_. Defaults to None.
+        """
+        payload = ClassListRequest(
+            pageNum=page_num,
+            pageSize=page_size,
+            detailLevel=detail_level,
+            classID=class_id,
+            classType=class_type,
+            label=labels,
+            name=name,
+            projectID=project_id,
+            type=type_,
+        )
+
+        return await self._api_request(
+            "POST",
+            "/supaiot/api/v2/class/list",
+            json=payload.model_dump(by_alias=True, exclude_none=True),
+        )
