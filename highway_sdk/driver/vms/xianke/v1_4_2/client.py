@@ -1,10 +1,10 @@
 from typing import Optional
-from highway_sdk.core.clients import TcpClient
+from highway_sdk.core.clients import TCPClient
 from highway_sdk.core.exceptions import CrcValidationError, ResponseError
 from highway_sdk.driver.vms.xianke.v1_4_2.spec import XianKeCode, XianKeMsg, XianKePacket, XianKeWhat
 
 
-class VmsXianKeClient(TcpClient):
+class VmsXianKeClient(TCPClient):
     """VMS XIANKE V1.4.2 客户端
 
     Args:

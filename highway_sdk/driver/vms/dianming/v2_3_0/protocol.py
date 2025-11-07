@@ -1,7 +1,7 @@
-from highway_sdk.core.protocols import TcpClientProtocol
+from highway_sdk.core.protocols import TCPClientProtocol
 from .spec import DianMingMsgBuilder
 
-class VmsDianMingProtocl(TcpClientProtocol):
+class VmsDianMingProtocl(TCPClientProtocol):
     """电明VMS协议实现"""
     
     def get_item(self):

@@ -1,6 +1,6 @@
 import logging
 from typing import Optional
-from highway_sdk.core.clients import TcpClient
+from highway_sdk.core.clients import TCPClient
 from highway_sdk.core.exceptions import ResponseError, CrcValidationError
 from highway_sdk.driver.vms.nova.v3_11_5.spec import (
     NovaCode,
@@ -12,7 +12,7 @@ from highway_sdk.driver.vms.nova.v3_11_5.spec import (
 logger = logging.getLogger(__name__)
 
 
-class VmsNovaClient(TcpClient):
+class VmsNovaClient(TCPClient):
     """VMS NOVA V3.11.5 客户端
 
     在线协议网址：https://docapi.vnnox.com/web/#/20?page_id=2289
