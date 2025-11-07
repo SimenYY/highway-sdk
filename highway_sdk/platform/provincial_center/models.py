@@ -6,47 +6,13 @@ Base = declarative_base()
 # ========== 当前信息表 ==========
 
 
-class CurAero(Base):
-    """气象检测器当前信息表（cur_aero）"""
-
-    __tablename__ = "cur_aero"
-
-    n_code = Column(
-        Numeric(9, 0), primary_key=True, comment="设备编码，9位，格式 yytzzdddd"
-    )
-    n_period = Column(
-        Numeric(4, 0),
-        primary_key=True,
-        default=1,
-        comment="时间周期，缺省值为1，表示最近几分钟数据",
-    )
-    d_temp = Column(Numeric(5, 2), comment="温度（℃），范围 -99 ~ 100")
-    d_humidity = Column(Numeric(5, 2), comment="湿度（%），范围 0 ~ 100")
-    c_icing = Column(CHAR(1), comment="是否结冰：'0'=未结冰，'1'=结冰")
-    n_visibility = Column(Numeric(6, 0), comment="能见度（米）")
-    c_wind_dir = Column(
-        CHAR(1),
-        comment="风向：'1'=偏北，'2'=东北，'3'=偏东，'4'=东南，'5'=偏南，'6'=西南，'7'=偏西，'8'=西北",
-    )
-    d_wind_speed = Column(Numeric(3, 1), comment="风速（米/秒）")
-    d_rainfall = Column(Numeric(5, 1), comment="雨量（毫米）")
-    c_status = Column(
-        CHAR(1),
-        comment="工作状态：'0'=正常，'1'=设备故障，'2'=通讯失败，'3'=数据错误，'9'=未知",
-    )
-    vc_status_des = Column(String(60), comment="工作状态描述")
-    t_rec_time = Column(DateTime, comment="记录时间")
-
-
 class CurVd(Base):
     """车辆检测器当前信息表（cur_vd）"""
 
     __tablename__ = "cur_vd"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码，9位")
-    n_period = Column(
-        Numeric(4, 0), primary_key=True, default=1, comment="时间周期，缺省值为1"
-    )
+    n_period = Column(Numeric(4, 0), default=1, comment="时间周期，缺省值为1")
 
     # 上行车道 1~5
     d_up_lane1_occupy = Column(Numeric(6, 2), comment="上行1车道占有率（%）")
@@ -111,9 +77,7 @@ class CurCms(Base):
     __tablename__ = "cur_cms"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码，9位")
-    n_sequence = Column(
-        Numeric(4, 0), primary_key=True, comment="序列号：单条信息为1，多条滚动时递增"
-    )
+    n_sequence = Column(Numeric(4, 0), comment="序列号：单条信息为1，多条滚动时递增")
     vc_orig_content = Column(
         Text,
         comment="原始显示内容，可为文本或 base64 编码图片，含颜色、位置、字体等属性",
@@ -129,16 +93,44 @@ class CurCms(Base):
     t_rec_time = Column(DateTime, comment="记录时间")
 
 
-class CurVi(Base):
-    """能见度检测器当前信息表（cur_vi）"""
+class CurEt(Base):
+    """紧急电话当前信息表（cur_et）"""
 
-    __tablename__ = "cur_vi"
+    __tablename__ = "cur_et"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码，9位")
-    n_period = Column(
-        Numeric(4, 0), primary_key=True, default=1, comment="时间周期，缺省值为1"
+    t_rec_time = Column(DateTime, comment="记录时间（状态变化时记录）")
+    c_et_status = Column(CHAR(1), comment="话机状态：'1'=故障，'2'=挂机，'3'=摘机")
+    c_status = Column(
+        CHAR(1),
+        comment="工作状态：'0'=正常，'1'=设备故障，'2'=通讯失败，'3'=数据错误，'9'=未知",
     )
+    vc_status_des = Column(String(60), comment="工作状态描述")
+
+
+class CurAero(Base):
+    """气象检测器当前信息表（cur_aero）"""
+
+    __tablename__ = "cur_aero"
+
+    n_code = Column(
+        Numeric(9, 0), primary_key=True, comment="设备编码，9位，格式 yytzzdddd"
+    )
+    n_period = Column(
+        Numeric(4, 0),
+        default=1,
+        comment="时间周期，缺省值为1，表示最近几分钟数据",
+    )
+    d_temp = Column(Numeric(5, 2), comment="温度（℃），范围 -99 ~ 100")
+    d_humidity = Column(Numeric(5, 2), comment="湿度（%），范围 0 ~ 100")
+    c_icing = Column(CHAR(1), comment="是否结冰：'0'=未结冰，'1'=结冰")
     n_visibility = Column(Numeric(6, 0), comment="能见度（米）")
+    c_wind_dir = Column(
+        CHAR(1),
+        comment="风向：'1'=偏北，'2'=东北，'3'=偏东，'4'=东南，'5'=偏南，'6'=西南，'7'=偏西，'8'=西北",
+    )
+    d_wind_speed = Column(Numeric(3, 1), comment="风速（米/秒）")
+    d_rainfall = Column(Numeric(5, 1), comment="雨量（毫米）")
     c_status = Column(
         CHAR(1),
         comment="工作状态：'0'=正常，'1'=设备故障，'2'=通讯失败，'3'=数据错误，'9'=未知",
@@ -147,21 +139,20 @@ class CurVi(Base):
     t_rec_time = Column(DateTime, comment="记录时间")
 
 
-class CurEt(Base):
-    """紧急电话当前信息表（cur_et）"""
+class CurVi(Base):
+    """能见度检测器当前信息表（cur_vi）"""
 
-    __tablename__ = "cur_et"
+    __tablename__ = "cur_vi"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码，9位")
-    t_rec_time = Column(
-        DateTime, primary_key=True, comment="记录时间（状态变化时记录）"
-    )
-    c_et_status = Column(CHAR(1), comment="话机状态：'1'=故障，'2'=挂机，'3'=摘机")
+    n_period = Column(Numeric(4, 0), default=1, comment="时间周期，缺省值为1")
+    n_visibility = Column(Numeric(6, 0), comment="能见度（米）")
     c_status = Column(
         CHAR(1),
         comment="工作状态：'0'=正常，'1'=设备故障，'2'=通讯失败，'3'=数据错误，'9'=未知",
     )
     vc_status_des = Column(String(60), comment="工作状态描述")
+    t_rec_time = Column(DateTime, comment="记录时间")
 
 
 # ========== 历史记录表 ==========
