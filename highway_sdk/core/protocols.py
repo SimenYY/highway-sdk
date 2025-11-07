@@ -1,14 +1,15 @@
 import logging
 import asyncio
-from asyncio.streams import StreamReader
 from highway_sdk.core.log import PrefixLoggerAdapter
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["TcpClientProtocol"]
+__all__ = ["TCPClientProtocol"]
 
-
-class TcpClientProtocol(asyncio.Protocol):
+#==============================================================================
+# 协议类
+#==============================================================================
+class TCPClientProtocol(asyncio.Protocol):
     """TCP 客户端协议类
 
     核心功能包括：
@@ -123,7 +124,7 @@ class TcpClientProtocol(asyncio.Protocol):
         pass
 
 
-class TcpClientSequentialProtocol(TcpClientProtocol):
+class TcpClientSequentialProtocol(TCPClientProtocol):
     """顺序请求响应协议
 
     基于发送顺序匹配响应的同步机制：
@@ -145,7 +146,6 @@ class TcpClientSequentialProtocol(TcpClientProtocol):
 
         self._resp_queue = asyncio.Queue()  # 等待响应队列
         self._lock = asyncio.Lock()
-        self._buffer = bytearray()
 
     async def request(self, name: str, payload: bytes, timeout: float = 3.0):
         """请求并等待响应
@@ -187,7 +187,6 @@ class TcpClientSequentialProtocol(TcpClientProtocol):
             data (bytes): 接收到的数据
         """
         self.log.debug(f"RXD << {data.hex(' ')}")
-        self._buffer.extend(data)
 
         if not self._resp_queue.empty():
             resp_future = self._resp_queue.get_nowait()

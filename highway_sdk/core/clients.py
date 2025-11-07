@@ -6,7 +6,7 @@ from .exceptions import HostResponseTimeoutError, HostResponseIncompleteError
 logger = logging.getLogger(__name__)
 
 
-class TcpClient:
+class TCPClient:
     """tcp客户端
 
     首选采用异步的方式进行通信，但是也封装了同步的方法

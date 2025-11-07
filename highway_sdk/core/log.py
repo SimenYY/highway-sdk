@@ -1,6 +1,10 @@
 import logging
 import inspect
 from dataclasses import dataclass
+from pathlib import Path
+import sys
+
+import loguru
 
 try:
     from loguru import logger
@@ -150,9 +154,68 @@ def intercept_logging() -> None:
 
 
 @dataclass(frozen=True)
-class loguru_defaults:
+class LoguruDefaults:
     FORMAT: str = (
         "<level>{level: <8}</level> | "
         "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
     )
+
+
+class LoguruConfig:
+    """配置loguru
+
+    注释：
+        1. 能够添加拦截原生的logger
+        2. 能够配置console和file两种常用输出
+    """
+
+    def __init__(
+        self,
+        name: str,
+        level: str = "DEBUG",
+    ):
+        loguru.logger.remove()
+
+        self.name = name
+        self.level = level
+
+    def include_logging_namespace(self, namespace: str) -> None:
+        """
+        添加logging命名空间
+        """
+        logging_logger = logging.getLogger(namespace)
+        self.include_logging_logger(logging_logger)
+
+    def include_logging_logger(self, logging_logger: logging.Logger) -> None:
+        """
+        添加logging.logger
+        """
+        logging_logger.setLevel(self.level)
+        logging_logger.handlers.clear()
+        logging_logger.addHandler(InterceptHandler())
+        logging_logger.propagate = False
+
+    def setup_console(self) -> None:
+        loguru.logger.add(sys.stdout, level=self.level)
+
+    def setup_file(
+        self,
+        log_dir: Path | str = "logs",
+        *,
+        rotation: str = "00:00",
+        retention: str = "3 days",
+        compression: str = "zip",
+        enqueue: bool = True,
+    ):
+        log_dir = Path(log_dir)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / self.name / (f"{self.name}" + "_{time: YYYY-MM-DD}.log")
+        loguru.logger.add(
+            str(log_file),
+            level=self.level,
+            rotation=rotation,
+            retention=retention,
+            compression=compression,
+            enqueue=enqueue,
+        )
