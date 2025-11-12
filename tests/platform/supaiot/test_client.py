@@ -1,4 +1,3 @@
-from flask import request
 import pytest
 from highway_sdk.platform.supaiot.client import SupaiotAsyncClient
 from highway_sdk.platform.supaiot.models import (
@@ -19,7 +18,7 @@ class TestSupaiotClient:
 
     @pytest.mark.asyncio
     async def test_login_success(self, client: SupaiotAsyncClient):
-        await client._login()
+        await client.login()
 
         assert client._client.cookies.get("hypToken") is not None
 
@@ -27,11 +26,11 @@ class TestSupaiotClient:
     async def test_login_fail(self, client: SupaiotAsyncClient):
         client.app_id += "1"  # 模拟 app_id 错误
         with pytest.raises(ValueError):
-            await client._login()
+            await client.login()
 
         client.app_secret += "1"  # 模拟 app_secret 错误
         with pytest.raises(ValueError):
-            await client._login()
+            await client.login()
 
     @pytest.mark.asyncio
     async def test_list_devices(self, client: SupaiotAsyncClient):
