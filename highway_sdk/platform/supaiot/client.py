@@ -1,6 +1,7 @@
 import asyncio
-from typing import List, Optional
 import httpx
+import aiomqtt
+import logging
 from .models import (
     DeviceListRequest,
     DeviceRealtimeDataListRequest,
@@ -8,7 +9,12 @@ from .models import (
     ClassListRequest,
 )
 
+logger = logging.getLogger(__name__)
 
+
+# ==============================================================================
+# API Client
+# ==============================================================================
 class SupaiotAsyncClient:
     """物联智控API 客户端"""
 
@@ -17,7 +23,7 @@ class SupaiotAsyncClient:
         base_url: str,
         app_id: str,
         app_secret: str,
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         *,
         max_retries: int = 1,
         timeout: float = 5.0,
@@ -35,7 +41,7 @@ class SupaiotAsyncClient:
             base_url=self.base_url, timeout=self.timeout, follow_redirects=True
         )
 
-    async def _login(self) -> None:
+    async def login(self) -> None:
         payload = {
             "appID": self.app_id,
             "appSecret": self.app_secret,
@@ -44,7 +50,6 @@ class SupaiotAsyncClient:
             payload["projectID"] = self.project_id
 
         async with httpx.AsyncClient() as client:  # 临时client方式cooikes污染
-            # TODO: 添加错误处理, 例如连接失败
             resp = await client.post(
                 f"{self.base_url}/supaiot/api/v2/app/sec/login",
                 json=payload,
@@ -71,9 +76,9 @@ class SupaiotAsyncClient:
         method: str,
         url: str,
         *,
-        params: Optional[dict] = None,
-        json: Optional[dict] = None,
-        headers: Optional[dict] = None,
+        params: dict | None = None,
+        json: dict | None = None,
+        headers: dict | None = None,
     ) -> SupaiotResponse:
         """物联智控请求，校验响应
 
@@ -95,7 +100,6 @@ class SupaiotAsyncClient:
             headers=headers,
             timeout=self.timeout,
         )
-        # TODO: 添加错误处理, 例如连接失败
         resp.raise_for_status()
 
         return SupaiotResponse.model_validate(resp.json())
@@ -105,9 +109,9 @@ class SupaiotAsyncClient:
         method: str,
         url: str,
         *,
-        params: Optional[dict] = None,
-        json: Optional[dict] = None,
-        headers: Optional[dict] = None,
+        params: dict | None = None,
+        json: dict | None = None,
+        headers: dict | None = None,
     ) -> SupaiotResponse:
         """物联智控api请求，懒加载cookies
 
@@ -125,7 +129,10 @@ class SupaiotAsyncClient:
             SupaiotResponse: _description_
         """
         if self._client.cookies.get("hypToken") is None:
-            await self._login()
+            try:
+                await self.login()
+            except Exception as e:
+                raise RuntimeError(f"Supaiot login error: {e}")
 
         for _ in range(2):
             resp = await self._request(
@@ -136,9 +143,9 @@ class SupaiotAsyncClient:
                 headers=headers,
             )
             if resp.result.resultCode == "401":
-                await self._login()
+                await self.login()
                 continue
-                    
+
             return resp
 
         raise RuntimeError("Failed to get a vaild response from Supaiot.")
@@ -150,17 +157,17 @@ class SupaiotAsyncClient:
         self,
         page_num: int = 1,
         page_size: int = 10,
-        device_ids: Optional[List[str]] = None,
-        app_id: Optional[str] = None,
-        area_id: Optional[str] = None,
-        class_id: Optional[str] = None,
-        class_name: Optional[str] = None,
-        class_type: Optional[str] = None,
-        labels: Optional[List[dict]] = None,
-        name: Optional[str] = None,
-        project_id: Optional[str] = None,
-        sub_off: Optional[bool] = None,
-        type_: Optional[str] = None,
+        device_ids: list[str] | None = None,
+        app_id: str | None = None,
+        area_id: str | None = None,
+        class_id: str | None = None,
+        class_name: str | None = None,
+        class_type: str | None = None,
+        labels: list[dict] | None = None,
+        name: str | None = None,
+        project_id: str | None = None,
+        sub_off: bool | None = None,
+        type_: str | None = None,
     ) -> SupaiotResponse:
         """条件查询多个设备实例列表(简化版)
 
@@ -170,16 +177,16 @@ class SupaiotAsyncClient:
             page_num (int): 请求页码，默认为1
             page_size (int): 每页条数，默认为10
             device_ids (Optional[List[str]]): 设备实例ID列表
-            app_id (Optional[str]): 应用ID
-            area_id (Optional[str]): 区域ID
-            class_id (Optional[str]): 原型ID
-            class_name (Optional[str]): 原型名称
-            class_type (Optional[str]): 设备类型
-            labels (Optional[List[dict]]): 标签列表
-            name (Optional[str]): 设备名称
-            project_id (Optional[str]): 项目ID
-            sub_off (Optional[bool]): 是否包含子集区域数据
-            type_ (Optional[str]): 类型
+            app_id (str | None): 应用ID
+            area_id (str | None): 区域ID
+            class_id (str | None): 原型ID
+            class_name (str | None): 原型名称
+            class_type (str | None): 设备类型
+            labels (list[str] | None): 标签列表
+            name (str | None): 设备名称
+            project_id (str | None): 项目ID
+            sub_off (bool | None): 是否包含子集区域数据
+            type_ (str | None): 类型
 
         Returns:
             SupaiotResponse: 包含设备列表的响应结果
@@ -199,7 +206,6 @@ class SupaiotAsyncClient:
             subOff=sub_off,
             type=type_,
         )
-
         return await self._api_request(
             "POST",
             "/supaiot/api/v2/device/list",
@@ -254,25 +260,25 @@ class SupaiotAsyncClient:
         self,
         page_num: int = 1,
         page_size: int = 10,
-        class_id: Optional[str] = None,
-        detail_level: Optional[int] = None,
-        class_type: Optional[str] = None,
-        labels: Optional[List[dict]] = None,
-        name: Optional[str] = None,
-        project_id: Optional[str] = None,
-        type_: Optional[str] = None,
+        class_id: str | None = None,
+        detail_level: int | None = None,
+        class_type: str | None = None,
+        labels: list[dict] | None = None,
+        name: str | None = None,
+        project_id: str | None = None,
+        type_: str | None = None,
     ) -> SupaiotResponse:
         """条件查询设备原型列表
 
         Args:
             page_num (int, optional): _description_. Defaults to 1.
             page_size (int, optional): _description_. Defaults to 10.
-            class_id (Optional[str], optional): _description_. Defaults to None.
-            class_type (Optional[str], optional): _description_. Defaults to None.
-            labels (Optional[List[dict]], optional): _description_. Defaults to None.
-            name (Optional[str], optional): _description_. Defaults to None.
-            project_id (Optional[str], optional): _description_. Defaults to None.
-            type_ (Optional[str], optional): _description_. Defaults to None.
+            class_id (str | None, optional): _description_. Defaults to None.
+            class_type (str | None, optional): _description_. Defaults to None.
+            labels (list[str] | None, optional): _description_. Defaults to None.
+            name (str | None, optional): _description_. Defaults to None.
+            project_id (str | None, optional): _description_. Defaults to None.
+            type_ (str | None, optional): _description_. Defaults to None.
         """
         payload = ClassListRequest(
             pageNum=page_num,
@@ -291,3 +297,10 @@ class SupaiotAsyncClient:
             "/supaiot/api/v2/class/list",
             json=payload.model_dump(by_alias=True, exclude_none=True),
         )
+
+
+# ==============================================================================
+# MQTT Client
+# ==============================================================================
+
+

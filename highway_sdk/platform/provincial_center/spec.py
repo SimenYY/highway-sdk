@@ -15,7 +15,7 @@ class DeviceTypeEnum(Enum):
         self.max_code = max_code
 
     @classmethod
-    def from_code(cls, code: int) -> "DeviceType":
+    def from_code(cls, code: int) -> "DeviceTypeEnum":
         """根据编码返回对应的设备类型枚举"""
         if not isinstance(code, int) or code < 1 or code > 9999:
             raise ValueError(
