@@ -1,7 +1,7 @@
 import textwrap
 import pytest
-from highway_sdk.driver.vms.nova.v3_11_5.client import VmsNovaClient
-from highway_sdk.driver.vms.nova.v3_11_5.spec import NovaMsg
+from highway_sdk.driver.vms.nova.client import VmsNovaClient
+from highway_sdk.driver.vms.nova.spec import NovaMsg
 from tests.mock.mock_server import VmsNovaMock_v3_11_5
 
 

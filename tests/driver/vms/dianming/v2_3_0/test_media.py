@@ -1,5 +1,5 @@
 import textwrap
-from highway_sdk.driver.vms.dianming.v2_3_0.media import (
+from highway_sdk.driver.vms.dianming.media import (
     TextBuilder,
     ItemBuilder,
     PlayBuilder,

@@ -1,7 +1,7 @@
 import textwrap
 import pytest
 from tests.mock.mock_server import VmsXiankeMock_v1_4_2
-from highway_sdk.driver.vms.xianke.v1_4_2.client import VmsXianKeClient
+from highway_sdk.driver.vms.xianke.client import VmsXianKeClient
 
 
 class TestXiankeClient:
@@ -41,5 +41,5 @@ class TestXiankeClient:
     
     
     def test_play_playlist(self, client: VmsXianKeClient):
-        client.play_playlist()
+        client.play_list()
 

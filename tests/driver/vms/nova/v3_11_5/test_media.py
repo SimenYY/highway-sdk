@@ -1,5 +1,5 @@
 import textwrap
-from highway_sdk.driver.vms.nova.v3_11_5.media import (
+from highway_sdk.driver.vms.nova.media import (
     TextMediaBuilder,
     ImageMediaBuilder,
     TextextMediaBuilder,

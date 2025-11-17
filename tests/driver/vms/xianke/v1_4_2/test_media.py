@@ -1,5 +1,5 @@
 import textwrap
-from highway_sdk.driver.vms.xianke.v1_4_2.media import (
+from highway_sdk.driver.vms.xianke.media import (
     MediaBuilder,
     PlayBuilder,
     ItemBuilder,

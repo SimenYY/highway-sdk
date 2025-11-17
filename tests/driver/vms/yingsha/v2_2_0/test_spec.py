@@ -1,6 +1,6 @@
 import pytest
-from highway_sdk.driver.vms.yingsha.v2_2_0.spec import YingShaMsg
-from highway_sdk.driver.vms.yingsha.v2_2_0.media import TextMediaBuilder, ItemBuilder, PlayBuilder, ColorEnum, FontSizeEnum, FontEnum, ScreenInOutEnum
+from highway_sdk.driver.vms.yingsha.spec import YingShaMsg
+from highway_sdk.driver.vms.yingsha.media import TextMediaBuilder, ItemBuilder, PlayBuilder, ColorEnum, FontSizeEnum, FontEnum, ScreenInOutEnum
 
 class TestYingShaMsg:
     

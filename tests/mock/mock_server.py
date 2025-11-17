@@ -1,9 +1,8 @@
-from gettext import find
 import socket
 import threading
 import time
-from highway_sdk.driver.vms.nova.v3_11_5.spec import NovaPacket, NovaWhat
-from highway_sdk.driver.vms.xianke.v1_4_2.spec import XianKeWhat, XianKePacket
+from highway_sdk.driver.vms.nova.spec import NovaPacket, NovaWhat
+from highway_sdk.driver.vms.xianke.spec import XianKeWhat, XianKeFrame
 
 # ==============================================================================
 # TCP服务端mock基类
@@ -127,7 +126,7 @@ class VmsXiankeMock_v1_4_2(TCPServerMock):
                         print(f"客户端 {addr} 已断开")
                         break
                     print(f"收到 {addr} 数据：{data.hex(' ')}")
-                    p = XianKePacket.unpack(data)
+                    p = XianKeFrame.unpack(data)
                     match p.what:
                         case XianKeWhat.UPLOAD_FILE:
                             conn.send(bytes.fromhex("02 32 30 30 30 01 B4 95 03"))
@@ -135,11 +134,11 @@ class VmsXiankeMock_v1_4_2(TCPServerMock):
                             conn.send(bytes.fromhex("02 32 31 30 30 01 30 31 32 6C 69 73 74 5C 30 30 30 2E 78 6B 6C 30 30 30 30 5B 4C 49 53 54 5D 0D 0A 49 74 65 6D 43 6F 75 6E 74 3D 30 30 32 0D 0A 49 74 65 6D 30 30 3D 32 2C 31 2C 30 2C 31 2C 31 2C 5C 43 30 30 30 30 30 30 5C 46 73 33 32 5C 54 32 35 35 30 30 30 30 30 30 30 30 30 5C 42 30 30 30 30 30 30 30 30 30 30 30 30 5C 55 C9 EE DB DA CF D4 BF C6 BF C6 BC BC D3 D0 CF DE B9 AB CB BE 0D 0A 49 74 65 6D 30 31 3D 32 2C 31 2C 30 2C 31 2C 31 2C 5C 43 30 30 30 30 30 30 5C 46 73 33 32 5C 54 30 30 30 32 35 35 30 30 30 30 30 30 5C 42 30 30 30 30 30 30 30 30 30 30 30 30 5C 55 C9 EE DB DA CF D4 BF C6 BF C6 BC BC D3 D0 CF DE B9 AB CB BE 0D 0A F2 52 03"))
                         case XianKeWhat.PLAY_LIST:
                             conn.send(bytes.fromhex("02 32 32 30 30 01 59 FD 03"))
-                        case XianKeWhat.GET_NOW_PLAY_CONTENT:
+                        case XianKeWhat.GET_ITEM:
                             conn.send(bytes.fromhex("02 32 34 30 30 01 34 2C 31 2C 30 2C 31 2C 31 2C 5C 43 30 30 30 30 30 30 5C 49 30 30 30 3D B0 03"))
-                        case XianKeWhat.GET_NOW_PLAY_ALL_CONTENT:
+                        case XianKeWhat.GET_PLAY:
                             conn.send(bytes.fromhex("02 32 33 30 30 01 30 30 30 2E 78 6B 6C 22 45 03"))
-                        case XianKeWhat.GET_NOW_BRIGHTNESS:
+                        case XianKeWhat.GET_BRIGHTNESS:
                             conn.send(bytes.fromhex("02 30 35 30 30 01 31 30 30 30 30 30 30 30 30 10 40 03"))
                 except Exception as e:
                     print(e)
