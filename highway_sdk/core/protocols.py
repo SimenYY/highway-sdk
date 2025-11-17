@@ -125,7 +125,7 @@ class TCPClientProtocol(asyncio.Protocol):
         pass
 
 
-class TcpClientSequentialProtocol(TCPClientProtocol):
+class TcpClientSyncProtocol(TCPClientProtocol):
     """顺序请求响应协议
 
     基于发送顺序匹配响应的同步机制：
