@@ -40,6 +40,7 @@ pyodb = "^0.1.5"
 pydantic-settings = "^2.11.0"
 bidict = "^0.23.1"
 aiomqtt = "^2.4.0"
+pytest-asyncio = "^1.3.0"
 
 
 [[tool.poetry.source]]
