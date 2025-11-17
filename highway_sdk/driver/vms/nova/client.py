@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 from highway_sdk.core.client import TCPClient
 from highway_sdk.core.exceptions import ResponseError, CrcValidationError
-from highway_sdk.driver.vms.nova.v3_11_5.spec import (
+from highway_sdk.driver.vms.nova.spec import (
     NovaCode,
     NovaMsg,
     NovaWhat,
