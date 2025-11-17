@@ -1,4 +1,4 @@
-from highway_sdk.core.protocols import TCPClientProtocol
+from highway_sdk.core.protocol import TCPClientProtocol
 from .spec import DianMingMsgBuilder
 
 class VmsDianMingProtocl(TCPClientProtocol):

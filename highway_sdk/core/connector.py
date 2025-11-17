@@ -2,7 +2,7 @@ import logging
 import asyncio
 import random
 from typing import Type, Self
-from .protocols import TCPClientProtocol
+from .protocol import TCPClientProtocol
 
 logger = logging.getLogger(__name__)
 
