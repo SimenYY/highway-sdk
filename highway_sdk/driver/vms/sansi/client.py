@@ -1,5 +1,5 @@
 import asyncio
-
+from highway_sdk.core.protocol import TcpClientSyncProtocol
 from highway_sdk.core.client import AioTCPClient
 from .spec import SanSiFrameReq, SanSiFrameResp, SanSiMsgBuilder
 from highway_sdk.core.exceptions import (
@@ -107,3 +107,8 @@ class VmsSanSiClient(AioTCPClient):
             SanSiFrameResp: _description_
         """
         return await self.request(msg=SanSiMsgBuilder.build_get_brightness())
+
+
+
+class VmsSanSiClientProtocol(TcpClientSyncProtocol):
+    pass
