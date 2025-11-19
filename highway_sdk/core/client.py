@@ -280,7 +280,7 @@ class AioTCPClient:
         )
 
     async def connect(self):
-        """连接到服务器"""
+        """建立连接"""
         if self._connected:
             return
 
@@ -296,6 +296,7 @@ class AioTCPClient:
             raise ConnectionFailError("connection fail") from e
 
     async def disconnect(self):
+        """断开连接"""
         if not self._connected:
             return
 
@@ -314,12 +315,12 @@ class AioTCPClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.disconnect()
 
-    async def request(self, msg: bytes) -> bytes:
+    async def request(self, msg: bytes, timeout: float = 3.0) -> bytes:
         """请求返回响应
 
         Args:
             msg (bytes): _description_
-
+            timeout (float): _description_
         Raises:
             HostResponseTimeoutError: _description_
             ConnectionFailureError: _description_
@@ -336,8 +337,6 @@ class AioTCPClient:
             self._writer.write(msg)
             await self._writer.drain()
             try:
-                return await asyncio.wait_for(
-                    self._reader.read(self._bufsize), self._timeout
-                )
+                return await asyncio.wait_for(self._reader.read(self._bufsize), timeout)
             except asyncio.TimeoutError:
                 raise HostResponseTimeoutError("Host response timeout")
