@@ -1,6 +1,9 @@
+from abc import ABC, abstractmethod
 import struct
 from dataclasses import dataclass
 from typing import Self
+
+from loguru import Message
 from highway_sdk.core.exceptions import CrcValidationError
 
 
@@ -22,7 +25,7 @@ class SanSiWhat:
 
     SET_BRIGHTNESS = b"05"  # 设置当前显示亮度
 
-    GE_BRIGHTNESS = b"06"  # 取当前显示亮度和调节方式
+    GET_BRIGHTNESS = b"06"  # 取当前显示亮度和调节方式
 
 
 class SanSiEscape:
@@ -395,78 +398,136 @@ class SanSiCRC:
         return struct.pack(">H", crc)
 
 
-class SanSiMsgBuilder:
-    """三思报文类"""
-
+# ==============================================================================
+# Message
+# ==============================================================================
+class MessageBuilder(ABC):
     encoding: str = "gbk"
+    what: bytes
+
+    @abstractmethod
+    def build(self) -> SanSiFrameReq:
+        pass
+
+
+class SanSiMessageFactory:
+    _registry: dict[bytes, type[MessageBuilder]] = {}
 
     @classmethod
-    def build_get_item(cls) -> SanSiFrameReq:
-        """获取当前内容
-
-        Returns:
-            SanSiFrameReq: _description_
-        """
-        return SanSiFrameReq.pack(SanSiWhat.GET_ITEM, b"")
-
-    @classmethod
-    def build_upload_file(
-        cls, content: str, file_name: str = "play.lst"
-    ) -> SanSiFrameReq:
-        """上载文件
+    def register(cls, builder_class: type[MessageBuilder]):
+        """类装饰器，注册消息构造器类
 
         Args:
-            content (str): _description_
-            file_name (str, optional): _description_. Defaults to "play.lst".
-
-        Returns:
-            SanSiFrameReq: _description_
+            what (bytes): _description_
         """
-        data = file_name.encode(cls.encoding)
+
+        if not issubclass(builder_class, MessageBuilder):
+            raise TypeError(f"{builder_class} must inherit from MessageBuilder")
+        cls._registry[builder_class.what] = builder_class
+
+        return builder_class
+
+    @classmethod
+    def create(cls, what: bytes, **kwargs):
+        """创建消息"""
+        if what not in cls._registry:
+            raise ValueError(f"Unsupported message type: {what}")
+
+        return cls._registry[what](**kwargs).build()
+
+
+@SanSiMessageFactory.register
+class MessageUploadFileBuilder(MessageBuilder):
+    """上传文件
+
+    Args:
+        MessageBuilder (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    what = SanSiWhat.UPLOAD_FILE
+
+    def __init__(self, content: str, file_name: str = "play.lst") -> None:
+        self.content = content
+        self.file_name = file_name
+
+    def build(self) -> SanSiFrameReq:
+        data = self.file_name.encode(self.encoding, "ignore")
         data += b"\x2b"  # 分隔符，代表文件名结束
         data += b"\x00\x00\x00\x00"  # 文件指针偏移
-        data += content.encode(cls.encoding, "ignore")  # 文件内容
+        data += self.content.encode(self.encoding, "ignore")  # 文件内容
 
-        return SanSiFrameReq.pack(SanSiWhat.UPLOAD_FILE, data)
+        return SanSiFrameReq.pack(self.what, data)
 
-    @classmethod
-    def build_set_brightness(cls, brightness: int) -> SanSiFrameReq:
-        """设置亮度
 
-        Args:
-            brightness (int): _description_
+@SanSiMessageFactory.register
+class MessageGetItemBuilder(MessageBuilder):
+    """获取当前播放项
 
-        Returns:
-            SanSiFrameReq: _description_
-        """
-        brightness = max(0, min(31, brightness))
+    Args:
+        MessageBuilder (_type_): _description_
+    """
+
+    what = SanSiWhat.GET_ITEM
+
+    def build(self) -> SanSiFrameReq:
+        return SanSiFrameReq.pack(self.what, b"")
+
+
+@SanSiMessageFactory.register
+class MessageSetBrightnessBuilder(MessageBuilder):
+    """设置亮度
+
+    Args:
+        MessageBuilder (_type_): _description_
+    """
+
+    what = SanSiWhat.SET_BRIGHTNESS
+
+    def __init__(self, brightness: int) -> None:
+        self.brightness = brightness
+
+    def build(self) -> SanSiFrameReq:
+        brightness = max(0, min(31, self.brightness))
 
         first = brightness // 10
         second = brightness % 10
 
         # 红，绿，蓝三基色相同
         data = b"".join([bytes([ord(str(first)), ord(str(second))])] * 3)
-        return SanSiFrameReq.pack(SanSiWhat.SET_BRIGHTNESS, data)
+        return SanSiFrameReq.pack(self.what, data)
 
-    @classmethod
-    def build_get_brightness(cls) -> SanSiFrameReq:
-        """获取当前亮度
 
-        Returns:
-            SanSiFrameReq: _description_
-        """
-        return SanSiFrameReq.pack(SanSiWhat.GE_BRIGHTNESS, b"")
+@SanSiMessageFactory.register
+class MessageGetBrightnessBuilder(MessageBuilder):
+    """获取亮度
 
-    @classmethod
-    def build_download_file(cls, file_name: str = "play.lst") -> SanSiFrameReq:
-        """下载文件
+    Args:
+        MessageBuilder (_type_): _description_
+    """
 
-        Args:
-            file_name (str, optional): _description_. Defaults to "play.lst".
+    what = SanSiWhat.GET_BRIGHTNESS
 
-        Returns:
-            SanSiFrameReq: _description_
-        """
-        data = file_name.encode(cls.encoding)
+    def build(self) -> SanSiFrameReq:
+        return SanSiFrameReq.pack(self.what, b"")
+
+
+@SanSiMessageFactory.register
+class MessageDownloadFileBuilder(MessageBuilder):
+    """下载播放表，可以下载当前播放表
+
+    Args:
+        MessageBuilder (_type_): _description_
+    """
+
+    what = SanSiWhat.DOWNLOAD_FILE
+
+    def __init__(self, file_name: str = "play.lst") -> None:
+        self.file_name = file_name
+
+    def build(self, **kwargs) -> SanSiFrameReq:
+        data = self.file_name.encode(self.encoding)
         data += b"\x00\x00\x00\x00"  # 文件指针偏移
-        return SanSiFrameReq.pack(SanSiWhat.DOWNLOAD_FILE, data)
+        return SanSiFrameReq.pack(self.what, data)
