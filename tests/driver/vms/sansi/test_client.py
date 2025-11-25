@@ -1,4 +1,3 @@
-from re import A
 import pytest
 import pytest_asyncio
 from highway_sdk.driver.vms.sansi.client import VmsSanSiClient
@@ -29,3 +28,4 @@ class TestVmsSanSiClient:
     @pytest.mark.asyncio
     async def test_set_brightness(self, client: VmsSanSiClient):
         await client.set_brightness(50)
+

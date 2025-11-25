@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from ftplib import CRLF
+from re import M
 from pydantic import BaseModel, Field
 from enum import StrEnum, IntEnum
-from typing import List
+from typing import Literal, Self
 
 
 # ==============================================================================
@@ -26,7 +27,7 @@ class FontEnum(StrEnum):
     FANG_SONG = "f"
 
 
-class TextSizeEnum(IntEnum):
+class FontSizeEnum(IntEnum):
     SIZE_16 = 16
     SIZE_24 = 24
     SIZE_32 = 32
@@ -50,24 +51,24 @@ class EscEnum(StrEnum):
 # ==============================================================================
 # 媒体类
 # ==============================================================================
-class Media(BaseModel):
+class BaseMedia(BaseModel):
     x: int = Field(..., ge=0, le=999)
     y: int = Field(..., ge=0, le=999)
 
 
-class Text(Media):
-    text_color: ColorEnum
+class Text(BaseMedia):
+    font_color: ColorEnum
     background_color: ColorEnum
     word_space: int = Field(..., ge=0, le=99)
     font: FontEnum
-    text_size: TextSizeEnum
+    font_size: FontSizeEnum
     text: str
 
     def __str__(self):
         protocol = (
             f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
-            f"{EscEnum.FONT.value}{self.font.value}{self.text_size.value}{self.text_size.value}"
-            f"{EscEnum.FONT_COLOR.value}{self.text_color.value}"
+            f"{EscEnum.FONT.value}{self.font.value}{self.font_size.value}{self.font_size.value}"
+            f"{EscEnum.FONT_COLOR.value}{self.font_color.value}"
             f"{EscEnum.BACKGROUND_COLOR.value}{self.background_color.value}"
             f"{EscEnum.WORD_SPACE.value}{self.word_space:02d}"
             f"{self.text}"
@@ -75,7 +76,7 @@ class Text(Media):
         return protocol
 
 
-class Bmp(Media):
+class Bmp(BaseMedia):
     bmp_file_name: str
 
     def __str__(self):
@@ -83,7 +84,7 @@ class Bmp(Media):
         return protocol
 
 
-class Png(Media):
+class Png(BaseMedia):
     png_file_name: str
 
     def __str__(self):
@@ -91,7 +92,7 @@ class Png(Media):
         return protocol
 
 
-class Jpg(Media):
+class Jpg(BaseMedia):
     jpg_file_name: str
 
     def __str__(self):
@@ -99,7 +100,7 @@ class Jpg(Media):
         return protocol
 
 
-class Gif(Media):
+class Gif(BaseMedia):
     gif_file_name: str
 
     def __str__(self):
@@ -107,7 +108,7 @@ class Gif(Media):
         return protocol
 
 
-class Mpg(Media):
+class Mpg(BaseMedia):
     """
     video
     """
@@ -128,7 +129,7 @@ class MediaBuilder(ABC):
         self.y: int = 0
 
     @abstractmethod
-    def build(self) -> Media:
+    def build(self) -> BaseMedia:
         """建造函数
         :return:
         """
@@ -140,14 +141,14 @@ class TextBuilder(MediaBuilder):
 
         # 文本
         self.text = text
-        self.text_color: str = ColorEnum.YELLOW.value
+        self.font_color: str = ColorEnum.YELLOW.value
         self.background_color: str = ColorEnum.BLACK.value
         # 字间距
         self.word_space: int = 0
         # 输入示例 h
         self.font: str = FontEnum.HEI_TI.value
         # 输入示例 16
-        self.text_size: int = TextSizeEnum.SIZE_16.value
+        self.font_size: int = FontSizeEnum.SIZE_16.value
 
     def build(self) -> Text:
         return Text(**self.__dict__)
@@ -199,42 +200,139 @@ class MpgBuilder(MediaBuilder):
 
 
 # ==============================================================================
+# 复杂构造器基类
+# ==============================================================================
+class BaseContainerBuilder:
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+    def build(self, *args, **kwargs):
+        pass
+
+
+# ==============================================================================
 # 播放项类
 # ==============================================================================
+
+
 class Item(BaseModel):
-    media: Media
+    media_list: list[BaseMedia]
     duration: int = Field(..., ge=2, le=30000)
     screen_in: int
     play_speed: int
 
     def __str__(self):
-        protocol = f"{self.duration},{self.screen_in},{self.play_speed},{self.media}"
+        media_str = "".join(str(media) for media in self.media_list)
+        protocol = f"{self.duration},{self.screen_in},{self.play_speed},{media_str}"
+
         return protocol
 
 
-class ItemBuilder:
-    def __init__(self, media: Media):
-        self.media = media
-        # 单位为百分之一秒， 缺省为2
-        self.duration: int = 1000
-        # 缺省为0
-        self.screen_in: int = ScreenInEnum.NORMAL.value
-        # 播放速度
-        self.play_speed: int = 0
+class ItemBuilder(BaseContainerBuilder):
+    def __init__(
+        self,
+        duration: int = 1000,
+        screen_in: ScreenInEnum = ScreenInEnum.NORMAL,
+        play_speed: int = 0,
+    ):
+        self.media_list: list[BaseMedia] = []
+        self.duration = duration  # 单位为百分之一秒， 缺省为2
+        self.screen_in = screen_in  # 缺省为0
+        self.play_speed = play_speed  # 播放速度
 
     def build(self) -> Item:
+        if len(self.media_list) == 0:
+            raise ValueError("No media")
         return Item(**self.__dict__)
 
+    def add_text_media(
+        self,
+        text: str,
+        *,
+        x: int = 0,
+        y: int = 0,
+        font_color: ColorEnum = ColorEnum.YELLOW,
+        background_color: ColorEnum = ColorEnum.BLACK,
+        word_space: int = 0,
+        font: FontEnum = FontEnum.HEI_TI,
+        font_size: FontSizeEnum = FontSizeEnum.SIZE_16,
+    ):
+        builder = TextBuilder(text)
+        builder.x = x
+        builder.y = y
+        builder.font_color = font_color
+        builder.background_color = background_color
+        builder.word_space = word_space
+        builder.font = font
+        builder.font_size = font_size
+        self._add_media_builder(builder)
+
+    def add_image_media(
+        self,
+        media_type: Literal["bmp", "gif", "jpg", "png", "mpg"],
+        *,
+        file_name: str,
+        x: int = 0,
+        y: int = 0,
+    ):
+        builders = {
+            "bmp": BmpBuilder,
+            "gif": GifBuilder,
+            "jpg": JpgBuilder,
+            "png": PngBuilder,
+            "mpg": MpgBuilder,
+        }
+        builder_name = media_type.lower()
+        if builder_name not in builders:
+            raise ValueError(f"Unsupported media type: {media_type}")
+
+        builder = builders[builder_name](file_name)
+        builder.x = x
+        builder.y = y
+        self._add_media_builder(builder)
+
+    def _add_media_builder(self, media_builder: MediaBuilder) -> Self:
+        """添加媒体建造器
+
+        允许有且只有一个text媒体类型，且位于媒体列表最后面
+
+        Args:
+            media_builder (MediaBuilder): _description_
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            Self: _description_
+        """
+        media = media_builder.build()
+        if isinstance(media, Text):
+            for existing_media in self.media_list:
+                if isinstance(existing_media, Text):
+                    raise ValueError("Only one text media is allowed per item.")
+            self.media_list.append(media)
+        else:
+            insert_index = len(self.media_list)
+            for i, existing_media in enumerate(self.media_list):
+                if isinstance(existing_media, Text):
+                    insert_index = i
+                    break
+            self.media_list.insert(insert_index, media)
+        return self
+
 
 # ==============================================================================
-# 区域窗口类
+# 窗口类
 # ==============================================================================
-class Win(BaseModel):
+class Window(BaseModel):
     item_list: list[Item]
-    x: int | None
-    y: int | None
-    w: int | None
-    h: int | None
+    x: int
+    y: int
+    w: int
+    h: int
 
     def __str__(self):
         """格式
@@ -246,13 +344,13 @@ class Win(BaseModel):
         """
         protocol = f"item_no={len(self.item_list)}"
         protocol += CRLF
-        for i, item in enumerate(self.item_list):
-            protocol += f"item{i}={item}"
+        for i, item_builder in enumerate(self.item_list):
+            protocol += f"item{i}={item_builder}"
             protocol += CRLF
 
         return protocol
 
-    def win_str(self, win_no: int):
+    def _win_str(self, win_no: int):
         """格式二
 
         第二窗口及以上格式按照本例
@@ -263,6 +361,9 @@ class Win(BaseModel):
         Returns:
             _type_: _description_
         """
+        if win_no < 1:
+            raise ValueError("win_no must be greater than 0")
+
         protocol = f"windows{win_no}_item_no={len(self.item_list)}"
         protocol += CRLF
         for i, item in enumerate(self.item_list):
@@ -272,21 +373,30 @@ class Win(BaseModel):
         return protocol
 
 
-class WinBuilder:
-    def __init__(self):
-        self.item_list: List[Item] = []
-        self.x: int | None = None
-        self.y: int | None = None
-        self.w: int | None = None
-        self.h: int | None = None
+class WindowBuilder(BaseContainerBuilder):
+    def __init__(self, x: int = 0, y: int = 0, w: int = 32, h: int = 32):
+        self.item_list: list[Item] = []
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self._item_builder_list: list[ItemBuilder] = []
 
-    def build(self) -> Win:
-        return Win(**self.__dict__)
+    def build(self) -> Window:
+        self.item_list = [item.build() for item in self._item_builder_list]
+        return Window(**self.__dict__)
 
-    def add_item_builder(self, builder: ItemBuilder) -> "WinBuilder":
-        self.item_list.append(builder.build())
-
-        return self
+    def new_item(
+        self,
+        duration: int = 1000,
+        screen_in: ScreenInEnum = ScreenInEnum.NORMAL,
+        play_speed: int = 0,
+    ) -> ItemBuilder:
+        try:
+            ib = ItemBuilder(duration, screen_in, play_speed)
+            return ib
+        finally:
+            self._item_builder_list.append(ib)
 
 
 # ==============================================================================
@@ -301,26 +411,26 @@ class MultipleWinPlay(Play):
     多窗口 playlist
     """
 
-    win_list: list[Win]
+    window_list: list[Window]
 
     def __str__(self):
         protocol = "[playlist]"
         protocol += CRLF
-        protocol += f"nwindows={len(self.win_list)}"
+        protocol += f"nwindows={len(self.window_list)}"
         protocol += CRLF
-        for i, win in enumerate(self.win_list):
-            protocol += f"windows{i}_x={win.x}"
+        for i, window in enumerate(self.window_list):
+            protocol += f"windows{i}_x={window.x}"
             protocol += CRLF
-            protocol += f"windows{i}_y={win.y}"
+            protocol += f"windows{i}_y={window.y}"
             protocol += CRLF
-            protocol += f"windows{i}_w={win.w}"
+            protocol += f"windows{i}_w={window.w}"
             protocol += CRLF
-            protocol += f"windows{i}_h={win.h}"
+            protocol += f"windows{i}_h={window.h}"
             protocol += CRLF
             if i == 0:
-                protocol += f"{win}"
+                protocol += f"{window}"
             else:
-                protocol += f"{win.win_str(i)}"
+                protocol += f"{window._win_str(i)}"
 
         return protocol
 
@@ -330,38 +440,140 @@ class SingleWinPlay(Play):
     单窗口 playlist
     """
 
-    win: Win
+    window: Window
 
     def __str__(self):
         protocol = "[playlist]"
         protocol += CRLF
-        protocol += f"{self.win}"
+        protocol += f"{self.window}"
 
         return protocol
 
 
-class PlayBuilder(ABC):
+class BasePlayBuilder(BaseContainerBuilder):
+    mode: str
+
     @abstractmethod
-    def build(self) -> Play:
+    def new_window(self, *args, **kwargs) -> WindowBuilder:
         pass
 
 
-class MultipleWinPlayBuilder(PlayBuilder):
+class PlayFactory:
+    """play构造工厂类
+
+
+    Examples:
+        1. single 模式
+
+    >>> pf = PlayFactory("single")
+    >>> with pf.get_play_builder() as pb:
+    >>>     with pb.new_window() as wb:
+    >>>         with wb.new_item() as ib:
+    >>>             ib.add_image_media("bmp", file_name="001")
+    >>>             ib.add_text_media("文本测试")
+    >>>         with wb.new_item() as ib:
+    >>>             ib.add_image_media("jpg", file_name="002")
+    >>> print(pf.get_play())
+
+        2. multiple 模式
+
+    >>> pf = PlayFactory("single")
+    >>> with pf.get_play_builder() as pb:
+    >>>     with pb.new_window() as wb:
+    >>>         with wb.new_item() as ib:
+    >>>             ib.add_image_media("bmp", file_name="001")
+    >>>             ib.add_text_media("文本测试")
+    >>>         with wb.new_item() as ib:
+    >>>             ib.add_image_media("jpg", file_name="002")
+    >>>     with pb.new_window() as wb:
+    >>>         with wb.new_item() as ib:
+    >>>             ib.add_image_media("bmp", file_name="001")
+    >>>             ib.add_text_media("文本测试")
+    >>>         with wb.new_item() as ib:
+    >>>             ib.add_image_media("jpg", file_name="002")
+    >>> print(pf.get_play())
+    """
+
+    _play_builders: dict[str, type[BasePlayBuilder]] = {}
+
+    def __init__(self, mode: Literal["single", "multiple"]) -> None:
+        if mode not in self._play_builders:
+            raise ValueError(
+                f"Unsupported mode: {mode}. Available modes: {list(self._play_builders.keys())}"
+            )
+        self._mode = mode
+        self._play_builder: BasePlayBuilder | None = None
+
+    @classmethod
+    def register(cls, builder_class: type[BasePlayBuilder]):
+        if not issubclass(builder_class, BasePlayBuilder):
+            raise TypeError(f"{builder_class} must inherit from BasePlayBuilder")
+        cls._play_builders[builder_class.mode] = builder_class
+        return builder_class
+
+    def get_play_builder(self):
+        if self._play_builder is None:
+            self._play_builder = self._play_builders[self._mode]()
+        return self._play_builder
+
+    def get_play(self):
+        if self._play_builder is None:
+            raise ValueError("Play Builder is None")
+        return self._play_builder.build()
+
+
+@PlayFactory.register
+class MultipleWindowPlayBuilder(BasePlayBuilder):
+    mode = "multiple"
+
     def __init__(self):
-        self.win_list: List[Win] = []
+        self.window_list: list[Window] = []
+        self._window_builder_list: list[WindowBuilder] = []
 
     def build(self) -> MultipleWinPlay:
+        self.window_list = [builder.build() for builder in self._window_builder_list]
         return MultipleWinPlay(**self.__dict__)
 
-    def add_win_builder(self, builder: WinBuilder) -> "MultipleWinPlayBuilder":
-        self.win_list.append(builder.build())
+    def new_window(
+        self,
+        x: int = 0,
+        y: int = 0,
+        w: int = 32,
+        h: int = 32,
+    ) -> WindowBuilder:
+        try:
+            wb = WindowBuilder(x, y, w, h)
+            return wb
+        finally:
+            self._window_builder_list.append(wb)
 
-        return self
 
+@PlayFactory.register
+class SingleWindowPlayBuilder(BasePlayBuilder):
+    mode = "single"
 
-class SingleWinPlayBuilder(PlayBuilder):
-    def __init__(self, win: Win):
-        self.win = win
+    def __init__(self):
+        self.window = None
+        self._window_builder: WindowBuilder | None = None
 
     def build(self) -> SingleWinPlay:
+        if self._window_builder is None:
+            raise ValueError("window_builder is None")
+        self.window = self._window_builder.build()
         return SingleWinPlay(**self.__dict__)
+
+    def new_window(
+        self,
+        x: int = 0,
+        y: int = 0,
+        w: int = 32,
+        h: int = 32,
+    ) -> WindowBuilder:
+        try:
+            wb = WindowBuilder(x, y, w, h)
+            return wb
+        finally:
+            self._window_builder = wb
+
+
+__all__ = ["PlayFactory"]

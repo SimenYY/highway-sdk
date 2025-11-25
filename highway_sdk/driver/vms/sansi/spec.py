@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 import struct
 from dataclasses import dataclass
 from typing import Self
-
-from loguru import Message
 from highway_sdk.core.exceptions import CrcValidationError
+
+
+ENCODING = "gbk"
 
 
 @dataclass(frozen=True)
@@ -402,7 +403,7 @@ class SanSiCRC:
 # Message
 # ==============================================================================
 class MessageBuilder(ABC):
-    encoding: str = "gbk"
+    encoding: str = ENCODING
     what: bytes
 
     @abstractmethod
