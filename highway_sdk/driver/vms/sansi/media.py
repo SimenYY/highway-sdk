@@ -57,22 +57,28 @@ class BaseMedia(BaseModel):
 
 
 class Text(BaseMedia):
-    font_color: ColorEnum
-    background_color: ColorEnum
-    word_space: int = Field(..., ge=0, le=99)
-    font: FontEnum
-    font_size: FontSizeEnum
+    font_color: ColorEnum | None
+    background_color: ColorEnum | None
+    word_space: int | None = Field(None, ge=0, le=99)
+    font: FontEnum | None
+    font_size: FontSizeEnum | None
     text: str
 
     def __str__(self):
-        protocol = (
-            f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
-            f"{EscEnum.FONT.value}{self.font.value}{self.font_size.value}{self.font_size.value}"
-            f"{EscEnum.FONT_COLOR.value}{self.font_color.value}"
-            f"{EscEnum.BACKGROUND_COLOR.value}{self.background_color.value}"
-            f"{EscEnum.WORD_SPACE.value}{self.word_space:02d}"
-            f"{self.text}"
-        )
+        # TODO: 增加灵活性，根据赋值的顺序，决定输出字符串的顺序
+        protocol = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
+        if self.font:
+            protocol += f"{EscEnum.FONT.value}{self.font.value}"
+        if self.font_size:
+            protocol += f"{self.font_size.value}{self.font_size.value}"
+        if self.font_color:
+            protocol += f"{EscEnum.FONT_COLOR.value}{self.font_color.value}"
+        if self.background_color:
+            protocol += f"{EscEnum.BACKGROUND_COLOR.value}{self.background_color.value}"
+        if self.word_space:
+            protocol += f"{EscEnum.WORD_SPACE.value}{self.word_space:02d}"
+        protocol += f"{self.text}"
+
         return protocol
 
 
@@ -141,17 +147,36 @@ class TextBuilder(MediaBuilder):
 
         # 文本
         self.text = text
-        self.font_color: str = ColorEnum.YELLOW.value
-        self.background_color: str = ColorEnum.BLACK.value
+        self.font_color: ColorEnum | None = None
+        self.background_color: ColorEnum | None = None
         # 字间距
         self.word_space: int = 0
         # 输入示例 h
-        self.font: str = FontEnum.HEI_TI.value
+        self.font: FontEnum | None = None
         # 输入示例 16
-        self.font_size: int = FontSizeEnum.SIZE_16.value
+        self.font_size: FontSizeEnum | None = None
 
     def build(self) -> Text:
         return Text(**self.__dict__)
+
+    def set_font_color(self, color: Literal["red", "green", "yellow", "black"]):
+        self.font_color = ColorEnum[color.upper()]
+
+    def set_background_color(self, color: Literal["red", "green", "yellow", "black"]):
+        self.background_color = ColorEnum[color.upper()]
+
+    def set_font(self, font: Literal["hei_ti", "kai_ti", "song_ti", "fang_song"]):
+        self.font = FontEnum[font.upper()]
+
+    def set_font_size(self, font_size: Literal[16, 24, 32, 48, 64]):
+        self.font_size = FontSizeEnum[f"SIZE_{font_size}"]
+
+    def set_word_space(self, word_space: int):
+        self.word_space = word_space
+
+    def set_xy(self, x: int, y: int):
+        self.x = x
+        self.y = y
 
 
 class BmpBuilder(MediaBuilder):
@@ -235,7 +260,7 @@ class ItemBuilder(BaseContainerBuilder):
     def __init__(
         self,
         duration: int = 1000,
-        screen_in: ScreenInEnum = ScreenInEnum.NORMAL,
+        screen_in: int = ScreenInEnum.NORMAL,
         play_speed: int = 0,
     ):
         self.media_list: list[BaseMedia] = []
@@ -252,22 +277,21 @@ class ItemBuilder(BaseContainerBuilder):
         self,
         text: str,
         *,
+        font: Literal["hei_ti", "kai_ti", "song_ti", "fang_song"] = "hei_ti",
+        font_size: Literal[16, 24, 32, 48, 64] = 16,
+        font_color: Literal["red", "yellow", "green", "black"] = "yellow",
         x: int = 0,
         y: int = 0,
-        font_color: ColorEnum = ColorEnum.YELLOW,
-        background_color: ColorEnum = ColorEnum.BLACK,
+        background_color: Literal["red", "yellow", "green", "black"] = "black",
         word_space: int = 0,
-        font: FontEnum = FontEnum.HEI_TI,
-        font_size: FontSizeEnum = FontSizeEnum.SIZE_16,
     ):
         builder = TextBuilder(text)
-        builder.x = x
-        builder.y = y
-        builder.font_color = font_color
-        builder.background_color = background_color
-        builder.word_space = word_space
-        builder.font = font
-        builder.font_size = font_size
+        builder.set_xy(x, y)
+        builder.set_font_color(font_color)
+        builder.set_background_color(background_color)
+        builder.set_word_space(word_space)
+        builder.set_font(font)
+        builder.set_font_size(font_size)
         self._add_media_builder(builder)
 
     def add_image_media(
@@ -389,7 +413,7 @@ class WindowBuilder(BaseContainerBuilder):
     def new_item(
         self,
         duration: int = 1000,
-        screen_in: ScreenInEnum = ScreenInEnum.NORMAL,
+        screen_in: int = ScreenInEnum.NORMAL,
         play_speed: int = 0,
     ) -> ItemBuilder:
         try:

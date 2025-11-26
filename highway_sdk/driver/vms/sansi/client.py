@@ -211,10 +211,3 @@ class VmsSanSiClientDriverProtocol(TCPClientSequenceDriverProtocol):
             [self.read_download_file, self.read_get_item, self.read_get_brightness],
             delay_seconds=2.0,
         )
-
-        if not self.scheduler.running:
-            self.scheduler.start()
-
-    def on_disconnected(self) -> None:
-        if self.scheduler.running:
-            self.scheduler.shutdown()
