@@ -263,6 +263,17 @@ class TCPClientDriverProtocol(TCPClientProtocol):
         self.scheduler = AsyncIOScheduler()  # 调度器
         self.reader = MessageReader()
 
+    def connection_made(self, transport: asyncio.Transport) -> None:
+        if not self.scheduler.running:
+            self.scheduler.start()
+        return super().connection_made(transport)
+
+    def connection_lost(self, exc: Exception | None) -> None:
+        if self.scheduler.running:
+            self.scheduler.shutdown()
+
+        return super().connection_lost(exc)
+
     def data_received(self, data: bytearray) -> None:
         self.log.debug(f"RXD << {data.hex(' ')}")
         self.reader.feed_data(data)
