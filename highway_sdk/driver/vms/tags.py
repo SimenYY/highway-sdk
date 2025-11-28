@@ -35,7 +35,7 @@ class ItemTags(BaseTags):
     screen_in: str | None = None  # 入屏方式
     screen_out: str | None = None  # 出屏方式
     play_speed: int | None = None  # 播放速度
-    
+
 
 @dataclass
 class WindowTags(BaseTags):
@@ -50,6 +50,7 @@ class WindowTags(BaseTags):
     h: int | None = None  # 窗口高度
     x: int | None = None
     y: int | None = None
+
 
 @dataclass
 class PlayTags(BaseTags):
@@ -66,4 +67,5 @@ class BrightnessTags(BaseTags):
     当前亮度点位
     """
 
-    brightness: int | None = None
+    brightness: int | None = None # 亮度
+    mode: int | None = None # 调节模式
