@@ -12,7 +12,6 @@ class BaseMessageChainParser(ABC):
 
     def __init__(self) -> None:
         self._successor = None
-
     def set_successor(self, successor: Self):
         self._successor = successor
 

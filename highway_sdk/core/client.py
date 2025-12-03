@@ -12,6 +12,7 @@ from .exceptions import (
     ConnectionLostError,
 )
 from .reader import MessageReader
+from .protocol import BUFSIZE
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class AioTCPClient:
         port: int,
         *,
         timeout: float = 3.0,
-        bufsize: int = 2**10,  # 1KB
+        bufsize: int = BUFSIZE,  # 1KB
         loop: asyncio.AbstractEventLoop | None = None,
     ):
         self._host = host
@@ -119,6 +120,14 @@ class AioTCPClient:
 # ==============================================================================
 # protocol 类
 # ==============================================================================
+class ClientProtocol(asyncio.Protocol):
+    def __init__(
+        self, on_lost_fut: asyncio.Future, loop: asyncio.AbstractEventLoop | None = None
+    ) -> None:
+        self._on_lost_fut = on_lost_fut
+        self._loop = loop or asyncio.get_running_loop()
+
+
 class TCPClientProtocol(asyncio.Protocol):
     """TCP 客户端协议类
 
@@ -373,8 +382,70 @@ class TCPClientSequenceDriverProtocol(TCPClientDriverProtocol):
         self.on_data_received(data)
 
 
-class TCPConnector:
-    """TCP连接类
+# ==============================================================================
+# 连接器类
+# ==============================================================================
+class BaseConnector:
+    """连接器基类"""
+
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        protocol_class: type[ClientProtocol],
+        loop: asyncio.AbstractEventLoop | None = None,
+    ) -> None:
+        self.host = host
+        self.port = port
+        self.protocol_class = protocol_class
+        self._loop = loop or asyncio.get_running_loop()
+        self._transport: asyncio.BaseTransport | None = None
+        self._protocol: ClientProtocol | None = None
+        self._on_lost_fut = self._loop.create_future()
+
+    async def create(self):
+        """创建连接器，生成transpost、protocol
+
+        Returns:
+            _type_: _description_
+        """
+
+
+class UDPConnector(BaseConnector):
+    """UDP 连接器
+
+    Args:
+        BaseConnector (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    async def create(self):
+        self._transport, self._protocol = await self._loop.create_datagram_endpoint(
+            lambda: self.protocol_class(self._on_lost_fut, self._loop),
+            remote_addr=(self.host, self.port),
+        )
+
+
+class TCPConnector(BaseConnector):
+    """TCP 连接器
+
+    Args:
+        BaseConnector (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    async def create(self):
+        self._transport, self._protocol = await self._loop.create_connection(
+            lambda: self.protocol_class(self._on_lost_fut, self._loop)
+        )
+
+
+class TCPReconnectingConnector(BaseConnector):
+    """TCP 重新连接的连接类
 
     Attributes:
         host (str): 服务器地址
@@ -388,7 +459,7 @@ class TCPConnector:
         _on_lost_fut (asyncio.Future): 非正常连接丢失回调Future
 
     Example:
-    >>> connector = TcpConnector.create("127.0.0.1", 8000, protocol_class=YourProtocol)
+    >>> connector = await TcpConnector.create("127.0.0.1", 8000, protocol_class=YourProtocol)
 
     """
 
