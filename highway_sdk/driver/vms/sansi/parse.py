@@ -1,16 +1,22 @@
+from calendar import c
 import configparser
 import re
 from highway_sdk.core.interface import BaseMessageChainParser
 from highway_sdk.driver.vms.tags import ItemTags, WindowTags, PlayTags, BrightnessTags
-from .spec import SanSiWhat, SanSiFrameResp, ENCODING
+from .spec import SansiWhat, SansiFrameResp, ENCODING
 
 
 class SanSiMessageParser(BaseMessageChainParser):
-    def parse(self, req_what: bytes, message: bytes):
+    frame = SansiFrameResp
+
+    def parse(self, req_what: bytes, frame: SansiFrameResp):
         if self._successor is not None:
-            return self._successor.parse(req_what, message)
+            return self._successor.parse(req_what, frame)
         else:
-            return message
+            return frame
+
+    def deserialize(self, message: bytes) -> SansiFrameResp:
+        return SansiFrameResp.unpack(message)
 
 
 class SanSiGetItemParser(SanSiMessageParser):
@@ -24,10 +30,9 @@ class SanSiGetItemParser(SanSiMessageParser):
     PNG_PATTERN = re.compile(r"\\P(\d{3})")
     GIF_PATTERN = re.compile(r"\\G(\d{3})")
 
-    def parse(self, req_what: bytes, message: bytes):
-        if req_what == SanSiWhat.GET_ITEM:
-            f = SanSiFrameResp.unpack(message)
-            data = f.data.decode(ENCODING)
+    def parse(self, req_what: bytes, frame: SansiFrameResp):
+        if req_what == SansiWhat.GET_ITEM:
+            data = frame.data.decode(ENCODING)
             tags = self._parse_media(data[15:])
 
             tags.duration = int(int(data[3:8]) * 0.01)
@@ -35,9 +40,9 @@ class SanSiGetItemParser(SanSiMessageParser):
             tags.index = data[0:3]
             return tags
         elif self._successor is not None:
-            return self._successor.parse(req_what, message)
+            return self._successor.parse(req_what, frame)
         else:
-            return message
+            return frame
 
     @classmethod
     def _parse_item(cls, item: str) -> ItemTags:
@@ -114,37 +119,35 @@ class SanSiGetItemParser(SanSiMessageParser):
 
 
 class SanSiGetBrightnessParser(SanSiMessageParser):
-    max_brightness: int = 31
-
-    def parse(self, req_what: bytes, message: bytes):
-        if req_what == SanSiWhat.GET_BRIGHTNESS:
-            tags = BrightnessTags()
-            f = SanSiFrameResp.unpack(message)
-            first = int(chr(f.data[1]))
-            second = int(chr(f.data[2]))
-            brightness = first * 10 + second
-            # 亮度显示百分比
-            percentage = round(brightness / self.max_brightness * 100)
-            tags.brightness = percentage
-            return tags
+    def parse(self, req_what: bytes, frame: SansiFrameResp):
+        if req_what == SansiWhat.GET_BRIGHTNESS:
+            return self._parse_brightness_and_mode(frame.data)
 
         elif self._successor is not None:
-            return self._successor.parse(req_what, message)
+            return self._successor.parse(req_what, frame)
         else:
-            return message
+            return frame
+
+    @classmethod
+    def _parse_brightness_and_mode(cls, data: bytes):
+        max_brightness = 31
+        tags = BrightnessTags()
+        tags.mode = int(chr(data[1]))
+        tags.brightness = round(int(data[2:3].decode("ascii")) / max_brightness * 100)
+        return tags
 
 
 class SanSiDownloadFileParser(SanSiMessageParser):
-    def parse(self, req_what: bytes, message: bytes):
-        if req_what == SanSiWhat.DOWNLOAD_FILE:
-            f = SanSiFrameResp.unpack(message)
-            return self._parse_play(f.data.decode(ENCODING))
+    def parse(self, req_what: bytes, frame: SansiFrameResp):
+        if req_what == SansiWhat.DOWNLOAD_FILE:
+            return self._parse_play(frame.data.decode(ENCODING))
         elif self._successor is not None:
-            return self._successor.parse(req_what, message)
+            return self._successor.parse(req_what, frame)
         else:
-            return message
+            return frame
 
-    def _parse_play(self, play: str) -> PlayTags:
+    @classmethod
+    def _parse_play(cls, play: str) -> PlayTags:
         tags = PlayTags()
 
         play_parser = configparser.ConfigParser()

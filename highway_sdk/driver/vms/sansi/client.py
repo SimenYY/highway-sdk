@@ -5,7 +5,7 @@ from highway_sdk.core.exceptions import (
     ConnectionLostError,
     HostResponseTimeoutError,
 )
-from .spec import SanSiFrameResp, SanSiMessageFactory, SanSiWhat
+from .spec import SansiFrameResp, SansiMessageFactory, SansiWhat
 from .parse import (
     SanSiGetItemParser,
     SanSiGetBrightnessParser,
@@ -27,7 +27,7 @@ class VmsSanSiClient(AioTCPClient):
 
     async def request(
         self, what: bytes, *, timeout: float = 3.0, **kwargs
-    ) -> SanSiFrameResp:
+    ) -> SansiFrameResp:
         """请求-响应
 
         Note:
@@ -49,7 +49,7 @@ class VmsSanSiClient(AioTCPClient):
 
         assert self._writer is not None and self._reader is not None
 
-        message = bytes(SanSiMessageFactory.create(what, **kwargs))
+        message = bytes(SansiMessageFactory.create(what, **kwargs))
 
         async with self._lock:
             self._writer.write(message)
@@ -62,13 +62,13 @@ class VmsSanSiClient(AioTCPClient):
                 raise HostResponseTimeoutError("Host response timeout")
 
         try:
-            frame = SanSiFrameResp.unpack(resp)
+            frame = SansiFrameResp.unpack(resp)
         except ValueError as e:
             raise CrcValidationError(e)
 
         return frame
 
-    async def get_item(self, **kwargs) -> SanSiFrameResp:
+    async def get_item(self, **kwargs) -> SansiFrameResp:
         """获取当前播放项
 
         send:
@@ -81,9 +81,9 @@ class VmsSanSiClient(AioTCPClient):
         Returns:
             SanSiFrameResp: _description_
         """
-        return await self.request(SanSiWhat.GET_ITEM, **kwargs)
+        return await self.request(SansiWhat.GET_ITEM, **kwargs)
 
-    async def get_brightness(self, **kwargs) -> SanSiFrameResp:
+    async def get_brightness(self, **kwargs) -> SansiFrameResp:
         """获取亮度
 
         send:
@@ -95,9 +95,9 @@ class VmsSanSiClient(AioTCPClient):
         Returns:
             SanSiFrameResp: _description_
         """
-        return await self.request(SanSiWhat.GET_BRIGHTNESS, **kwargs)
+        return await self.request(SansiWhat.GET_BRIGHTNESS, **kwargs)
 
-    async def set_brightness(self, brightness: int, **kwargs) -> SanSiFrameResp:
+    async def set_brightness(self, brightness: int, **kwargs) -> SansiFrameResp:
         """设置亮度
 
         send:
@@ -113,12 +113,12 @@ class VmsSanSiClient(AioTCPClient):
             SanSiFrameResp: _description_
         """
         return await self.request(
-            SanSiWhat.SET_BRIGHTNESS, brightness=brightness, **kwargs
+            SansiWhat.SET_BRIGHTNESS, brightness=brightness, **kwargs
         )
 
     async def upload_file(
         self, content: str, file_name: str = "play.lst", **kwargs
-    ) -> SanSiFrameResp:
+    ) -> SansiFrameResp:
         """载文件，可以直接修改当前播放表
 
         send:
@@ -135,12 +135,12 @@ class VmsSanSiClient(AioTCPClient):
             _type_: _description_
         """
         return await self.request(
-            SanSiWhat.UPLOAD_FILE, content=content, file_name=file_name, **kwargs
+            SansiWhat.UPLOAD_FILE, content=content, file_name=file_name, **kwargs
         )
 
     async def download_file(
         self, file_name: str = "play.lst", **kwargs
-    ) -> SanSiFrameResp:
+    ) -> SansiFrameResp:
         """下载播放表，可以下载当前播放表
 
         send:
@@ -157,11 +157,11 @@ class VmsSanSiClient(AioTCPClient):
             SanSiFrameResp: _description_
         """
         return await self.request(
-            SanSiWhat.DOWNLOAD_FILE, file_name=file_name, **kwargs
+            SansiWhat.DOWNLOAD_FILE, file_name=file_name, **kwargs
         )
 
 
-class VmsSanSiClientDriverProtocol(TCPClientSequenceDriverProtocol):
+class VmsSansiClientDriverProtocol(TCPClientSequenceDriverProtocol):
     parser: SanSiMessageParser = (
         SanSiMessageParser()
         | SanSiDownloadFileParser()
@@ -171,37 +171,37 @@ class VmsSanSiClientDriverProtocol(TCPClientSequenceDriverProtocol):
 
     async def read_get_item(self):
         """获取当前播放项"""
-        what = SanSiWhat.GET_ITEM
-        message = bytes(SanSiMessageFactory.create(what))
+        what = SansiWhat.GET_ITEM
+        message = bytes(SansiMessageFactory.create(what))
         resp = await self.request("get_item", message)
-        return self.parser.parse(what, resp)
+        return self.parser.parse(what, self.parser.deserialize(resp))
 
     async def read_get_brightness(self):
         """获取亮度"""
-        what = SanSiWhat.GET_BRIGHTNESS
-        message = bytes(SanSiMessageFactory.create(what))
+        what = SansiWhat.GET_BRIGHTNESS
+        message = bytes(SansiMessageFactory.create(what))
         resp = await self.request("get_brightness", message)
-        return self.parser.parse(what, resp)
+        return self.parser.parse(what, self.parser.deserialize(resp))
 
     async def read_download_file(self, file_name: str = "play.lst"):
         """下载播放表，可以下载当前播放表"""
-        what = SanSiWhat.DOWNLOAD_FILE
-        message = bytes(SanSiMessageFactory.create(what, file_name=file_name))
+        what = SansiWhat.DOWNLOAD_FILE
+        message = bytes(SansiMessageFactory.create(what, file_name=file_name))
         resp = await self.request("download_file", message)
-        return self.parser.parse(what, resp)
+        return self.parser.parse(what, self.parser.deserialize(resp))
 
     def write_set_brightness(self, brightness: int):
         """设置亮度"""
         message = bytes(
-            SanSiMessageFactory.create(SanSiWhat.SET_BRIGHTNESS, brightness=brightness)
+            SansiMessageFactory.create(SansiWhat.SET_BRIGHTNESS, brightness=brightness)
         )
         self.send(message)
 
     def write_upload_file(self, content: str, file_name: str = "play.lst"):
         """上载文件，可以直接修改当前播放表"""
         message = bytes(
-            SanSiMessageFactory.create(
-                SanSiWhat.UPLOAD_FILE, content=content, file_name=file_name
+            SansiMessageFactory.create(
+                SansiWhat.UPLOAD_FILE, content=content, file_name=file_name
             )
         )
         self.send(message)

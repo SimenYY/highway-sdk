@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum, unique
 import struct
 from dataclasses import dataclass
 from typing import Self
@@ -9,13 +10,13 @@ ENCODING = "gbk"
 
 
 @dataclass(frozen=True)
-class SanSiCode:
+class SansiCode:
     SUCCESS: bytes = b"\x30"
     FAILURE: bytes = b"\x31"
 
 
 @dataclass(frozen=True)
-class SanSiWhat:
+class SansiWhat:
     GET_ITEM = b"97"  # 获取当前内容
 
     UPLOAD_FILE = b"10"  # 上载文件，可直接更改当前播放表
@@ -29,7 +30,23 @@ class SanSiWhat:
     GET_BRIGHTNESS = b"06"  # 取当前显示亮度和调节方式
 
 
-class SanSiEscape:
+# ==============================================================================
+# 枚举定义
+# ==============================================================================
+@unique
+class SansiWhatEnum(Enum):
+    """帧类型枚举"""
+
+    GET_ITEM = b"97"  # 获取当前内容
+    UPLOAD_FILE = b"10"  # 上载文件，可直接更改当前播放表
+    DOWNLOAD_FILE = b"09"  # 下载文件 代替获取当前列表
+    PLAY_LIST = b"98"  # 播放播放表, 可不用
+    SET_BRIGHTNESS = b"05"  # 设置当前显示亮度
+    SET_BRIGHTNESS_MODE = b"04"  # 设置当前亮度调节方式
+    GET_BRIGHTNESS_AND_MODE = b"06"  # 取当前显示亮度和调节方式
+
+
+class SansiEscape:
     """
     对发送报文，接受报文进行转义
     """
@@ -55,7 +72,7 @@ class SanSiEscape:
 
 
 @dataclass
-class SanSiFrameResp:
+class SansiFrameResp:
     """
     帧格式：【帧头1B】【地址2B】【帧数据nB】【帧校验2B】【帧尾1B】
     注
@@ -77,14 +94,14 @@ class SanSiFrameResp:
         :return:
         """
         data_crc = message[3:-1]
-        escaped_data_crc = SanSiEscape(data_crc).short_to_byte()
+        escaped_data_crc = SansiEscape(data_crc).short_to_byte()
         start = message[:1]
         end = message[-1:]
         address = message[1:3]
         crc = escaped_data_crc[-2:]
         data = escaped_data_crc[:-2]
 
-        crc_16 = SanSiCRC(address + data).crc()
+        crc_16 = SansiCRC(address + data).crc()
         if crc_16 != crc:
             raise CrcValidationError("crc check failed")
 
@@ -108,7 +125,7 @@ class SanSiFrameReq:
     end: bytes = b"\x03"
 
     def __bytes__(self) -> bytes:
-        escaped = SanSiEscape(self.data + self.crc).byte_to_short()
+        escaped = SansiEscape(self.data + self.crc).byte_to_short()
         return self.start + self.address + self.what + escaped + self.end
 
     @classmethod
@@ -122,12 +139,12 @@ class SanSiFrameReq:
 
         address = kwargs.get("address", cls.address)
 
-        crc = SanSiCRC(address + what + data).crc()
+        crc = SansiCRC(address + what + data).crc()
 
         return cls(what=what, data=data, crc=crc, address=address)
 
 
-class SanSiCRC:
+class SansiCRC:
     crc_table = [
         0x0000,
         0x1021,
@@ -411,7 +428,7 @@ class MessageBuilder(ABC):
         pass
 
 
-class SanSiMessageFactory:
+class SansiMessageFactory:
     _registry: dict[bytes, type[MessageBuilder]] = {}
 
     @classmethod
@@ -437,7 +454,7 @@ class SanSiMessageFactory:
         return cls._registry[what](**kwargs).build()
 
 
-@SanSiMessageFactory.register
+@SansiMessageFactory.register
 class MessageUploadFileBuilder(MessageBuilder):
     """上传文件
 
@@ -448,7 +465,7 @@ class MessageUploadFileBuilder(MessageBuilder):
         _type_: _description_
     """
 
-    what = SanSiWhat.UPLOAD_FILE
+    what = SansiWhat.UPLOAD_FILE
 
     def __init__(self, content: str, file_name: str = "play.lst") -> None:
         self.content = content
@@ -463,7 +480,7 @@ class MessageUploadFileBuilder(MessageBuilder):
         return SanSiFrameReq.pack(self.what, data)
 
 
-@SanSiMessageFactory.register
+@SansiMessageFactory.register
 class MessageGetItemBuilder(MessageBuilder):
     """获取当前播放项
 
@@ -471,13 +488,13 @@ class MessageGetItemBuilder(MessageBuilder):
         MessageBuilder (_type_): _description_
     """
 
-    what = SanSiWhat.GET_ITEM
+    what = SansiWhat.GET_ITEM
 
     def build(self) -> SanSiFrameReq:
         return SanSiFrameReq.pack(self.what, b"")
 
 
-@SanSiMessageFactory.register
+@SansiMessageFactory.register
 class MessageSetBrightnessBuilder(MessageBuilder):
     """设置亮度
 
@@ -485,7 +502,7 @@ class MessageSetBrightnessBuilder(MessageBuilder):
         MessageBuilder (_type_): _description_
     """
 
-    what = SanSiWhat.SET_BRIGHTNESS
+    what = SansiWhat.SET_BRIGHTNESS
 
     def __init__(self, brightness: int) -> None:
         self.brightness = brightness
@@ -501,7 +518,7 @@ class MessageSetBrightnessBuilder(MessageBuilder):
         return SanSiFrameReq.pack(self.what, data)
 
 
-@SanSiMessageFactory.register
+@SansiMessageFactory.register
 class MessageGetBrightnessBuilder(MessageBuilder):
     """获取亮度
 
@@ -509,13 +526,13 @@ class MessageGetBrightnessBuilder(MessageBuilder):
         MessageBuilder (_type_): _description_
     """
 
-    what = SanSiWhat.GET_BRIGHTNESS
+    what = SansiWhat.GET_BRIGHTNESS
 
     def build(self) -> SanSiFrameReq:
         return SanSiFrameReq.pack(self.what, b"")
 
 
-@SanSiMessageFactory.register
+@SansiMessageFactory.register
 class MessageDownloadFileBuilder(MessageBuilder):
     """下载播放表，可以下载当前播放表
 
@@ -523,7 +540,7 @@ class MessageDownloadFileBuilder(MessageBuilder):
         MessageBuilder (_type_): _description_
     """
 
-    what = SanSiWhat.DOWNLOAD_FILE
+    what = SansiWhat.DOWNLOAD_FILE
 
     def __init__(self, file_name: str = "play.lst") -> None:
         self.file_name = file_name
