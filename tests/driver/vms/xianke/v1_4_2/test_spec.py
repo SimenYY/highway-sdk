@@ -1,5 +1,5 @@
 import textwrap
-from highway_sdk.driver.vms.xianke.spec import XianKeMsgBuilder
+from highway_sdk.vendors.vms.xianke.spec import XianKeMsgBuilder
 
 
 class TestXiankeMsg:

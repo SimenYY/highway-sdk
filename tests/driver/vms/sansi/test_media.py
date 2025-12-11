@@ -1,5 +1,5 @@
 import textwrap
-from highway_sdk.driver.vms.sansi.media import PlayFactory
+from highway_sdk.vendors.vms.sansi.media import PlayFactory
 
 
 def test_play_facotry():

@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from highway_sdk.driver.vms.sansi.client import VmsSanSiClient
+from highway_sdk.vendors.vms.sansi.client import VmsSanSiClient
 
 
 class TestVmsSanSiClient:

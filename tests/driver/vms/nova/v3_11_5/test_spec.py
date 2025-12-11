@@ -1,5 +1,5 @@
 import textwrap
-from highway_sdk.driver.vms.nova.spec import NovaMsg
+from highway_sdk.vendors.vms.nova.spec import NovaMsg
 
 
 class TestNovaMsg:

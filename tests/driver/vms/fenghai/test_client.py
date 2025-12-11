@@ -3,7 +3,7 @@ import socketserver
 import pytest
 import pytest_asyncio
 from tests.driver.conftest import TCPFendhaiHandler
-from highway_sdk.core.client import TCPReconnectingConnector
+from highway_sdk.core.driver import TCPReconnectingConnector
 
 
 class TestVmsFenghaiClient:

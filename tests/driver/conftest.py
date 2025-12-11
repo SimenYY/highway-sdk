@@ -1,5 +1,5 @@
 import socketserver
-from highway_sdk.driver.vms.fenghai.spec import FenghaiFrame, FenghaiWhatEnum
+from highway_sdk.vendors.vms.fenghai.spec import FenghaiFrame, FenghaiWhatEnum
 
 
 class TCPFendhaiHandler(socketserver.BaseRequestHandler):

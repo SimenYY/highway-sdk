@@ -1,7 +1,7 @@
 import textwrap
 import pytest
 from tests.mock.mock_server import VmsXiankeMock_v1_4_2
-from highway_sdk.driver.vms.xianke.client import VmsXianKeClient
+from highway_sdk.vendors.vms.xianke.client import VmsXianKeClient
 
 
 class TestXiankeClient:
