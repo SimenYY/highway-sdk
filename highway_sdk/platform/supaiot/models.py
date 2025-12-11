@@ -1,8 +1,10 @@
-from abc import abstractmethod
 from datetime import datetime
-from typing import Dict, Optional, List, Any, Union
-from pydantic import BaseModel, Field
+from typing import Any
+from typing_extensions import Self
+from pydantic import BaseModel, Field, field_validator
+from pydantic.networks import IPvAnyAddress
 from pydantic.config import ConfigDict
+from highway_sdk.utils.judge import is_chainage
 
 
 # ==============================================================================
@@ -14,7 +16,7 @@ class _ApiResult(BaseModel):
 
 
 class SupaiotResponse(BaseModel):
-    data: Union[Dict[Any, Any], List[Any]]
+    data: dict[Any, Any] | list[Any] | None
     result: _ApiResult
 
 
@@ -30,27 +32,25 @@ class DeviceListRequest(BaseSupaiotRequest):
     page_num: int = Field(..., alias="pageNum", description="请求页码")
     page_size: int = Field(..., alias="pageSize", description="每页条数")
 
-    device_ids: Optional[List[str]] = Field(
-        None, alias="ID", description="设备实例ID列表"
-    )
-    app_id: Optional[str] = Field(None, alias="appId", description="应用ID")
-    area_id: Optional[str] = Field(None, alias="areaID", description="区域ID")
-    class_id: Optional[str] = Field(None, alias="classID", description="原型ID")
-    class_name: Optional[str] = Field(None, alias="className", description="原型名称")
-    class_type: Optional[str] = Field(None, alias="classType", description="设备类型")
-    label: Optional[List[dict]] = Field(None, alias="label", description="标签")
-    name: Optional[str] = Field(None, description="设备名称")
-    project_id: Optional[str] = Field(None, alias="projectID", description="项目ID")
-    sub_off: Optional[bool] = Field(
+    device_ids: list[str] | None = Field(None, alias="ID", description="设备实例ID列表")
+    app_id: str | None = Field(None, alias="appId", description="应用ID")
+    area_id: str | None = Field(None, alias="areaID", description="区域ID")
+    class_id: str | None = Field(None, alias="classID", description="原型ID")
+    class_name: str | None = Field(None, alias="className", description="原型名称")
+    class_type: str | None = Field(None, alias="classType", description="设备类型")
+    label: list[dict] | None = Field(None, alias="label", description="标签")
+    name: str | None = Field(None, description="设备名称")
+    project_id: str | None = Field(None, alias="projectID", description="项目ID")
+    sub_off: bool | None = Field(
         None,
         alias="subOff",
         description="是否包含子集 默认false，只显示当前区域，true包含子集区域数据",
     )
-    type_: Optional[str] = Field(None, alias="type", description="类型")
+    type_: str | None = Field(None, alias="type", description="类型")
 
 
 class DeviceRealtimeDataListRequest(BaseSupaiotRequest):
-    device_ids: List[str] = Field(..., alias="ID", description="设备ID列表")
+    device_ids: list[str] = Field(..., alias="ID", description="设备ID列表")
 
 
 class ClassListRequest(BaseSupaiotRequest):
@@ -58,15 +58,13 @@ class ClassListRequest(BaseSupaiotRequest):
 
     page_num: int = Field(..., alias="pageNum", description="请求页码")
     page_size: int = Field(..., alias="pageSize", description="每页条数")
-    detail_level: Optional[int] = Field(
-        None, alias="detailLevel", description="详情等级"
-    )
-    class_id: Optional[str] = Field(None, alias="classID", description="原型ID")
-    class_type: Optional[str] = Field(None, alias="classType", description="设备类型")
-    label: Optional[List[dict]] = Field(None, alias="label", description="标签")
-    name: Optional[str] = Field(None, description="设备名称")
-    project_id: Optional[str] = Field(None, alias="projectID", description="项目ID")
-    type_: Optional[str] = Field(None, alias="type", description="类型")
+    detail_level: int | None = Field(None, alias="detailLevel", description="详情等级")
+    class_id: str | None = Field(None, alias="classID", description="原型ID")
+    class_type: str | None = Field(None, alias="classType", description="设备类型")
+    label: list[dict] | None = Field(None, alias="label", description="标签")
+    name: str | None = Field(None, description="设备名称")
+    project_id: str | None = Field(None, alias="projectID", description="项目ID")
+    type_: str | None = Field(None, alias="type", description="类型")
 
 
 # ==============================================================================
@@ -83,8 +81,7 @@ class SupaiotMqttModel(BaseModel):
         """
         return self.model_dump_json()
 
-    @abstractmethod
-    def get_topic(self) -> str:
+    def get_topic(self):
         """获取对应的主题
 
         Returns:
@@ -92,9 +89,6 @@ class SupaiotMqttModel(BaseModel):
         """
 
 
-# -----------------------------------------------------------------------------
-# 设备上报历史数据
-# -----------------------------------------------------------------------------
 class SubscribeControlReqModel(SupaiotMqttModel):
     """设备上报历史数据
 
@@ -133,9 +127,6 @@ class SubscribeControlReqModel(SupaiotMqttModel):
         return f"/edge/{series}/{sn}/{version}/control"
 
 
-# -----------------------------------------------------------------------------
-# 设备响应控制命令
-# -----------------------------------------------------------------------------
 class ControlReqCommandModel(BaseModel):
     """控制响应命令
 
@@ -166,7 +157,7 @@ class PublishControlResMqttModel(SupaiotMqttModel):
     version: str = Field(default="1.0", description="协议版本号")
     time: datetime = Field(..., description="推送时间")
     sequence: int = Field(..., description="命令序列号")
-    data: Dict[str, ControlReqCommandModel] = Field(
+    data: dict[str, ControlReqCommandModel] = Field(
         ..., description="可响应单条或者多条控制命令"
     )
 
@@ -174,9 +165,6 @@ class PublishControlResMqttModel(SupaiotMqttModel):
         return f"/edge/{self.series}/{self.sn}/{self.version}/response"
 
 
-# -----------------------------------------------------------------------------
-# 设备上报实时数据
-# -----------------------------------------------------------------------------
 class PublishRealMqttModel(SupaiotMqttModel):
     """设备上报实时数据
 
@@ -194,9 +182,6 @@ class PublishRealMqttModel(SupaiotMqttModel):
         return f"/edge/{self.series}/{self.sn}/{self.version}/data"
 
 
-# -----------------------------------------------------------------------------
-# 设备推送历史数据
-# -----------------------------------------------------------------------------
 class HistoryDataModel(BaseModel):
     """推送历史数据
 
@@ -221,3 +206,26 @@ class PublishHistoryModel(SupaiotMqttModel):
 
     def get_topic(self):
         return f"/edge/{self.series}/{self.sn}/{self.version}/history"
+
+
+# ==============================================================================
+# Bussiness models
+# ==============================================================================
+class DeviceInfoMode(BaseModel):
+    """业务设备信息模型"""
+    
+    series: str = Field(..., description="设备产品序列号")
+    sn: str = Field(..., description="设备标识码")
+    port: int = Field(..., description="设备端口号")
+    ip: IPvAnyAddress = Field(..., description="设备IP地址")
+    device_id: str | None = Field(..., description="设备编码")
+    class_id: str | None = Field(..., description="设备原型ID")
+    chainage: str | None = Field(..., description="设备桩号")
+
+    @field_validator("chainage")
+    @classmethod
+    def validate_chainage(cls, value: str | None) -> str | None:
+        if value is not None:
+            if not is_chainage(value):
+                raise ValueError(f"Invalid chainage, input: {value}")
+        return value
