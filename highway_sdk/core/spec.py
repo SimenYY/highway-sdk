@@ -6,4 +6,4 @@ ETX: bytes = b"\x03"
 ESC: bytes = b"\x1b"
 
 
-BUFSIZE = 2**10  # 1KB
+BUFSIZE = 2**16  # 64KB

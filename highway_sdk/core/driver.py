@@ -1,18 +1,18 @@
+from collections.abc import Callable
 from datetime import datetime, timedelta
 import logging
 import random
 import asyncio
-from typing import Self
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from highway_sdk.core.log import PrefixLoggerAdapter
-from highway_sdk.core.interface import BaseMessageChainParser
+from highway_sdk.core.interface import BaseMessageParser
 from .exceptions import (
     HostResponseTimeoutError,
     ConnectionFailError,
     ConnectionLostError,
 )
 from .reader import MessageReader
-from .protocol import BUFSIZE
+from .spec import BUFSIZE
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 # asyncio streams client
 # ==============================================================================
 class AioTCPClient:
+    """asyncio client"""
+
     def __init__(
         self,
         host: str,
@@ -118,42 +120,50 @@ class AioTCPClient:
 
 
 # ==============================================================================
-# protocol 类
+# Protocol 类
 # ==============================================================================
-class ClientProtocol(asyncio.Protocol):
-    def __init__(
-        self, on_lost_fut: asyncio.Future, loop: asyncio.AbstractEventLoop | None = None
-    ) -> None:
-        self._on_lost_fut = on_lost_fut
-        self._loop = loop or asyncio.get_running_loop()
+class UDPProtocol(asyncio.DatagramProtocol):
+    """UDP 协议
 
-
-class TCPClientProtocol(asyncio.Protocol):
-    """TCP 客户端协议类
-
-    核心功能包括：
-        1. 自定义协议开发、
-        2. 自动重连机制、
-        3. 完善的日志
-
-    Attributes:
-        _on_lost_fut (asyncio.Future): 连接丢失的 Future 对象
-        _loop (asyncio.AbstractEventLoop): 事件循环
-        _transport (asyncio.Transport): 传输对象
-        log (PrefixLoggerAdapter): 日志适配器
+    Args:
+        asyncio (_type_): _description_
     """
 
     def __init__(
         self,
-        on_lost_fut: asyncio.Future | None = None,
+        on_con_lost: asyncio.Future,
         loop: asyncio.AbstractEventLoop | None = None,
     ) -> None:
-        self._on_lost_fut = on_lost_fut
-        self._transport: asyncio.Transport | None = None
+        self._on_con_lost = on_con_lost
         self._loop = loop or asyncio.get_running_loop()
+
+    def connection_lost(self, exc: Exception | None) -> None:
+        self._on_con_lost.set_result(True)
+
+
+class TCPClientProtocol(asyncio.Protocol):
+    """TCP 客户端协议
+
+    Args:
+        asyncio (_type_): _description_
+    """
+
+    def __init__(
+        self,
+        on_con_lost: asyncio.Future,
+        loop: asyncio.AbstractEventLoop | None = None,
+    ) -> None:
+        self._on_con_lost = on_con_lost
+        self._loop = loop or asyncio.get_running_loop()
+        self._transport: asyncio.BaseTransport | None = None
         self.log: PrefixLoggerAdapter = PrefixLoggerAdapter(logger)
 
-    def connection_made(self, transport: asyncio.Transport) -> None:
+    @property
+    def peername(self):
+        assert self._transport is not None
+        return self._transport.get_extra_info("peername")
+
+    def connection_made(self, transport: asyncio.BaseTransport) -> None:
         """连接建立时回调
 
         Args:
@@ -162,13 +172,11 @@ class TCPClientProtocol(asyncio.Protocol):
         """
 
         self._transport = transport
-        self.log = PrefixLoggerAdapter(
-            logger, prefix=str(list(transport.get_extra_info("peername")))
-        )
+        self.log = PrefixLoggerAdapter(logger, prefix=str(list(self.peername)))
         self.log.info("Connection made")
         self.on_connected()
 
-    def data_received(self, data: bytearray) -> None:
+    def data_received(self, data: bytes) -> None:
         """数据接收时回调
 
         Args:
@@ -192,10 +200,10 @@ class TCPClientProtocol(asyncio.Protocol):
 
         self.log.error(f"Connection lost: {exc}")
 
-        on_lost_fut = self._on_lost_fut
-        if on_lost_fut is not None and not on_lost_fut.cancelled():
-            on_lost_fut.set_result(True)
-            self._on_lost_fut = None
+        on_con_fut = self._on_con_lost
+        if on_con_fut is not None and not on_con_fut.cancelled():
+            on_con_fut.set_result(True)
+            self._on_con_lost = None
 
         self._transport = None
         self.on_disconnected()
@@ -221,20 +229,16 @@ class TCPClientProtocol(asyncio.Protocol):
         if not self.is_connected:
             raise ConnectionError("Connection lost")
 
-        assert self._transport is not None
-        self._transport.write(data)
+        assert self._transport is not None, "transport is None"
+        self._transport.write(data)  # type: ignore
         self.log.debug(f"TXD >> {data.hex(' ')}")
 
     def on_connected(self) -> None:
         """连接建立后的钩子方法"""
         pass
 
-    def on_data_received(self, data: bytearray) -> None:
-        """数据接收时候的钩子方法
-
-        Args:
-            data (bytearray): _description_
-        """
+    def on_data_received(self, data: bytes) -> None:
+        """数据接收时候的钩子方法"""
         pass
 
     def on_disconnected(self) -> None:
@@ -242,29 +246,20 @@ class TCPClientProtocol(asyncio.Protocol):
         pass
 
 
-class TCPClientDriverProtocol(TCPClientProtocol):
-    """适用于驱动的协议
-
-    核心功能包括：
-        1. 完善的调度器
-        2. 报文读取处理
+class DriverTCPClientProtocol(TCPClientProtocol):
+    """TCP 客户端驱动协议
 
     Args:
         TCPClientProtocol (_type_): _description_
 
-    Raises:
-        ConnectionError: _description_
-        ValueError: _description_
-        ValueError: _description_
-        RuntimeError: _description_
-        RuntimeError: _description_
-        ValueError: _description_
+    Notes:
+        AsyncIOScheduler是可以动态的增添任务的
 
     Returns:
         _type_: _description_
     """
 
-    parser: BaseMessageChainParser | None = None
+    parser: type[BaseMessageParser]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -272,28 +267,14 @@ class TCPClientDriverProtocol(TCPClientProtocol):
         self.scheduler = AsyncIOScheduler()  # 调度器
         self.reader = MessageReader()
 
-    def connection_made(self, transport: asyncio.Transport) -> None:
-        if not self.scheduler.running:
-            self.scheduler.start()
-        return super().connection_made(transport)
-
-    def connection_lost(self, exc: Exception | None) -> None:
-        if self.scheduler.running:
-            self.scheduler.shutdown()
-
-        return super().connection_lost(exc)
-
-    def data_received(self, data: bytearray) -> None:
+    def data_received(self, data: bytes) -> None:
         self.log.debug(f"RXD << {data.hex(' ')}")
         self.reader.feed_data(data)
         self.on_data_received(data)
 
     def add_interval_jobs(self, func_list: list, delay_seconds: float = 2.0):
-        """添加间隔任务"""
+        """均匀添加间隔任务"""
         gap = delay_seconds / len(func_list)
-        if gap < 0.1:
-            # TODO: 增加gap过小的异常
-            pass
         now = datetime.now()
         for i, func in enumerate(func_list):
             self.scheduler.add_job(
@@ -303,26 +284,28 @@ class TCPClientDriverProtocol(TCPClientProtocol):
                 next_run_time=now + timedelta(seconds=gap * i),
             )
 
+    def connection_made(self, transport: asyncio.BaseTransport) -> None:
+        if not self.scheduler.running:
+            self.scheduler.start()
+        return super().connection_made(transport)
 
-class TCPClientSequenceDriverProtocol(TCPClientDriverProtocol):
+    def connection_lost(self, exc: Exception | None) -> None:
+        if self.scheduler.running:
+            self.scheduler.shutdown()
+        return super().connection_lost(exc)
+
+
+class SequenceDriverTCPClientProtocol(DriverTCPClientProtocol):
     """顺序请求响应协议
 
-    基于发送顺序匹配响应的同步机制：
-    1. 使用队列维护发送命令的顺序
-    2. 使用相同顺序的Future队列等待对应的响应
-    3. 按照先进先出(FIFO)原则匹配响应与请求
-    4. 实现超时机制保证可靠性
+    顺序匹配响应的同步机制
 
     Args:
         TcpClientProtocol (_type_): _description_
     """
 
-    def __init__(
-        self,
-        on_lost_fut: asyncio.Future | None = None,
-        loop: asyncio.AbstractEventLoop | None = None,
-    ) -> None:
-        super().__init__(on_lost_fut, loop)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self._resp_queue = asyncio.Queue()  # 等待响应队列
         self._lock = asyncio.Lock()
@@ -367,7 +350,7 @@ class TCPClientSequenceDriverProtocol(TCPClientDriverProtocol):
                 if not resp_fut.done():
                     resp_fut.cancel()
 
-    def data_received(self, data: bytearray) -> None:
+    def data_received(self, data: bytes) -> None:
         """数据接收时回调
 
         Args:
@@ -383,7 +366,7 @@ class TCPClientSequenceDriverProtocol(TCPClientDriverProtocol):
 
 
 # ==============================================================================
-# 连接器类
+# Connector 类
 # ==============================================================================
 class BaseConnector:
     """连接器基类"""
@@ -392,16 +375,24 @@ class BaseConnector:
         self,
         host: str,
         port: int,
-        protocol_class: type[ClientProtocol],
+        protocol_factory: Callable[..., TCPClientProtocol | UDPProtocol],
         loop: asyncio.AbstractEventLoop | None = None,
     ) -> None:
         self.host = host
         self.port = port
-        self.protocol_class = protocol_class
+        self.protocol_cls = protocol_factory
         self._loop = loop or asyncio.get_running_loop()
         self._transport: asyncio.BaseTransport | None = None
-        self._protocol: ClientProtocol | None = None
-        self._on_lost_fut = self._loop.create_future()
+        self._protocol: asyncio.BaseProtocol | None = None
+        self._on_con_lost = self._loop.create_future()  # 连接丢失future
+
+    @property
+    def protocol(self):
+        return self._protocol
+
+    @property
+    def transport(self):
+        return self._transport
 
     async def create(self):
         """创建连接器，生成transpost、protocol
@@ -409,6 +400,9 @@ class BaseConnector:
         Returns:
             _type_: _description_
         """
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.host}, {self.port})"
 
 
 class UDPConnector(BaseConnector):
@@ -421,9 +415,25 @@ class UDPConnector(BaseConnector):
         _type_: _description_
     """
 
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        protocol_cls: type[UDPProtocol],
+        *,
+        local_addr: tuple[str, int] | None = None,
+        loop: asyncio.AbstractEventLoop | None = None,
+    ) -> None:
+        super().__init__(host, port, protocol_cls, loop)
+        self.local_addr = local_addr
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}[remote_addr=({self.host},{self.port}), local_addr={self.local_addr}]"
+
     async def create(self):
         self._transport, self._protocol = await self._loop.create_datagram_endpoint(
-            lambda: self.protocol_class(self._on_lost_fut, self._loop),
+            lambda: self.protocol_cls(self._on_con_lost, self._loop),
+            local_addr=self.local_addr,
             remote_addr=(self.host, self.port),
         )
 
@@ -438,29 +448,46 @@ class TCPConnector(BaseConnector):
         _type_: _description_
     """
 
-    async def create(self):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        protocol_cls: type[TCPClientProtocol],
+        loop: asyncio.AbstractEventLoop | None = None,
+    ) -> None:
+        super().__init__(host, port, protocol_cls, loop)
+
+    async def create(self) -> None:
         self._transport, self._protocol = await self._loop.create_connection(
-            lambda: self.protocol_class(self._on_lost_fut, self._loop)
+            lambda: self.protocol_cls(on_con_lost=self._on_con_lost, loop=self._loop),
+            host=self.host,
+            port=self.port,
         )
+        if await self._on_con_lost:
+            self.close()
+
+    @property
+    def is_connected(self) -> bool:
+        return self._transport is not None and not self._transport.is_closing()
+
+    def close(self) -> None:
+        """关闭连接"""
+        if self.is_connected:
+            assert self._transport is not None, "transport is None"
+            self._transport.close()
+            self._transport = None
+            self._protocol = None
+            logger.info(f"Disconnected from {self}")
 
 
-class TCPReconnectingConnector(BaseConnector):
+class TCPReconnectingConnector(TCPConnector):
     """TCP 重新连接的连接类
 
-    Attributes:
-        host (str): 服务器地址
-        port (int): 服务器端口
-        auto_reconnect (bool): 是否自动重连. Defaults to True.
-        use_jitter (bool): 是否使用重连抖动. Defaults to False.
-        protocol_class (Type[TcpClientProtocol], optional): 协议类. Defaults to TcpClientProtocol.
-        _loop (asyncio.AbstractEventLoop): 事件循环
-        _retry_delay (float): 重连延迟
-        _continue_trying (bool): 是否继续尝试连接
-        _on_lost_fut (asyncio.Future): 非正常连接丢失回调Future
+    Args:
+        TCPConnector (_type_): _description_
 
-    Example:
-    >>> connector = await TcpConnector.create("127.0.0.1", 8000, protocol_class=YourProtocol)
-
+    Returns:
+        _type_: _description_
     """
 
     min_delay: float = 1.0
@@ -473,98 +500,56 @@ class TCPReconnectingConnector(BaseConnector):
         self,
         host: str,
         port: int,
-        auto_reconnect: bool,
-        use_jitter: bool,
-        protocol_class: type[TCPClientProtocol],
-        loop: asyncio.AbstractEventLoop | None = None,
-    ):
-        self.host = host
-        self.port = port
-        self.auto_reconnect = auto_reconnect
-        self.protocol_class = protocol_class
-        self.use_jitter = use_jitter
-
-        self._loop = loop or asyncio.get_running_loop()
-        self._retry_delay = self.min_delay
-        self._continue_trying = True
-        self._on_lost_fut = self._loop.create_future()
-
-    @classmethod
-    async def create(
-        cls,
-        host: str,
-        port: int,
+        protocol_cls: type[TCPClientProtocol],
         *,
         auto_reconnect: bool = True,
         use_jitter: bool = False,
-        protocol_class: type[TCPClientProtocol] = TCPClientProtocol,
         loop: asyncio.AbstractEventLoop | None = None,
-    ) -> Self:
-        """创建连接
+    ) -> None:
+        super().__init__(host, port, protocol_cls, loop)
 
-        Node:
-            如果auto_reconnect为True, 则会阻塞协程
+        self.auto_reconnect = auto_reconnect
+        self.use_jitter = use_jitter
+        self._retry_delay = self.min_delay
+        self._continue_trying = True
 
-        Args:
-            host (str): 服务器地址
-            port (int): 服务器端口
-            auto_reconnect (bool): 是否自动重连. Defaults to True.
-            use_jitter (bool): 是否使用重连抖动. Defaults to False.
-            protocol_class (Type[TcpClientProtocol], optional): 协议类. Defaults to TcpClientProtocol.
-
-        Returns:
-            Self: 连接实例
-        """
-        connector = cls(host, port, auto_reconnect, use_jitter, protocol_class, loop)
-
-        if connector.auto_reconnect:
-            await connector._reconnect()
+    async def create(self):
+        if self.auto_reconnect:
+            await self._reconnect()
         else:
-            await connector._connect()
-
-        return connector
-
-    def close(self) -> None:
-        """关闭连接"""
-        if self.is_connected():
-            assert self._transport is not None, "transport is None"
-            self._transport.close()
-            self._transport = None
-            logger.info(f"Disconnected from {self.log_address()}")
+            await self._connect()
 
     async def _connect(self) -> None:
         """连接"""
-        transport, protocol = await self._loop.create_connection(
-            lambda: self.protocol_class(self._on_lost_fut, self._loop),
+        self._transport, self._protocol = await self._loop.create_connection(
+            lambda: self.protocol_cls(on_con_lost=self._on_con_lost, loop=self._loop),
             self.host,
             self.port,
         )
-        self._transport = transport
-        self._protocol = protocol
 
     async def _reconnect(self) -> None:
         """重连
 
         Note:
-            实现说明，连接成功后，因为等待`self._on_lost_fut`的结果，当前函数会被暂时搁置，
-            当`self._on_lost_fut`结果返回时，当前函数会继续执行，并重新连接。
+            实现说明，连接成功后，因为等待`self._on_con_lost`的结果，当前函数会被暂时搁置，
+            当`self._on_con_lost`结果返回时，当前函数会继续执行，并重新连接。
         """
         while self._continue_trying:
             try:
                 await self._connect()
                 self._reset_delay()
-                on_lost_fut = self._on_lost_fut
+                on_lost_fut = self._on_con_lost
                 if await on_lost_fut:
                     self.close()
                     self._protocol = None
-                    self._on_lost_fut = self._loop.create_future()
+                    self._on_con_lost = self._loop.create_future()
                     continue
                 else:
                     break
             except OSError as e:
                 self._increase_delay()
                 logger.info(
-                    f"Failed to connect to {self.log_address()}: {e} Reconnecting...(after {self._retry_delay: 0.2f} s)"
+                    f"Failed to connect to {self}: {e} Reconnecting...(after {self._retry_delay: 0.2f} s)"
                 )
             finally:
                 # 断开后，一定在延时后再连接，避免二次触发protocol的连接回调
@@ -591,11 +576,16 @@ class TCPReconnectingConnector(BaseConnector):
                 self._retry_delay, self.jitter * self._retry_delay
             )
 
-    def is_connected(self) -> bool:
-        return self._transport is not None and not self._transport.is_closing()
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(host={self.host}, port={self.port})"
+# ==============================================================================
+# Driver
+# ==============================================================================
+class BaseDriver:
+    connector_class: type[BaseConnector]
+    protocol_class: type[UDPProtocol] | type[TCPClientProtocol]
 
-    def log_address(self) -> str:
-        return f"{self.host}:{self.port}"
+    async def start(self, *args, **kwargs):
+        """启动驱动"""
+
+    async def stop(self):
+        """停止驱动"""

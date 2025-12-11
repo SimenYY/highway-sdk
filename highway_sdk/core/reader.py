@@ -1,12 +1,10 @@
-from .protocol import STX, ETX
-
-_DEFAULT_LIMIT = 2**16  # 64KB
+from .spec import STX, ETX, BUFSIZE
 
 
 class MessageReader:
     """报文读取器"""
 
-    def __init__(self, limit: int = _DEFAULT_LIMIT):
+    def __init__(self, limit: int = BUFSIZE):
         if limit < 0:
             raise ValueError("Limit cannot be <=0")
 

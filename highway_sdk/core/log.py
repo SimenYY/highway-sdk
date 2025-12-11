@@ -1,25 +1,11 @@
 import logging
 import inspect
-from dataclasses import dataclass
 from pathlib import Path
 import sys
+from typing import Final
 
 import loguru
 
-try:
-    from loguru import logger
-except ImportError:
-    raise ImportError(
-        "loguru is not installed., Please install it using pip insall loguru"
-    )
-
-__all__ = [
-    "PrefixLoggerAdapter",
-    "PropagateFromLoguruHandler",
-    "ColoredStreamHandler",
-    "InterceptHandler",
-    "intercept_logging",
-]
 
 # ==============================================================================
 # logger adapter
@@ -56,7 +42,7 @@ class PrefixLoggerAdapter(logging.LoggerAdapter):
 # ==============================================================================
 
 
-class PropagateFromLoguruHandler(logging.Handler):
+class PropagateHandler(logging.Handler):
     """Propagate loguru messages to logging
 
     Usage:
@@ -82,7 +68,7 @@ class InterceptHandler(logging.Handler):
         # Get corresponding Loguru level if it exists.
         level: str | int
         try:
-            level = logger.level(record.levelname).name
+            level = loguru.logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
 
@@ -92,7 +78,7 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(
+        loguru.logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
 
@@ -139,29 +125,29 @@ class ColoredStreamHandler(logging.StreamHandler):
 # ==============================================================================
 # logging utils
 # ==============================================================================
-
-
-def intercept_logging() -> None:
-    """intercept all logging to loguru"""
-    intercept_handler = InterceptHandler()
-    # Configuares global logging
-    logging.basicConfig(handlers=[intercept_handler], level=0, force=True)
-
-
-# ==============================================================================
-# logging config
-# ==============================================================================
-
-
-@dataclass(frozen=True)
-class LoguruDefaults:
-    FORMAT: str = (
+class LoguruUtils:
+    DEFAULT_FORMAT: Final = (
         "<level>{level: <8}</level> | "
         "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
     )
 
+    @classmethod
+    def intercept_logging(cls) -> None:
+        """intercept all logging to loguru"""
+        intercept_handler = InterceptHandler()
+        # Configuares global logging
+        logging.basicConfig(handlers=[intercept_handler], level=0, force=True)
 
+    @classmethod
+    def propagate_logging(cls) -> None:
+        """propagate all loguru to logging"""
+        loguru.logger.add(PropagateHandler(), format=cls.DEFAULT_FORMAT)
+
+
+# ==============================================================================
+# logging config
+# ==============================================================================
 class LoguruConfig:
     """配置loguru
 
@@ -196,10 +182,10 @@ class LoguruConfig:
         logging_logger.addHandler(InterceptHandler())
         logging_logger.propagate = False
 
-    def setup_console(self) -> None:
+    def set_console(self) -> None:
         loguru.logger.add(sys.stdout, level=self.level)
 
-    def setup_file(
+    def set_file(
         self,
         log_dir: Path | str = "logs",
         *,
@@ -219,3 +205,6 @@ class LoguruConfig:
             compression=compression,
             enqueue=enqueue,
         )
+
+
+

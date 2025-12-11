@@ -61,17 +61,6 @@ class ValidationError(HighwaySDKException, ValueError):
 class CrcValidationError(ValidationError):
     """CRC校验异常"""
 
-# TODO 协议解析待删除
-# -----------------------------------------------------------------------------
-# 协议解析异常
-# -----------------------------------------------------------------------------
-class ProtocolError(HighwaySDKException, ValueError):
-    """协议相关异常"""
-
-
-class ProtocolParserError(ProtocolError):
-    """协议解析异常"""
-
 
 # -----------------------------------------------------------------------------
 # 设备业务异常
