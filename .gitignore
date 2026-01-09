@@ -138,7 +138,5 @@ dmypy.json
 cython_debug/
 
 # PyCharm and other tools
-.vscode/
 .idea/
 .deprecated/
-temp.py
