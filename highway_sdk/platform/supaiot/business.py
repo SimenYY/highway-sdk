@@ -1,11 +1,14 @@
 import logging
 import ipaddress
+import re
 from pydantic.networks import IPvAnyAddress
 from highway_sdk.utils.judge import is_ip, is_user_port, is_chainage
 from .client import SupaiotAPIClient
 from .models import DeviceInfoMode
 
 logger = logging.getLogger(__name__)
+
+__all__ = ["SupaiotBusinessService"]
 
 
 class SupaiotBusinessService:
@@ -37,9 +40,7 @@ class SupaiotBusinessService:
 
         page_num, page_size = 1, 20
         while True:
-            res = await self._client.list_devices(
-                page_num, page_size, class_id=class_id
-            )
+            res = await self._client.get_devices(page_num, page_size, class_id=class_id)
             if isinstance(res.data, dict):
                 device_list = res.data.get("data")
 
@@ -47,6 +48,7 @@ class SupaiotBusinessService:
                     break
 
                 for device in device_list:
+                    extra = {}
                     device_id = device["ID"]
                     description: str = device.get(
                         "description", ""
@@ -61,8 +63,16 @@ class SupaiotBusinessService:
                             ip = ipaddress.ip_address(field)
                         elif is_user_port(field):
                             port = int(field)
+                        elif ret := re.search(r"h(\d+)w(\d+)", field):
+                            extra.update(
+                                {
+                                    "h": int(ret.group(1)),
+                                    "w": int(ret.group(2)),
+                                }
+                            )
+
                     sn = device["mqttInfo"]["SN"]
-                    if ip is None or port is None:
+                    if ip is None:
                         logger.error(f"缺失通信地址, 设备描述：{description}")
                         continue
                     devices_info[ip] = DeviceInfoMode(
@@ -73,6 +83,7 @@ class SupaiotBusinessService:
                         device_id=device_id,
                         class_id=class_id,
                         chainage=chainage,
+                        extra=extra,
                     )
 
                 page_num += 1
@@ -103,9 +114,7 @@ class SupaiotBusinessService:
         devices_address["ip_list"] = []
         page_num, page_size = 1, 20
         while True:
-            res = await self._client.list_devices(
-                page_num, page_size, class_id=class_id
-            )
+            res = await self._client.get_devices(page_num, page_size, class_id=class_id)
             if isinstance(res.data, dict):
                 device_list = res.data.get("data")
 
@@ -128,16 +137,16 @@ class SupaiotBusinessService:
                 break
         return devices_address
 
-    async def get_mqtt_class_ids(self):
+    async def get_class_ids(self):
         """获取MQTT接入设备原型列表
 
         Returns:
             _type_: _description_
         """
         page_num, page_size = 1, 20
-        mqtt_class_list = []
+        class_ids = []
         while True:
-            res = await self._client.list_class(page_num, page_size)
+            res = await self._client.get_class_list(page_num, page_size)
             if isinstance(res.data, dict):
                 class_list = res.data.get("data")
 
@@ -148,11 +157,11 @@ class SupaiotBusinessService:
                     res = await self._client.get_device_class(class_id)
                     if isinstance(res.data, dict):
                         if "mqttInfo" in res.data.keys():
-                            mqtt_class_list.append(class_id)
+                            class_ids.append(class_id)
                     else:
                         break
 
                 page_num += 1
             else:
                 break
-        return mqtt_class_list
+        return class_ids

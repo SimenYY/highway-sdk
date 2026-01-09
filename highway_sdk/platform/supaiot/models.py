@@ -1,10 +1,23 @@
 from datetime import datetime
 from typing import Any
-from typing_extensions import Self
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 from pydantic.networks import IPvAnyAddress
 from pydantic.config import ConfigDict
 from highway_sdk.utils.judge import is_chainage
+
+__all__ = [
+    "APIResponse",
+    "BaseAPIRequest",
+    "Devices",
+    "DevicesRealtimeData",
+    "ClassListRequest",
+    "BaseMqttModel",
+    "ControlReqSubscribeModel",
+    "_ControlReqCommandModel",
+    "RealtimeDataPublishModel",
+    "HistoryDataPublishModel",
+    "DeviceInfoMode",
+]
 
 
 # ==============================================================================
@@ -15,16 +28,16 @@ class _ApiResult(BaseModel):
     resultError: str
 
 
-class SupaiotResponse(BaseModel):
+class APIResponse(BaseModel):
     data: dict[Any, Any] | list[Any] | None
     result: _ApiResult
 
 
-class BaseSupaiotRequest(BaseModel):
+class BaseAPIRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
-class DeviceListRequest(BaseSupaiotRequest):
+class Devices(BaseAPIRequest):
     """条件查询设备列表的请求体
     对应平台接口 /supaiot/api/v2/device/list 的 body
     """
@@ -49,11 +62,11 @@ class DeviceListRequest(BaseSupaiotRequest):
     type_: str | None = Field(None, alias="type", description="类型")
 
 
-class DeviceRealtimeDataListRequest(BaseSupaiotRequest):
+class DevicesRealtimeData(BaseAPIRequest):
     device_ids: list[str] = Field(..., alias="ID", description="设备ID列表")
 
 
-class ClassListRequest(BaseSupaiotRequest):
+class ClassListRequest(BaseAPIRequest):
     """条件查询设备原型列表"""
 
     page_num: int = Field(..., alias="pageNum", description="请求页码")
@@ -70,16 +83,14 @@ class ClassListRequest(BaseSupaiotRequest):
 # ==============================================================================
 # MQTT Models
 # ==============================================================================
-class SupaiotMqttModel(BaseModel):
+class BaseMqttModel(BaseModel):
     """物联智控MQTT Model 基类"""
 
-    def get_payload(self) -> str:
-        """获取对应的载荷
+    time: datetime = Field(default_factory=datetime.now, description="推送时间")
 
-        Returns:
-            str: _description_
-        """
-        return self.model_dump_json()
+    @field_serializer("time")
+    def serialize_time(self, time: datetime) -> str:
+        return time.strftime("%Y-%m-%d %H:%M:%S")
 
     def get_topic(self):
         """获取对应的主题
@@ -89,8 +100,8 @@ class SupaiotMqttModel(BaseModel):
         """
 
 
-class SubscribeControlReqModel(SupaiotMqttModel):
-    """设备上报历史数据
+class ControlReqSubscribeModel(BaseMqttModel):
+    """设备订阅控制命令
 
     用于校验
 
@@ -104,8 +115,7 @@ class SubscribeControlReqModel(SupaiotMqttModel):
     series: str = Field(..., description="设备产品序列号")
     sn: str = Field(..., description="设备标识码")
     version: str = Field(..., description="设备版本号")
-    time: datetime = Field(..., description="推送时间")
-    timestamp: int | None = Field(None, description="Unix毫秒级推送时间")
+    timestamp: int | None = Field(default=None, description="Unix毫秒级推送时间")
     needResponse: bool = Field(..., description="是否需要设备响应控制命令")
     sequence: int = Field(..., description="命令序列号")
     data: dict = Field(..., description="可下发单条或者多条控制命令")
@@ -127,7 +137,7 @@ class SubscribeControlReqModel(SupaiotMqttModel):
         return f"/edge/{series}/{sn}/{version}/control"
 
 
-class ControlReqCommandModel(BaseModel):
+class _ControlReqCommandModel(BaseModel):
     """控制响应命令
 
     用于构建
@@ -136,15 +146,15 @@ class ControlReqCommandModel(BaseModel):
         BaseModel (_type_): _description_
     """
 
-    time: datetime = Field(..., description="响应时间")
-    timestamp: int | None = Field(None, description="Unix毫秒级推送时间")
+    time: datetime = Field(default_factory=datetime.now, description="响应时间")
+    timestamp: int | None = Field(default=None, description="Unix毫秒级推送时间")
     value: Any = Field(..., description="控制数值")
     succes: bool = Field(..., description="控制命令是否下发成功")
     resultCode: int = Field(..., description="控制结果序号，等于0成功，非0失败")
     resultMsg: str = Field(..., description="控制结果描述（失败原因")
 
 
-class PublishControlResMqttModel(SupaiotMqttModel):
+class ControlRespPublishModel(BaseMqttModel):
     """设备响应控制命令
 
 
@@ -155,9 +165,8 @@ class PublishControlResMqttModel(SupaiotMqttModel):
     series: str = Field(..., description="设备产品序列号")
     sn: str = Field(..., description="设备标识码")
     version: str = Field(default="1.0", description="协议版本号")
-    time: datetime = Field(..., description="推送时间")
     sequence: int = Field(..., description="命令序列号")
-    data: dict[str, ControlReqCommandModel] = Field(
+    data: dict[str, _ControlReqCommandModel] = Field(
         ..., description="可响应单条或者多条控制命令"
     )
 
@@ -165,7 +174,7 @@ class PublishControlResMqttModel(SupaiotMqttModel):
         return f"/edge/{self.series}/{self.sn}/{self.version}/response"
 
 
-class PublishRealMqttModel(SupaiotMqttModel):
+class RealtimeDataPublishModel(BaseMqttModel):
     """设备上报实时数据
 
     用于构建
@@ -174,35 +183,36 @@ class PublishRealMqttModel(SupaiotMqttModel):
     series: str = Field(..., description="设备产品序列号")
     sn: str = Field(..., description="设备标识码")
     version: str = Field(default="1.0", description="协议版本号")
-    time: datetime = Field(..., description="推送时间")
-    timestamp: int | None = Field(None, description="Unix毫秒级推送时间")
+    timestamp: int | None = Field(
+        default=None,
+        description="Unix毫秒级推送时间",
+    )
     data: dict = Field(..., description="设备运行数据")
 
     def get_topic(self):
         return f"/edge/{self.series}/{self.sn}/{self.version}/data"
 
 
-class HistoryDataModel(BaseModel):
+class _HistoryDataModel(BaseModel):
     """推送历史数据
 
     Args:
         BaseModel (_type_): _description_
     """
 
-    time: datetime = Field(..., description="推送时间")
-    timestamp: int | None = Field(None, description="Unix毫秒级推送时间")
+    time: datetime = Field(default_factory=datetime.now, description="推送时间")
+    timestamp: int | None = Field(default=None, description="Unix毫秒级推送时间")
 
     model_config = ConfigDict(extra="allow")
 
 
-class PublishHistoryModel(SupaiotMqttModel):
+class HistoryDataPublishModel(BaseMqttModel):
     """设备推送历史数据"""
 
     series: str = Field(..., description="设备产品序列号")
     sn: str = Field(..., description="设备标识码")
     version: str = Field(default="1.0", description="协议版本号")
-    time: datetime = Field(..., description="推送时间")
-    data: list[HistoryDataModel] = Field(..., description="推送历史数据列表")
+    data: list[_HistoryDataModel] = Field(..., description="推送历史数据列表")
 
     def get_topic(self):
         return f"/edge/{self.series}/{self.sn}/{self.version}/history"
@@ -213,14 +223,15 @@ class PublishHistoryModel(SupaiotMqttModel):
 # ==============================================================================
 class DeviceInfoMode(BaseModel):
     """业务设备信息模型"""
-    
+
     series: str = Field(..., description="设备产品序列号")
     sn: str = Field(..., description="设备标识码")
-    port: int = Field(..., description="设备端口号")
+    port: int | None = Field(default=None, description="设备端口号")
     ip: IPvAnyAddress = Field(..., description="设备IP地址")
-    device_id: str | None = Field(..., description="设备编码")
-    class_id: str | None = Field(..., description="设备原型ID")
-    chainage: str | None = Field(..., description="设备桩号")
+    device_id: str | None = Field(default=None, description="设备编码")
+    class_id: str | None = Field(default=None, description="设备原型ID")
+    chainage: str | None = Field(default=None, description="设备桩号")
+    extra: dict[str, Any] = Field(default_factory=dict, description="扩展字段")
 
     @field_validator("chainage")
     @classmethod

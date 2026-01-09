@@ -13,20 +13,21 @@ from .exceptions import (
     SupaiotAPIconnectError,
     SupaiotAPIError,
     SupaiotAPILoginError,
-    SupaiotError,
 )
 from .models import (
     ClassListRequest,
-    DeviceListRequest,
-    DeviceRealtimeDataListRequest,
-    PublishControlResMqttModel,
-    PublishHistoryModel,
-    PublishRealMqttModel,
-    SubscribeControlReqModel,
-    SupaiotResponse,
+    Devices,
+    DevicesRealtimeData,
+    ControlRespPublishModel,
+    HistoryDataPublishModel,
+    RealtimeDataPublishModel,
+    ControlReqSubscribeModel,
+    APIResponse,
 )
 
 logger = logging.getLogger(__name__)
+
+__all__ = ["SupaiotAPIClient", "SupaiotMQTTClient"]
 
 
 # ==============================================================================
@@ -77,7 +78,7 @@ class SupaiotAPIClient:
                 raise SupaiotAPIconnectError(e)
 
             resp.raise_for_status()
-            supaiot_resp = SupaiotResponse.model_validate(resp.json())
+            supaiot_resp = APIResponse.model_validate(resp.json())
 
             if supaiot_resp.result.resultCode != "0":
                 raise SupaiotAPILoginError(
@@ -93,7 +94,7 @@ class SupaiotAPIClient:
                 raise SupaiotAPILoginError("Token missing in login response")
 
             self._client.cookies.set("hypToken", token)
-
+    
     async def request(
         self,
         method: str,
@@ -102,7 +103,7 @@ class SupaiotAPIClient:
         params: dict | None = None,
         json: dict | None = None,
         headers: dict | None = None,
-    ) -> SupaiotResponse:
+    ) -> APIResponse:
         """物联智控请求，校验响应
 
         Args:
@@ -131,7 +132,7 @@ class SupaiotAPIClient:
             raise SupaiotAPIError(e)
 
         try:
-            return SupaiotResponse.model_validate(resp.json())
+            return APIResponse.model_validate(resp.json())
         except ValidationError as e:
             raise SupaiotAPIResponseValidateError(e)
 
@@ -143,7 +144,7 @@ class SupaiotAPIClient:
         params: dict | None = None,
         json: dict | None = None,
         headers: dict | None = None,
-    ) -> SupaiotResponse:
+    ) -> APIResponse:
         """物联智控api请求，懒加载cookies
 
         Args:
@@ -176,13 +177,13 @@ class SupaiotAPIClient:
                 continue
 
             return resp
-        
+
         raise SupaiotAPIError("Failed to get a vaild response from Supaiot.")
 
     # -----------------------------------------------------------------------------
     # 业务接口
     # -----------------------------------------------------------------------------
-    async def list_devices(
+    async def get_devices(
         self,
         page_num: int = 1,
         page_size: int = 10,
@@ -197,7 +198,7 @@ class SupaiotAPIClient:
         project_id: str | None = None,
         sub_off: bool | None = None,
         type_: str | None = None,
-    ) -> SupaiotResponse:
+    ) -> APIResponse:
         """条件查询多个设备实例列表(简化版)
 
         提供直接传参的方式查询设备列表，无需手动构造DeviceListRequest对象
@@ -220,7 +221,7 @@ class SupaiotAPIClient:
         Returns:
             SupaiotResponse: 包含设备列表的响应结果
         """
-        payload = DeviceListRequest(
+        payload = Devices(
             pageNum=page_num,
             pageSize=page_size,
             ID=device_ids,
@@ -241,7 +242,7 @@ class SupaiotAPIClient:
             json=payload.model_dump(by_alias=True, exclude_none=True),
         )
 
-    async def get_device_class(self, class_id: str) -> SupaiotResponse:
+    async def get_device_class(self, class_id: str) -> APIResponse:
         """查询指定设备原型详情
 
         Args:
@@ -256,7 +257,9 @@ class SupaiotAPIClient:
             params={"classID": class_id},
         )
 
-    async def list_device_realtime_data(self, id_: list = []) -> SupaiotResponse:
+    async def get_devices_realtime_data(
+        self, device_ids: list | None = None
+    ) -> APIResponse:
         """多设备实时状态查询
 
         Args:
@@ -265,14 +268,16 @@ class SupaiotAPIClient:
         Returns:
             SupaiotResponse: _description_
         """
-        payload = DeviceRealtimeDataListRequest(ID=id_)
+        if device_ids is None:
+            device_ids = []
+        payload = DevicesRealtimeData(ID=device_ids)
         return await self.request_with_login(
             "POST",
             "/supaiot/api/v2/data/real/device/list",
             json=payload.model_dump(by_alias=True, exclude_none=True),
         )
 
-    async def get_device_realtime_data(self, id_: str) -> SupaiotResponse:
+    async def get_device_realtime_data(self, id_: str) -> APIResponse:
         """获取设备实时数据
 
         Args:
@@ -285,7 +290,7 @@ class SupaiotAPIClient:
             "GET", "/supaiot/api/v2/data/real/device", params={"ID": id_}
         )
 
-    async def list_class(
+    async def get_class_list(
         self,
         page_num: int = 1,
         page_size: int = 10,
@@ -296,7 +301,7 @@ class SupaiotAPIClient:
         name: str | None = None,
         project_id: str | None = None,
         type_: str | None = None,
-    ) -> SupaiotResponse:
+    ) -> APIResponse:
         """条件查询设备原型列表
 
         Args:
@@ -350,20 +355,28 @@ class SupaiotMQTTClient(MqttClientV2):
         super().__init__(host, port, client_id, auth, user_data, qos)
 
     def publish_real_data(self, series: str, sn: str, data: dict):
-        prmm = PublishRealMqttModel(
+        prmm = RealtimeDataPublishModel(
             series=series, sn=sn, time=datetime.now(), timestamp=None, data=data
         )
-        return self.publish(topic=prmm.get_topic(), payload=prmm.get_payload())
+        return self.publish(
+            topic=prmm.get_topic(), payload=prmm.model_dump_json(exclude_none=True)
+        )
 
     def subscribe_control_req(self, series: str, sn: str):
-        return self.subscribe(topic=SubscribeControlReqModel.get_topic(series, sn))
+        return self.subscribe(topic=ControlReqSubscribeModel.get_topic(series, sn))
 
     def publish_history_data(self, series: str, sn: str, data: list):
-        phm = PublishHistoryModel(series=series, sn=sn, time=datetime.now(), data=data)
-        return self.publish(topic=phm.get_topic(), payload=phm.get_payload())
+        phm = HistoryDataPublishModel(
+            series=series, sn=sn, time=datetime.now(), data=data
+        )
+        return self.publish(
+            topic=phm.get_topic(), payload=phm.model_dump_json(exclude_none=True)
+        )
 
     def publish_control_res(self, series: str, sn: str, sequence: int, data: dict):
-        pcrm = PublishControlResMqttModel(
+        pcrm = ControlRespPublishModel(
             series=series, sn=sn, time=datetime.now(), sequence=sequence, data=data
         )
-        return self.publish(topic=pcrm.get_topic(), payload=pcrm.get_payload())
+        return self.publish(
+            topic=pcrm.get_topic(), payload=pcrm.model_dump_json(exclude_none=True)
+        )

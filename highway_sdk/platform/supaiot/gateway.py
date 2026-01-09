@@ -1,33 +1,30 @@
 import asyncio
 from typing import Any
 from collections.abc import Callable
+import logging
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic.networks import IPvAnyAddress
 from functools import partial
+import aiomqtt
 
-from highway_sdk.core.config import LogConfig
-from highway_sdk.core.driver import (
+from highway_sdk.core.protocols import (
     TCPClientProtocol,
+    UDPProtocol,
+)
+from highway_sdk.core.connectors import (
     TCPReconnectingConnector,
     BaseConnector,
     UDPConnector,
-    UDPProtocol,
 )
-
 from .business import SupaiotBusinessService
-from .client import SupaiotAPIClient, SupaiotMQTTClient
+from .client import SupaiotAPIClient
 from .config import SupaiotConfig
-from .models import SubscribeControlReqModel, DeviceInfoMode
-from .protocols import SupaiotMQTTGatewayProtocol
+from .models import ControlReqSubscribeModel, DeviceInfoMode
+from .protocols import MQTTGatewayProtocol
 
+logger = logging.getLogger(__name__)
 
-class SupaiotMQTTGatewayConfig(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="GATEWAY_", env_file=[".env.local", ".env"], extra="allow"
-    )
-    supaiot: SupaiotConfig = SupaiotConfig()
-    log: LogConfig = LogConfig()
+__all__ = ["SupaiotMQTTGateway"]
 
 
 class SupaiotMQTTGateway:
@@ -39,7 +36,7 @@ class SupaiotMQTTGateway:
     """
 
     def __init__(
-        self, protocol_cls: type[SupaiotMQTTGatewayProtocol], class_ids: list[str]
+        self, protocol_cls: type[MQTTGatewayProtocol], class_ids: list[str]
     ) -> None:
         self.connector_cls: type[BaseConnector]
 
@@ -57,49 +54,44 @@ class SupaiotMQTTGateway:
         self.devices_info: dict[IPvAnyAddress, DeviceInfoMode] = {}  # ip: device_info
         self.control_connectors: dict[str, BaseConnector] = {}
         self.north_finished: bool = False
-        self.settings = SupaiotMQTTGatewayConfig()  # load settings
+        self.settings = SupaiotConfig()  # load settings
 
-    def enable_log(self):
-        """启用日志"""
-        self.settings.log.config_loguru()
-
-    async def north_connect(self):
+        # 物联智控api客户端
+        self.api_client = SupaiotAPIClient(
+            self.settings.API_BASE_URL,
+            self.settings.API_APP_ID,
+            self.settings.API_APP_SECRET,
+        )
+        # 物联智控mqtt客户端
+        self.mqtt_client = aiomqtt.Client(
+            hostname=self.settings.MQTT_BROKER_HOST,
+            port=self.settings.MQTT_BROKER_PORT,
+            username=self.settings.MQTT_BROKER_USR,
+            password=self.settings.MQTT_BROKER_PWD,
+            logger=logger
+        )
+        
+    
+    async def north_connect(self, need_subsribe: bool = True) -> None:
         """北向连接，平台连接"""
 
-        self.api_client = SupaiotAPIClient(
-            self.settings.supaiot.API_BASE_URL,
-            self.settings.supaiot.API_APP_ID,
-            self.settings.supaiot.API_APP_SECRET,
-        )
-        await self.api_client.login()
-
+        # 通过获取设备描述以构建设备信息
         self.service = SupaiotBusinessService(self.api_client)
         for class_id in self.class_ids:
             self.devices_info.update(await self.service.get_devices_info(class_id))
-
-        self.mqtt_client = SupaiotMQTTClient(
-            self.settings.supaiot.MQTT_BROKER_HOST,
-            self.settings.supaiot.MQTT_BROKER_PORT,
-            auth=(
-                self.settings.supaiot.MQTT_BROKER_USR,
-                self.settings.supaiot.MQTT_BROKER_PWD,
-            ),
-            qos=self.settings.supaiot.MQTT_QOS,
-        )
-
-        # 批量订阅控制主题
-        def batch_subscribe():
+        
+        if need_subsribe:
+            await self.mqtt_client.__aenter__()
             for _, info in self.devices_info.items():
-                # 订阅控制主题, 在mqtt回调时订阅主题以增加稳定性
-                self.mqtt_client.subscribe_control_req(info.series, info.sn)
+                await self.mqtt_client.subscribe(
+                    ControlReqSubscribeModel.get_topic(info.series, info.sn)
+                )
 
-        self.mqtt_client.set_on_connect(on_sucess=batch_subscribe)
-        self.mqtt_client.connect()
         self.north_finished = True
 
     def set_on_message(self, callback: Callable[..., Any]):
         """设置控制消息回调函数"""
-        self.mqtt_client.set_on_message(callback)
+        ...
 
     async def south_connect(self, **kwargs):
         """南向连接，设备连接
@@ -123,7 +115,7 @@ class SupaiotMQTTGateway:
 
                 tg.create_task(conn.create())
                 self.control_connectors[
-                    SubscribeControlReqModel.get_topic(info.series, info.sn)
+                    ControlReqSubscribeModel.get_topic(info.series, info.sn)
                 ] = conn
 
     async def run(self):

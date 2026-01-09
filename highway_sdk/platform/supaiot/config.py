@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+__all__ = ["SupaiotConfig"]
+
 
 class SupaiotConfig(BaseSettings):
     """物联智控配置"""
