@@ -44,6 +44,7 @@ apscheduler = "^3.11.1"
 aiomqtt = "^2.4.0"
 confluent-kafka = "^2.12.2"
 pre-commit = "^4.5.0"
+platformdirs = "^4.5.1"
 
 
 [[tool.poetry.source]]
