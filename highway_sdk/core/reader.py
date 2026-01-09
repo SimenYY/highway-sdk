@@ -1,9 +1,7 @@
-from .spec import STX, ETX, BUFSIZE
+from .constants import STX, ETX, BUFSIZE
 
 
-class MessageReader:
-    """报文读取器"""
-
+class Reader:
     def __init__(self, limit: int = BUFSIZE):
         if limit < 0:
             raise ValueError("Limit cannot be <=0")
@@ -24,7 +22,7 @@ class MessageReader:
             raise RuntimeError("Buffer is full")
 
     def iter_read_until(self, separator: bytes):
-        """迭代获取报文，通过分隔符
+        """迭代获取字节流，通过分隔符
 
         Args:
             separator (bytes): _description_

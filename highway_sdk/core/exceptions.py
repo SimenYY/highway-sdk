@@ -62,6 +62,14 @@ class CrcValidationError(ValidationError):
     """CRC校验异常"""
 
 
+class ProtocolParsingError(ValidationError):
+    """协议解析错误"""
+
+
+class ProtocolNotSupportedError(ValidationError):
+    """协议不支持解析"""
+
+
 # -----------------------------------------------------------------------------
 # 设备业务异常
 # -----------------------------------------------------------------------------
