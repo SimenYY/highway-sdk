@@ -34,18 +34,13 @@ class TestSupaiotClient:
 
     @pytest.mark.asyncio
     async def test_list_devices(self, client: SupaiotAsyncAPIClient):
-        resp: APIResponse = await client.list_device(
-            Devices(pageNum=1, pageSize=1)
-        )
+        resp: APIResponse = await client.list_device(Devices(pageNum=1, pageSize=1))
 
         assert resp.result.resultCode == "0"
-        
-        
+
     @pytest.mark.asyncio
     async def test_list_device_realtime_data(self, client: SupaiotAsyncAPIClient):
-        resp: APIResponse = await client.list_device(
-            Devices(pageNum=1, pageSize=1)
-        )
+        resp: APIResponse = await client.list_device(Devices(pageNum=1, pageSize=1))
         # 验证设备列表响应
         assert resp.result.resultCode == "0"
         assert resp.data is not None
@@ -55,9 +50,7 @@ class TestSupaiotClient:
         # 获取设备ID
         id_ = resp.data["data"][0]["ID"]
         assert id_ is not None
-        
-        resp = await client.list_device_realtime_data(
-            DevicesRealtimeData(ID=[id_])
-        )
+
+        resp = await client.list_device_realtime_data(DevicesRealtimeData(ID=[id_]))
 
         assert resp.result.resultCode == "0"

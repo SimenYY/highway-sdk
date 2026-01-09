@@ -50,4 +50,3 @@ class TestPrototype:
         expected_json = '{"CT":"","FC1":"2","FO1":"107","SH1":1,"TI1":10,"ZCT1":"车道关闭","FC2":"2","FO2":"107","SH2":1,"TI2":10,"ZCT2":"车道关闭"}'
 
         assert vms.model_dump_json() == expected_json
-        
