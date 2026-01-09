@@ -15,6 +15,7 @@ from typing import List, Any
 import configparser
 import re
 
+#TODO: 修改
 
 # ==============================================================================
 # 枚举量
@@ -615,7 +616,7 @@ class ItemParser(BaseParser):
                     item_builder.play_count = params[6]
 
                 case _ if cls.TXT_PATTERN.match(option):  # 文本媒体
-                    index = re.search(r"\d+", option).group()  # type: ignore
+                    index = re.search(r"\d+", option).group()  
                     if index not in text_cache:
                         text_cache[index] = TextMediaBuilder()
 
@@ -635,7 +636,7 @@ class ItemParser(BaseParser):
                     text_builder.font_style = fields[10]
 
                 case _ if cls.TXT_PARAM_PATTERN.match(option):  # 文本参数媒体
-                    index = re.search(r"\d+", option).group()  # type: ignore
+                    index = re.search(r"\d+", option).group()  
                     if index not in text_cache:
                         text_cache[index] = TextMediaBuilder()
 
@@ -676,7 +677,7 @@ class ItemParser(BaseParser):
                     item_builder.add_media_builder(textext_builder)
 
                 case _ if cls.IMAGE_PATTERN.match(option):  # 图片媒体
-                    index = re.search(r"\d+", option).group()  # type: ignore
+                    index = re.search(r"\d+", option).group()  
                     if index not in img_cache:
                         img_cache[index] = ImageMediaBuilder()
 
@@ -691,7 +692,7 @@ class ItemParser(BaseParser):
                     img_builder.height = int(fields[5])
 
                 case _ if cls.IMAGE_PARAM_PATTERN.match(option):
-                    index = re.search(r"\d+", option).group()  # type: ignore
+                    index = re.search(r"\d+", option).group()  
                     if index not in img_cache:
                         img_cache[index] = ImageMediaBuilder()
 

@@ -1,47 +1,103 @@
-from dataclasses import dataclass
-import struct
+"""丰海厂商VMS协议规范模块。
+
+该模块定义了丰海厂商VMS设备的通信协议规范，包括：
+- 帧类型枚举（What）
+- 返回状态码枚举（ResultCode）
+- 帧数据结构（Frame）
+- CRC校验和转义处理
+"""
+
 from typing import Self
+from enum import Enum
+from functools import lru_cache
+from pydantic import Field, ValidationError as PydanticValidationError, computed_field
+from highway_sdk.core.exceptions import CrcValidationError, ValidationError
+from highway_sdk.core.constants import ESC, ETX, STX
+from highway_sdk.vendors.vms._base import BaseFrame
 
-from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.vendors.vms.sansi.spec import (
-    BaseSansiMsgReqBuilder,
-    SansiCode,
-    SansiMsgDirector,
-    SansiMsgDownloadFileBuilder,
-    SansiMsgGetBrightnessAndModeBuilder,
-    SansiMsgGetItemBuilder,
-    SansiMsgSetBrightnessBuilder,
-    SansiMsgUploadFileBuilder,
-    SansiWhatEnum,
-    SansiReqFrame,
-)
-
-# ==============================================================================
-# 枚举&常量定义
-# ==============================================================================
 ENCODING = "gbk"
 
-FenghaiWhatEnum = SansiWhatEnum
 
-FenghaiCode = SansiCode
+class What(Enum):
+    """帧类型枚举。
+
+    定义了丰海VMS设备支持的所有帧类型。
+    """
+
+    GET_PLAY_ITEM = b"97"
+    UPLOAD_FILE = b"10"
+    DOWNLOAD_FILE = b"09"
+    PLAY_LIST = b"98"
+    SET_BRIGHTNESS = b"05"
+    SET_BRIGHTNESS_MODE = b"04"
+    GET_BRIGHTNESS_AND_MODE = b"06"
+    GET_SETTINGS = b"51"
 
 
-# ==============================================================================
-# 帧格式
-# ==============================================================================
-@dataclass(slots=True)
-class FenghaiFrame(SansiReqFrame):
-    """帧格式"""
+class ResultCode(Enum):
+    """返回状态码枚举。
+
+    定义了设备操作返回的状态码。
+    """
+
+    SUCCESS = b"0"
+    FAILLED = b"1"
+
+
+class Frame(BaseFrame):
+    """丰海VMS帧数据结构。
+
+    Attributes:
+        address: 帧地址，默认为"00"。
+        what: 帧类型。
+        data: 帧数据。
+        crc: CRC校验码（计算字段）。
+    """
+
+    address: bytes = Field(
+        default=b"\x00\x00",
+        min_length=2,
+        max_length=2,
+        description="帧地址",
+    )
+    what: What = Field(..., description="帧类型")
+    data: bytes = Field(default=b"", description="帧数据")
+
+    @computed_field
+    @property
+    def crc(self) -> bytes:
+        """计算CRC校验码。"""
+        return self.calc_crc(self.address + self.what.value + self.data)
+
+    def __bytes__(self) -> bytes:
+        """将帧转换为字节数据。
+
+        Returns:
+            bytes: 转义后的完整帧数据。
+        """
+        return (
+            self.start
+            + self.escape(self.address + self.what.value + self.data + self.crc)
+            + self.end
+        )
 
     @classmethod
-    def unpack(cls, message: bytes) -> Self:
-        """解包
+    def from_bytes(cls, message: bytes) -> Self:
+        """从字节数据解析帧。
 
-        :param message:
-        :raise CrcError
-        :return:
+        Args:
+            message: 帧的字节数据。
+
+        Returns:
+            Self: 解析后的帧对象。
+
+        Raises:
+            ValueError: 消息格式无效。
+            ValidationError: 数据验证失败。
+            CrcValidationError: CRC校验失败。
         """
-        cls.validate_start_end(message)
+        if not message.startswith(STX) or not message.endswith(ETX):
+            raise ValueError("invalid message")
 
         unescaped = cls.escape(message[1:-1], reverse=True)
         address = unescaped[:2]
@@ -49,70 +105,55 @@ class FenghaiFrame(SansiReqFrame):
         data = unescaped[4:-2]
         crc = unescaped[-2:]
 
-        crc_calc = cls.calc_crc(address + what + data)
-        if crc_calc != crc:
+        try:
+            frame = cls(address=address, what=what, data=data)
+        except PydanticValidationError as e:
+            raise ValidationError(e)
+        if frame.crc != crc:
             raise CrcValidationError("crc check failed")
-
-        return cls(address=address, what=what, data=data, crc=crc)
-
-    @classmethod
-    def pack(
-        cls, what: FenghaiWhatEnum, data: bytes, address: bytes = b"\x00\x00"
-    ) -> Self:
-        crc = cls.calc_crc(address + what.value + data)
-        return cls(address=address, what=what.value, data=data, crc=crc)
+        return frame
 
     @classmethod
+    @lru_cache
     def calc_crc(cls, payload: bytes):
+        """计算CRC校验码。
+
+        使用CRC-16-CCITT算法计算校验码。
+
+        Args:
+            payload: 需要校验的数据。
+
+        Returns:
+            bytes: 2字节的CRC校验码（大端序）。
+        """
         crc = 0x0000
         for byte in payload:
             crc ^= byte << 8
             for _ in range(8):
                 crc = (crc << 1) ^ 0x1021 if (crc & 0x8000) else (crc << 1)
-                crc &= 0xFFFF                       # 保持在 16 bit
-        # 转成大端 bytes
-        return crc.to_bytes(2, 'big')
-                
+                crc &= 0xFFFF
+        return crc.to_bytes(2, "big")
 
+    @classmethod
+    def escape(cls, payload: bytes, *, reverse: bool = False) -> bytes:
+        """转义处理。
 
-# ==============================================================================
-# Message
-# ==============================================================================
-class FenghaiMsgBuilderMixin:
-    def build(self) -> FenghaiFrame:
-        return FenghaiFrame.pack(**self.kwargs)  # type: ignore
+        对特殊字符进行转义，避免与帧起始符和结束符冲突。
 
+        Args:
+            payload: 需要转义的数据。
+            reverse: 是否反向转义（解析时使用）。
 
-class FenghaiMsgSetBrightnessBuilder(
-    FenghaiMsgBuilderMixin, SansiMsgSetBrightnessBuilder
-): ...
+        Returns:
+            bytes: 转义后的数据。
+        """
+        if reverse:
+            payload = payload.replace(b"\x1b\xe7", STX)
+            payload = payload.replace(b"\x1b\xe8", ETX)
+            payload = payload.replace(b"\x1b\x00", ESC)
+        else:
+            payload = payload.replace(ESC, b"\x1b\x00")
+            payload = payload.replace(STX, b"\x1b\xe7")
+            payload = payload.replace(ETX, b"\x1b\xe8")
 
-
-class FenghaiMsgGetBrightnessAndModeBuilder(
-    FenghaiMsgBuilderMixin, SansiMsgGetBrightnessAndModeBuilder
-): ...
-
-
-class FenghaiMsgGetItemBuilder(FenghaiMsgBuilderMixin, SansiMsgGetItemBuilder): ...
-
-
-class FenghaiMsgDownLoadFileBuilder(
-    FenghaiMsgBuilderMixin, SansiMsgDownloadFileBuilder
-):
-    def set_data(self) -> Self:
-        data = self.file_name.encode(ENCODING)
-        data += b"+"
-        data += b"\x00\x00\x00\x00"  # 文件指针偏移
-        self.kwargs["data"] = data
-        return self
-
-
-class FenghaiMsgUploadFileBuilder(
-    FenghaiMsgBuilderMixin, SansiMsgUploadFileBuilder
-): ...
-
-
-class FenghaiMsgDirector(SansiMsgDirector):
-    """控制报文产生"""
-
-    ...
+        return payload

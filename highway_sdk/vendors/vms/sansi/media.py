@@ -1,33 +1,34 @@
 from abc import ABC, abstractmethod
 from ftplib import CRLF
-from re import M
 from pydantic import BaseModel, Field
 from enum import StrEnum, IntEnum
 from typing import Literal, Self
+from highway_sdk.vendors.vms._base import BaseMediaBuilder
 
+#TODO: 修改
 
 # ==============================================================================
 # 枚举类
 # ==============================================================================
-class ScreenInEnum(IntEnum):
+class ScreenInMode(IntEnum):
     NORMAL = 1
 
 
-class ColorEnum(StrEnum):
+class Color(StrEnum):
     RED = "255000000000"
     GREEN = "000255000000"
     YELLOW = "255255000000"
     BLACK = "000000000000"
 
 
-class FontEnum(StrEnum):
+class Font(StrEnum):
     HEI_TI = "h"
     KAI_TI = "k"
     SONG_TI = "s"
     FANG_SONG = "f"
 
 
-class FontSizeEnum(IntEnum):
+class FontSize(IntEnum):
     SIZE_16 = 16
     SIZE_24 = 24
     SIZE_32 = 32
@@ -35,7 +36,7 @@ class FontSizeEnum(IntEnum):
     SIZE_64 = 64
 
 
-class EscEnum(StrEnum):
+class Esc(StrEnum):
     XY = "\\C"  # 起始坐标
     BMP = "\\B"  # bmp
     PNG = "\\P"
@@ -57,26 +58,26 @@ class BaseMedia(BaseModel):
 
 
 class Text(BaseMedia):
-    font_color: ColorEnum | None
-    background_color: ColorEnum | None
+    font_color: Color | None
+    background_color: Color | None
     word_space: int | None = Field(None, ge=0, le=99)
-    font: FontEnum | None
-    font_size: FontSizeEnum | None
+    font: Font | None
+    font_size: FontSize | None
     text: str
 
     def __str__(self):
         # TODO: 增加灵活性，根据赋值的顺序，决定输出字符串的顺序
-        protocol = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
+        protocol = f"{Esc.XY.value}{self.x:03d}{self.y:03d}"
         if self.font:
-            protocol += f"{EscEnum.FONT.value}{self.font.value}"
+            protocol += f"{Esc.FONT.value}{self.font.value}"
         if self.font_size:
             protocol += f"{self.font_size.value}{self.font_size.value}"
         if self.font_color:
-            protocol += f"{EscEnum.FONT_COLOR.value}{self.font_color.value}"
+            protocol += f"{Esc.FONT_COLOR.value}{self.font_color.value}"
         if self.background_color:
-            protocol += f"{EscEnum.BACKGROUND_COLOR.value}{self.background_color.value}"
+            protocol += f"{Esc.BACKGROUND_COLOR.value}{self.background_color.value}"
         if self.word_space:
-            protocol += f"{EscEnum.WORD_SPACE.value}{self.word_space:02d}"
+            protocol += f"{Esc.WORD_SPACE.value}{self.word_space:02d}"
         protocol += f"{self.text}"
 
         return protocol
@@ -86,7 +87,9 @@ class Bmp(BaseMedia):
     bmp_file_name: str
 
     def __str__(self):
-        protocol = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}{EscEnum.BMP.value}{self.bmp_file_name}"
+        protocol = (
+            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.BMP.value}{self.bmp_file_name}"
+        )
         return protocol
 
 
@@ -94,7 +97,9 @@ class Png(BaseMedia):
     png_file_name: str
 
     def __str__(self):
-        protocol = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}{EscEnum.PNG.value}{self.png_file_name}"
+        protocol = (
+            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.PNG.value}{self.png_file_name}"
+        )
         return protocol
 
 
@@ -102,7 +107,9 @@ class Jpg(BaseMedia):
     jpg_file_name: str
 
     def __str__(self):
-        protocol = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}{EscEnum.JPG.value}{self.jpg_file_name}"
+        protocol = (
+            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.JPG.value}{self.jpg_file_name}"
+        )
         return protocol
 
 
@@ -110,7 +117,9 @@ class Gif(BaseMedia):
     gif_file_name: str
 
     def __str__(self):
-        protocol = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}{EscEnum.GIF.value}{self.gif_file_name}"
+        protocol = (
+            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.GIF.value}{self.gif_file_name}"
+        )
         return protocol
 
 
@@ -122,23 +131,19 @@ class Mpg(BaseMedia):
     mpg_file_name: str
 
     def __str__(self):
-        protocol = f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}{EscEnum.MPG.value}{self.mpg_file_name}"
+        protocol = (
+            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.MPG.value}{self.mpg_file_name}"
+        )
         return protocol
 
 
 # ==============================================================================
 # 媒体构造类
 # ==============================================================================
-class MediaBuilder(ABC):
+class MediaBuilder(BaseMediaBuilder):
     def __init__(self):
         self.x: int = 0
         self.y: int = 0
-
-    @abstractmethod
-    def build(self) -> BaseMedia:
-        """建造函数
-        :return:
-        """
 
 
 class TextBuilder(MediaBuilder):
@@ -147,29 +152,29 @@ class TextBuilder(MediaBuilder):
 
         # 文本
         self.text = text
-        self.font_color: ColorEnum | None = None
-        self.background_color: ColorEnum | None = None
+        self.font_color: Color | None = None
+        self.background_color: Color | None = None
         # 字间距
         self.word_space: int = 0
         # 输入示例 h
-        self.font: FontEnum | None = None
+        self.font: Font | None = None
         # 输入示例 16
-        self.font_size: FontSizeEnum | None = None
+        self.font_size: FontSize | None = None
 
     def build(self) -> Text:
         return Text(**self.__dict__)
 
     def set_font_color(self, color: Literal["red", "green", "yellow", "black"]):
-        self.font_color = ColorEnum[color.upper()]
+        self.font_color = Color[color.upper()]
 
     def set_background_color(self, color: Literal["red", "green", "yellow", "black"]):
-        self.background_color = ColorEnum[color.upper()]
+        self.background_color = Color[color.upper()]
 
     def set_font(self, font: Literal["hei_ti", "kai_ti", "song_ti", "fang_song"]):
-        self.font = FontEnum[font.upper()]
+        self.font = Font[font.upper()]
 
     def set_font_size(self, font_size: Literal[16, 24, 32, 48, 64]):
-        self.font_size = FontSizeEnum[f"SIZE_{font_size}"]
+        self.font_size = FontSize[f"SIZE_{font_size}"]
 
     def set_word_space(self, word_space: int):
         self.word_space = word_space
@@ -225,20 +230,6 @@ class MpgBuilder(MediaBuilder):
 
 
 # ==============================================================================
-# 复杂构造器基类
-# ==============================================================================
-class BaseContainerBuilder:
-    def __enter__(self) -> Self:
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return False
-
-    def build(self, *args, **kwargs):
-        pass
-
-
-# ==============================================================================
 # 播放项类
 # ==============================================================================
 
@@ -256,11 +247,11 @@ class Item(BaseModel):
         return protocol
 
 
-class ItemBuilder(BaseContainerBuilder):
+class ItemBuilder(BaseMediaBuilder):
     def __init__(
         self,
         duration: int = 1000,
-        screen_in: int = ScreenInEnum.NORMAL,
+        screen_in: int = ScreenInMode.NORMAL,
         play_speed: int = 0,
     ):
         self.media_list: list[BaseMedia] = []
@@ -397,7 +388,7 @@ class Window(BaseModel):
         return protocol
 
 
-class WindowBuilder(BaseContainerBuilder):
+class WindowBuilder(BaseMediaBuilder):
     def __init__(self, x: int = 0, y: int = 0, w: int = 32, h: int = 32):
         self.item_list: list[Item] = []
         self.x = x
@@ -413,7 +404,7 @@ class WindowBuilder(BaseContainerBuilder):
     def new_item(
         self,
         duration: int = 1000,
-        screen_in: int = ScreenInEnum.NORMAL,
+        screen_in: int = ScreenInMode.NORMAL,
         play_speed: int = 0,
     ) -> ItemBuilder:
         try:
@@ -435,14 +426,14 @@ class MultipleWinPlay(Play):
     多窗口 playlist
     """
 
-    window_list: list[Window]
+    windows: list[Window]
 
     def __str__(self):
         protocol = "[playlist]"
         protocol += CRLF
-        protocol += f"nwindows={len(self.window_list)}"
+        protocol += f"nwindows={len(self.windows)}"
         protocol += CRLF
-        for i, window in enumerate(self.window_list):
+        for i, window in enumerate(self.windows):
             protocol += f"windows{i}_x={window.x}"
             protocol += CRLF
             protocol += f"windows{i}_y={window.y}"
@@ -474,7 +465,7 @@ class SingleWinPlay(Play):
         return protocol
 
 
-class BasePlayBuilder(BaseContainerBuilder):
+class BasePlayBuilder(BaseMediaBuilder):
     mode: str
 
     @abstractmethod
