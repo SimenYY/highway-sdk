@@ -1,16 +1,11 @@
 import sys
 import logging
-import tempfile
 from pathlib import Path
 from functools import wraps, partial
-from typing import Callable, Any
-
-try:
-    from filelock import FileLock, AsyncFileLock, BaseAsyncFileLock, BaseFileLock
-except ImportError:
-    raise ImportError(
-        "filelock is not installed., Please install it using pip insall uv "
-    )
+from typing import Any
+from collections.abc import Callable
+from filelock import FileLock, AsyncFileLock, BaseAsyncFileLock, BaseFileLock
+from highway_sdk import dirs
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +17,6 @@ class AppLock:
 
     这个类的作用是通过文件锁来实现同一个时间只能运行一个应用
 
-    #! 由于tempfile.gettempdir()获取的临时路径会根据系统管理员和普通用户而不同，因此会导致应用锁失效
-
     Attributes:
         name (str): 应用名称
         lock_file (str): 文件锁文件名
@@ -33,7 +26,10 @@ class AppLock:
 
     def __init__(self, name: str = "app") -> None:
         self.name: str = name
-        self.lock_file: Path = Path(tempfile.gettempdir()) / f"{name}.lock"
+        dirs.appname = name
+        lock_dir = Path(dirs.user_data_dir)
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        self.lock_file: Path = lock_dir / "app.lock"
         self.lock: BaseAsyncFileLock | BaseFileLock | None = None
         logger.info(f"lock file path: {str(self.lock_file)}")
 
