@@ -94,7 +94,7 @@ class SupaiotAPIClient:
                 raise SupaiotAPILoginError("Token missing in login response")
 
             self._client.cookies.set("hypToken", token)
-    
+
     async def request(
         self,
         method: str,

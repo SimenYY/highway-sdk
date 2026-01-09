@@ -68,10 +68,9 @@ class SupaiotMQTTGateway:
             port=self.settings.MQTT_BROKER_PORT,
             username=self.settings.MQTT_BROKER_USR,
             password=self.settings.MQTT_BROKER_PWD,
-            logger=logger
+            logger=logger,
         )
-        
-    
+
     async def north_connect(self, need_subsribe: bool = True) -> None:
         """北向连接，平台连接"""
 
@@ -79,7 +78,7 @@ class SupaiotMQTTGateway:
         self.service = SupaiotBusinessService(self.api_client)
         for class_id in self.class_ids:
             self.devices_info.update(await self.service.get_devices_info(class_id))
-        
+
         if need_subsribe:
             await self.mqtt_client.__aenter__()
             for _, info in self.devices_info.items():

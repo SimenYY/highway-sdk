@@ -106,6 +106,7 @@ class _VmsPlayTagsModel(PlayTags):
         ret.update(supaiot_tags)
         return ret
 
+
 class _VmsBrightnessTagsModel(BrightnessTags):
     def to_supaiot_tags(self):
         supaiot_tags = {"TGFK": self.brightness, "LDMS": self.mode}

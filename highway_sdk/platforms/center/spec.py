@@ -9,7 +9,6 @@ class DeviceTypeEnum(Enum):
     CSLS = (1401, 1599)  # 可变限速标志
     ET = (2001, 2899)  # 紧急电话
 
-
     def __init__(self, min_code, max_code):
         self.min_code = min_code
         self.max_code = max_code

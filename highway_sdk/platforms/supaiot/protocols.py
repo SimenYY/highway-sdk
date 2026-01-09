@@ -1,5 +1,4 @@
 from datetime import datetime
-import ipaddress
 import itertools
 from typing import Protocol
 import logging
@@ -23,7 +22,6 @@ from .tags import (
     ControlVmsTagsModel,
 )
 from .models import DeviceInfoMode, RealtimeDataPublishModel
-from .client import SupaiotAPIClient
 
 __all__ = [
     "MQTTGatewayProtocol",
