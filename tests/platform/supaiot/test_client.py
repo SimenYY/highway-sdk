@@ -1,9 +1,9 @@
 import pytest
 from highway_sdk.platform.supaiot.client import SupaiotAsyncAPIClient
 from highway_sdk.platform.supaiot.models import (
-    DeviceListRequest,
-    SupaiotResponse,
-    DeviceRealtimeDataListRequest,
+    Devices,
+    APIResponse,
+    DevicesRealtimeData,
 )
 
 
@@ -34,8 +34,8 @@ class TestSupaiotClient:
 
     @pytest.mark.asyncio
     async def test_list_devices(self, client: SupaiotAsyncAPIClient):
-        resp: SupaiotResponse = await client.list_device(
-            DeviceListRequest(pageNum=1, pageSize=1)
+        resp: APIResponse = await client.list_device(
+            Devices(pageNum=1, pageSize=1)
         )
 
         assert resp.result.resultCode == "0"
@@ -43,8 +43,8 @@ class TestSupaiotClient:
         
     @pytest.mark.asyncio
     async def test_list_device_realtime_data(self, client: SupaiotAsyncAPIClient):
-        resp: SupaiotResponse = await client.list_device(
-            DeviceListRequest(pageNum=1, pageSize=1)
+        resp: APIResponse = await client.list_device(
+            Devices(pageNum=1, pageSize=1)
         )
         # 验证设备列表响应
         assert resp.result.resultCode == "0"
@@ -57,7 +57,7 @@ class TestSupaiotClient:
         assert id_ is not None
         
         resp = await client.list_device_realtime_data(
-            DeviceRealtimeDataListRequest(ID=[id_])
+            DevicesRealtimeData(ID=[id_])
         )
 
         assert resp.result.resultCode == "0"
