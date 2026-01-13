@@ -1,6 +1,6 @@
 from typing import Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from .log import LoguruConfig, LoguruUtils
+from .log import LoguruConfig
 
 
 class LogConfig(BaseSettings):
@@ -20,7 +20,7 @@ class LogConfig(BaseSettings):
     LOG_FILE: bool = True
 
     def config_loguru(self) -> None:
-        LoguruUtils.intercept_logging()
+        LoguruConfig.intercept_logging()
         config = LoguruConfig(name=self.LOG_NAME, level=self.LOG_LEVEL)
         if self.LOG_CONSOLE:
             config.set_console()

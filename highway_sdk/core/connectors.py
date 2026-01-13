@@ -3,8 +3,10 @@ import logging
 import random
 import asyncio
 from .protocols import TCPClientProtocol, UDPProtocol
+from .metrics import MetricsMixin
 
 logger = logging.getLogger(__name__)
+
 
 # ==============================================================================
 # Connector 类：封装连接行为
@@ -121,7 +123,7 @@ class TCPConnector(BaseConnector):
             logger.info(f"Disconnected from {self}")
 
 
-class TCPReconnectingConnector(TCPConnector):
+class TCPReconnectingConnector(TCPConnector, MetricsMixin):
     """TCP 重新连接的连接类
 
     Args:
@@ -145,14 +147,20 @@ class TCPReconnectingConnector(TCPConnector):
         *,
         auto_reconnect: bool = True,
         use_jitter: bool = False,
+        need_metrics: bool = False,
         loop: asyncio.AbstractEventLoop | None = None,
     ) -> None:
-        super().__init__(host, port, protocol_cls, loop)
+        TCPConnector.__init__(self, host, port, protocol_cls, loop)
 
         self.auto_reconnect = auto_reconnect
         self.use_jitter = use_jitter
         self._retry_delay = self.min_delay
         self._continue_trying = True
+
+        self.need_metrics = need_metrics
+        if need_metrics:
+            MetricsMixin.__init__(self, f"{self}")
+            self.update_connection_status(False)
 
     async def create(self):
         if self.auto_reconnect:
@@ -167,6 +175,8 @@ class TCPReconnectingConnector(TCPConnector):
             self.host,
             self.port,
         )
+        if self.need_metrics:
+            self.update_connection_status(True)
 
     async def _reconnect(self) -> None:
         """重连
@@ -184,6 +194,8 @@ class TCPReconnectingConnector(TCPConnector):
                     self.close()
                     self._protocol = None
                     self._on_con_lost = self._loop.create_future()
+                    if self.need_metrics:
+                        self.update_connection_status(False)
                     continue
                 else:
                     break

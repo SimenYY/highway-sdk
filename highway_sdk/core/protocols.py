@@ -1,10 +1,8 @@
 from collections.abc import Callable
-from datetime import datetime, timedelta
 import logging
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from highway_sdk.core.log import PrefixLoggerAdapter
-from highway_sdk.core.base import BaseMessageParser
 from .exceptions import (
     HostResponseTimeoutError,
     ConnectionFailError,
@@ -149,12 +147,7 @@ class TCPClientProtocol(asyncio.Protocol):
         self._transport: asyncio.Transport | None = None
         self.reader = Reader()
         self.log: PrefixLoggerAdapter = PrefixLoggerAdapter(logger)
-
-    @property
-    def host_addr(self):
-        if self._transport is None:
-            raise RuntimeError("Transport not initialized")
-        return self._transport.get_extra_info("peername")
+        self.host_addr: tuple = ("unknown", 0)
 
     def connection_made(self, transport: asyncio.Transport) -> None:
         """连接建立时回调
@@ -164,6 +157,7 @@ class TCPClientProtocol(asyncio.Protocol):
 
         """
         self._transport = transport
+        self.host_addr = transport.get_extra_info("peername")
         self.log = PrefixLoggerAdapter(logger, prefix=str(list(self.host_addr)))
         self.log.info("Connection made")
         self.on_connected()
