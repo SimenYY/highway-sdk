@@ -1,14 +1,14 @@
 from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from .log import LoguruConfig
 
 
 class LogConfig(BaseSettings):
     """Log configuration"""
 
-    model_config = SettingsConfigDict(
-        env_prefix="HIGHWAY_SDK_", env_file=[".env.local", ".env"], extra="allow"
-    )
+    model_config = SettingsConfigDict(env_prefix="HIGHWAY_SDK_", env_file=[".env.local", ".env"], extra="allow")
 
     LOG_NAME: str = "None"
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "DEBUG"

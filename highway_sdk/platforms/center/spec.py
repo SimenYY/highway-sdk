@@ -17,18 +17,14 @@ class DeviceTypeEnum(Enum):
     def from_code(cls, code: int) -> "DeviceTypeEnum":
         """根据编码返回对应的设备类型枚举"""
         if not isinstance(code, int) or code < 1 or code > 9999:
-            raise ValueError(
-                f"Invalid device code: {code}. Must be integer between 1 and 9999."
-            )
+            raise ValueError(f"Invalid device code: {code}. Must be integer between 1 and 9999.")
 
         for device_type in cls:
             if device_type.min_code <= code <= device_type.max_code:
                 return device_type
 
         # 如果落在空隙区间（如 1000, 1100 等），视为无效
-        raise ValueError(
-            f"Device code {code} is not assigned to any valid type (falls in gap)."
-        )
+        raise ValueError(f"Device code {code} is not assigned to any valid type (falls in gap).")
 
     def contains(self, code: int) -> bool:
         """判断该类型是否包含指定编码"""

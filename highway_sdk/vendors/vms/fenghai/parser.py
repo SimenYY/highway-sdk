@@ -3,14 +3,16 @@
 该模块提供了丰海VMS设备的响应数据解析功能。
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
+
 from highway_sdk.core.exceptions import (
     DeviceOperationError,
 )
-from highway_sdk.vendors.vms._tags import BrightnessTags, ItemTags
 from highway_sdk.vendors.vms._base import BaseParser
+from highway_sdk.vendors.vms._tags import BrightnessTags, ItemTags
 from highway_sdk.vendors.vms.sansi.parser import Parser as SansiParser
+
 from .spec import ENCODING, ResultCode, What
 
 __all__ = ["Parser"]

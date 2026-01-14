@@ -6,9 +6,10 @@
 - 播放项和播放列表类
 """
 
+from enum import IntEnum, StrEnum
 from ftplib import CRLF
+
 from pydantic import BaseModel, Field
-from enum import StrEnum, IntEnum
 
 
 class ScreenInMode(IntEnum):
@@ -142,9 +143,7 @@ class Bmp(BaseMedia):
 
     def __str__(self):
         """将BMP媒体转换为协议字符串。"""
-        protocol = (
-            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.BMP.value}{self.bmp_file_name}"
-        )
+        protocol = f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.BMP.value}{self.bmp_file_name}"
         return protocol
 
 
@@ -159,9 +158,7 @@ class Flc(BaseMedia):
 
     def __str__(self):
         """将FLC媒体转换为协议字符串。"""
-        protocol = (
-            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.FLC.value}{self.flc_file_name}"
-        )
+        protocol = f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.FLC.value}{self.flc_file_name}"
         return protocol
 
 
@@ -178,20 +175,14 @@ class Item(BaseModel):
     """
 
     media_list: list[BaseMedia] = Field(default_factory=list, description="媒体列表")
-    duration: int = Field(
-        default=1000, ge=2, le=30000, description="停留时间, 百分之一秒"
-    )
-    screen_in_mode: ScreenInMode = Field(
-        default=ScreenInMode.NORMAL, description="节目进入屏幕方式"
-    )
+    duration: int = Field(default=1000, ge=2, le=30000, description="停留时间, 百分之一秒")
+    screen_in_mode: ScreenInMode = Field(default=ScreenInMode.NORMAL, description="节目进入屏幕方式")
     play_speed: int = Field(default=0, ge=0, le=49, description="播放速度")
 
     def __str__(self):
         """将播放项转换为协议字符串。"""
         media_str = "".join(str(media) for media in self.media_list)
-        protocol = (
-            f"{self.duration},{self.screen_in_mode},{self.play_speed},{media_str}"
-        )
+        protocol = f"{self.duration},{self.screen_in_mode},{self.play_speed},{media_str}"
 
         return protocol
 

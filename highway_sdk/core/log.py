@@ -1,11 +1,10 @@
-import logging
 import inspect
-from pathlib import Path
+import logging
 import sys
+from pathlib import Path
 from typing import Final
 
 import loguru
-
 
 # ==============================================================================
 # logger adapter
@@ -78,9 +77,7 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        loguru.logger.opt(depth=depth, exception=record.exc_info).log(
-            level, record.getMessage()
-        )
+        loguru.logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
 class ColoredStreamHandler(logging.StreamHandler):

@@ -1,22 +1,24 @@
 from datetime import datetime
 from typing import Any
+
 from pydantic import BaseModel, Field, field_serializer, field_validator
-from pydantic.networks import IPvAnyAddress
 from pydantic.config import ConfigDict
+from pydantic.networks import IPvAnyAddress
+
 from highway_sdk.utils.judge import is_chainage
 
 __all__ = [
     "APIResponse",
     "BaseAPIRequest",
+    "BaseMqttModel",
+    "ClassListRequest",
+    "ControlReqSubscribeModel",
+    "DeviceInfoMode",
     "Devices",
     "DevicesRealtimeData",
-    "ClassListRequest",
-    "BaseMqttModel",
-    "ControlReqSubscribeModel",
-    "_ControlReqCommandModel",
-    "RealtimeDataPublishModel",
     "HistoryDataPublishModel",
-    "DeviceInfoMode",
+    "RealtimeDataPublishModel",
+    "_ControlReqCommandModel",
 ]
 
 
@@ -166,9 +168,7 @@ class ControlRespPublishModel(BaseMqttModel):
     sn: str = Field(..., description="设备标识码")
     version: str = Field(default="1.0", description="协议版本号")
     sequence: int = Field(..., description="命令序列号")
-    data: dict[str, _ControlReqCommandModel] = Field(
-        ..., description="可响应单条或者多条控制命令"
-    )
+    data: dict[str, _ControlReqCommandModel] = Field(..., description="可响应单条或者多条控制命令")
 
     def get_topic(self) -> str:
         return f"/edge/{self.series}/{self.sn}/{self.version}/response"

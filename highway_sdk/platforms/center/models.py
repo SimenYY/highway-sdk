@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Numeric, String, DateTime, CHAR, Text
+from sqlalchemy import CHAR, Column, DateTime, Numeric, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -82,9 +82,7 @@ class CurCms(Base):
         Text,
         comment="原始显示内容，可为文本或 base64 编码图片，含颜色、位置、字体等属性",
     )
-    n_disp_time = Column(
-        Numeric(6, 0), comment="停留时间（秒）：单条信息为0，多条滚动时为对应停留秒数"
-    )
+    n_disp_time = Column(Numeric(6, 0), comment="停留时间（秒）：单条信息为0，多条滚动时为对应停留秒数")
     c_status = Column(
         CHAR(1),
         comment="工作状态：'0'=正常，'1'=设备故障，'2'=通讯失败，'3'=数据错误，'9'=未知",
@@ -113,9 +111,7 @@ class CurAero(Base):
 
     __tablename__ = "cur_aero"
 
-    n_code = Column(
-        Numeric(9, 0), primary_key=True, comment="设备编码，9位，格式 yytzzdddd"
-    )
+    n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码，9位，格式 yytzzdddd")
     n_period = Column(
         Numeric(4, 0),
         default=1,
@@ -164,9 +160,7 @@ class HistAero(Base):
     __tablename__ = "hist_aero"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码")
-    n_time_stamp = Column(
-        Numeric(12, 0), primary_key=True, comment="时间戳记，格式 YYYYMMDDhhmm"
-    )
+    n_time_stamp = Column(Numeric(12, 0), primary_key=True, comment="时间戳记，格式 YYYYMMDDhhmm")
     d_temp = Column(Numeric(5, 2), comment="温度（℃）")
     d_humidity = Column(Numeric(5, 2), comment="湿度（%）")
     c_icing = Column(CHAR(1), comment="是否结冰：'0'=未结冰，'1'=结冰")
@@ -175,9 +169,7 @@ class HistAero(Base):
     d_wind_speed = Column(Numeric(3, 1), comment="风速（米/秒）")
     d_rainfall = Column(Numeric(5, 1), comment="雨量（毫米）")
     t_rec_time = Column(DateTime, comment="记录时间")
-    c_send_flag = Column(
-        CHAR(1), default="0", comment="发送标志：'0'=未发送，'1'=已发送至省中心"
-    )
+    c_send_flag = Column(CHAR(1), default="0", comment="发送标志：'0'=未发送，'1'=已发送至省中心")
     c_stat_falg = Column(
         CHAR(1),
         default="0",
@@ -191,9 +183,7 @@ class HistVd(Base):
     __tablename__ = "hist_vd"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码")
-    n_time_stamp = Column(
-        Numeric(12, 0), primary_key=True, comment="时间戳记，格式 YYYYMMDDhhmm"
-    )
+    n_time_stamp = Column(Numeric(12, 0), primary_key=True, comment="时间戳记，格式 YYYYMMDDhhmm")
 
     # 上行/下行字段同 CurVd（此处完整列出，实际可复用）
     d_up_lane1_occupy = Column(Numeric(6, 2))
@@ -239,9 +229,7 @@ class HistCsls(Base):
     __tablename__ = "hist_csls"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码")
-    t_rec_time = Column(
-        DateTime, primary_key=True, comment="记录时间（内容或状态变化时新增）"
-    )
+    t_rec_time = Column(DateTime, primary_key=True, comment="记录时间（内容或状态变化时新增）")
     n_limit = Column(Numeric(4, 0), comment="限速值（千米/小时）")
     c_status = Column(CHAR(1), comment="工作状态")
     vc_status_des = Column(String(60), comment="工作状态描述")
@@ -254,9 +242,7 @@ class HistCms(Base):
     __tablename__ = "hist_cms"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码")
-    t_rec_time = Column(
-        DateTime, primary_key=True, comment="记录时间（内容变化时新增）"
-    )
+    t_rec_time = Column(DateTime, primary_key=True, comment="记录时间（内容变化时新增）")
     vc_orig_content = Column(String(2000), comment="原始播放内容（厂家协议格式）")
     vc_content = Column(
         String(2000),
@@ -273,9 +259,7 @@ class HistVi(Base):
     __tablename__ = "hist_vi"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码")
-    n_time_stamp = Column(
-        Numeric(12, 0), primary_key=True, comment="时间戳记，格式 YYYYMMDDhhmm"
-    )
+    n_time_stamp = Column(Numeric(12, 0), primary_key=True, comment="时间戳记，格式 YYYYMMDDhhmm")
     n_visibility = Column(Numeric(6, 0), comment="能见度（米）")
     t_rec_time = Column(DateTime, comment="记录时间")
     c_send_flag = Column(CHAR(1), default="0", comment="发送标志")
@@ -288,9 +272,7 @@ class HistEt(Base):
     __tablename__ = "hist_et"
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码")
-    t_rec_time = Column(
-        DateTime, primary_key=True, comment="记录时间（状态变化时新增）"
-    )
+    t_rec_time = Column(DateTime, primary_key=True, comment="记录时间（状态变化时新增）")
     c_et_status = Column(CHAR(1), comment="话机状态：'1'=故障，'2'=挂机，'3'=摘机")
     c_status = Column(CHAR(1), comment="工作状态")
     vc_status_des = Column(String(60), comment="工作状态描述")
@@ -369,13 +351,9 @@ class CtrlCmd(Base):
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码")
     t_order_time = Column(DateTime, primary_key=True, comment="命令下达时间")
-    vc_content = Column(
-        String(2000), comment="命令内容，格式：内容1/时间1|内容2/时间2…（秒）"
-    )
+    vc_content = Column(String(2000), comment="命令内容，格式：内容1/时间1|内容2/时间2…（秒）")
     vc_postscript = Column(String(250), comment="命令附言")
-    c_grade = Column(
-        CHAR(1), comment="命令等级：'0'=一般（需确认），'1'=强制（直接执行）"
-    )
+    c_grade = Column(CHAR(1), comment="命令等级：'0'=一般（需确认），'1'=强制（直接执行）")
     t_expire_time = Column(DateTime, comment="命令到期时间")
     n_order_op = Column(Numeric(8, 0), comment="省中心操作员编码（yytzznnn）")
     c_status = Column(
@@ -396,12 +374,8 @@ class HistStatus(Base):
 
     n_code = Column(Numeric(9, 0), primary_key=True, comment="设备编码")
     t_fault_time = Column(DateTime, primary_key=True, comment="故障发生时间")
-    c_status = Column(
-        CHAR(1), comment="故障状态：'1'=设备故障，'2'=通讯失败，'3'=数据错误，'9'=未知"
-    )
+    c_status = Column(CHAR(1), comment="故障状态：'1'=设备故障，'2'=通讯失败，'3'=数据错误，'9'=未知")
     vc_status_des = Column(String(60), comment="故障描述")
-    t_repair_time = Column(
-        DateTime, nullable=True, comment="修复时间（未修复时为 NULL）"
-    )
+    t_repair_time = Column(DateTime, nullable=True, comment="修复时间（未修复时为 NULL）")
     c_send_flag = Column(CHAR(1), default="0", comment="发送标志")
     c_stat_falg = Column(CHAR(1), default="0", comment="统计标志")

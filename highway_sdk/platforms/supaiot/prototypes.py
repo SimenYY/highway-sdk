@@ -1,14 +1,15 @@
 import re
+from enum import IntEnum, StrEnum
+from typing import Any
+
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    IPvAnyAddress,
     field_validator,
     model_serializer,
-    IPvAnyAddress,
 )
-from typing import Any
-from enum import IntEnum, StrEnum
 
 
 class Prototype(BaseModel):
@@ -30,18 +31,14 @@ class NetworkNode(Prototype):
 
     sn: str | None = Field(default=None, exclude=True, description="设备标识码")
     series: str | None = Field(default=None, exclude=True, description="设备产品序列号")
-    host: IPvAnyAddress | None = Field(
-        default=None, exclude=True, description="设备地址"
-    )
+    host: IPvAnyAddress | None = Field(default=None, exclude=True, description="设备地址")
     port: int | None = Field(default=None, exclude=True, description="设备端口")
 
 
 class Csls(NetworkNode):
     """限速标"""
 
-    realtime_content: str = Field(
-        default="", serialization_alias="CT", description="实时内容"
-    )
+    realtime_content: str = Field(default="", serialization_alias="CT", description="实时内容")
 
     play_content: str = Field(
         ...,
@@ -103,15 +100,9 @@ class PlayMode(IntEnum):
 class PlayItem(BaseModel):
     """情报板播放项"""
 
-    font_color: FontColor = Field(
-        ..., validation_alias="KFC", serialization_alias="FC", description="字体颜色"
-    )
-    font: Font = Field(
-        ..., validation_alias="KFO", serialization_alias="FO", description="字体"
-    )
-    play_mode: PlayMode = Field(
-        ..., validation_alias="KSH", serialization_alias="SH", description="显示模式"
-    )
+    font_color: FontColor = Field(..., validation_alias="KFC", serialization_alias="FC", description="字体颜色")
+    font: Font = Field(..., validation_alias="KFO", serialization_alias="FO", description="字体")
+    play_mode: PlayMode = Field(..., validation_alias="KSH", serialization_alias="SH", description="显示模式")
     duration: int = Field(
         ...,
         validation_alias="KTI",
@@ -144,9 +135,7 @@ class Vms(NetworkNode):
     height: int | None = Field(default=None, exclude=True, description="情报板高度")
     width: int | None = Field(default=None, exclude=True, description="情报板宽度")
 
-    realtime_content: str = Field(
-        default="", serialization_alias="CT", description="实时内容"
-    )
+    realtime_content: str = Field(default="", serialization_alias="CT", description="实时内容")
 
     items: list[PlayItem] = Field(default_factory=list, description="播放项列表")
 

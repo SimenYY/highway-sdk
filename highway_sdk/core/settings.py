@@ -47,7 +47,7 @@ class YamlSettings(BaseSettings):
             yaml_file=cls.model_config.get("yaml_file", Path("")),
             yaml_file_encoding=cls.model_config.get("yaml_file_encoding", None),
         )
-        return (yaml_settings,) + sources
+        return (yaml_settings, *sources)
 
     model_config = SettingsConfigDict(yaml_file="config.yaml", yaml_file_encoding="utf-8", env_prefix="hw_")
 
@@ -85,6 +85,6 @@ class JsonSettings(BaseSettings):
             json_file=cls.model_config.get("json_file", Path("")),
             json_file_encoding=cls.model_config.get("json_file_encoding", None),
         )
-        return (json_settings,) + sources
+        return (json_settings, *sources)
 
     model_config = SettingsConfigDict(json_file="config.json", json_file_encoding="utf-8", env_prefix="hw_")

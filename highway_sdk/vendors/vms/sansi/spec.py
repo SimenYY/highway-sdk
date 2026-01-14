@@ -1,9 +1,11 @@
-from typing import Self
 from enum import Enum
 from functools import lru_cache
+from typing import Self
+
 from pydantic import Field, computed_field
-from highway_sdk.core.exceptions import CrcValidationError
+
 from highway_sdk.core.constants import ESC, ETX, STX
+from highway_sdk.core.exceptions import CrcValidationError
 from highway_sdk.vendors.vms._base import BaseFrame
 
 ENCODING = "gbk"
@@ -38,12 +40,8 @@ class Frame(BaseFrame):
         1. 先转义，后校验
     """
 
-    address: bytes = Field(
-        default=b"00", min_length=2, max_length=2, frozen=True, description="帧地址"
-    )
-    what: What | None = Field(
-        default=None, description="帧类型，作为请求帧时存在，作为响应帧是不存在"
-    )
+    address: bytes = Field(default=b"00", min_length=2, max_length=2, frozen=True, description="帧地址")
+    what: What | None = Field(default=None, description="帧类型，作为请求帧时存在，作为响应帧是不存在")
     data: bytes = Field(default=b"", description="帧数据")
 
     @computed_field

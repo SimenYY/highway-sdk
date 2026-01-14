@@ -1,8 +1,9 @@
 import logging
 from datetime import datetime
+
 from prometheus_client import (
-    Gauge,
     CollectorRegistry,
+    Gauge,
 )
 from prometheus_client.exposition import start_http_server
 
@@ -36,9 +37,7 @@ class MetricsMixin:
     """监控指标混入类，用于为协议类提供监控功能"""
 
     def __init__(self, device_id: str | None = None):
-        self.device_id = (
-            device_id if device_id is not None else f"device_{datetime.now()}"
-        )
+        self.device_id = device_id if device_id is not None else f"device_{datetime.now()}"
 
     def update_connection_status(self, status: bool) -> None:
         """更新设备连接状态

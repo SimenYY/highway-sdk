@@ -13,4 +13,4 @@ def test_frame_factory():
 
     frame = FrameFactory.upload_file(file_name="badpoint.png")
     expected_hex = "02 30 30 30 31 30 37 62 61 64 70 6F 69 6E 74 2E 70 6E 67 2B 30 30 30 30 30 30 30 30 43 C2 03"
-    assert bytes(frame) == bytes.fromhex(expected_hex)  
+    assert bytes(frame) == bytes.fromhex(expected_hex)

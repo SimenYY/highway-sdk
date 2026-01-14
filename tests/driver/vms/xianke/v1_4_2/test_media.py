@@ -1,13 +1,14 @@
 import textwrap
+
 from highway_sdk.vendors.vms.xianke.media import (
+    ColorEnum,
+    FontEnum,
+    ItemBuilder,
     MediaBuilder,
     PlayBuilder,
-    ItemBuilder,
-    FontEnum,
-    TextSizeEnum,
-    ColorEnum,
+    PlayParser,
     ScreenInOutEnum,
-    PlayParser
+    TextSizeEnum,
 )
 
 
@@ -53,7 +54,7 @@ class TestPlayBuiler:
             textwrap.dedent(r"""
             [LIST]
             ItemCount=002
-            Item00=2,1,0,1,1,\C000000\Fs32\T255000000000\B000000000000\U深圳显科科技有限公司 
+            Item00=2,1,0,1,1,\C000000\Fs32\T255000000000\B000000000000\U深圳显科科技有限公司
             Item01=2,1,0,1,1,\C000000\Fs32\T000255000000\B000000000000\U深圳显科科技有限公司
         """)
             .lstrip()
@@ -70,17 +71,14 @@ class TestPlayParser:
             textwrap.dedent(r"""
             [LIST]
             ItemCount=002
-            Item00=2,1,0,1,1,\C000000\Fs32\T255000000000\B000000000000\U深圳显科科技有限公司 
+            Item00=2,1,0,1,1,\C000000\Fs32\T255000000000\B000000000000\U深圳显科科技有限公司
             Item01=2,1,0,1,1,\C000000\Fs32\T000255000000\B000000000000\U深圳显科科技有限公司
             """)
             .lstrip()
             .replace("\n", "\r\n")
             .replace(" ", "")
         )
-        
+
         play_builder = PlayParser.parse(parsed)
-        
+
         assert str(play_builder.build()) == parsed
-        
-        
-        

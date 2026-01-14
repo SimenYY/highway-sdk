@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 :FileName: txtMedia.py
 :Project:
@@ -12,12 +11,13 @@
 """
 
 import configparser
-from ftplib import CRLF
 import re
-from pydantic import BaseModel, Field
-from typing import List, Any
-from enum import StrEnum, IntEnum
 from abc import abstractmethod
+from enum import IntEnum, StrEnum
+from ftplib import CRLF
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 # ==============================================================================
@@ -59,6 +59,7 @@ class EscEnum(StrEnum):
     Args:
         StrEnum (_type_): _description_
     """
+
     XY = "\\C"  # 起始坐标
     IMAGE = "\\I"  # 图片信息设置，默认bmp
     ICON = "\\A"  # 交通图标
@@ -85,6 +86,7 @@ class _Media(BaseModel):
     bmp_file_name: str
     gif_file_name: str
     video_file_name: str
+
     def __str__(self):
         protocol = (
             f"{EscEnum.XY.value}{self.x:03d}{self.y:03d}"
@@ -113,6 +115,7 @@ class MediaBuilder:
         self.bmp_file_name: str = ""
         self.gif_file_name: str = ""
         self.video_file_name: str = ""
+
     def build(self) -> _Media:
         """构造函数
 
@@ -169,12 +172,12 @@ class ItemBuilder:
 # 播放表类
 # ==============================================================================
 class _Play(BaseModel):
-    _item_list: List[_Item]
+    _item_list: list[_Item]
 
     def __str__(self):
         """
         注：除了转义字符，其他字符均大小写无关
-        
+
         :return:
         """
         protocol = "[LIST]"
@@ -189,11 +192,10 @@ class _Play(BaseModel):
 
 
 class PlayBuilder:
-    """播放表构建器
-    """
+    """播放表构建器"""
 
     def __init__(self):
-        self._item_list: List[_Item] = []
+        self._item_list: list[_Item] = []
 
     def add_item_builder(self, builder: ItemBuilder) -> "PlayBuilder":
         """添加item建造器
@@ -213,29 +215,33 @@ class PlayBuilder:
         play = _Play(**self.__dict__)
         play._item_list = self._item_list
         return play
-    
-#==============================================================================
+
+
+# ==============================================================================
 # 解析器
-#==============================================================================
+# ==============================================================================
+
 
 class BaseParser:
     @classmethod
     @abstractmethod
     def parse(cls, data: str) -> Any:
         pass
-    
+
+
 class PlayParser(BaseParser):
     """播放表解析器
 
     播放表格式
     [LIST]
     ItemCount=002
-    Item00=2,1,0,1,1,\\C000000\\Fs32\\T255000000000\\B000000000000\\U 深圳显科科技有限公司 
+    Item00=2,1,0,1,1,\\C000000\\Fs32\\T255000000000\\B000000000000\\U 深圳显科科技有限公司
     Item01=2,1,0,1,1,\\C000000\\Fs32\\T000255000000\\B000000000000\\U 深圳显科科技有限公司
-        
+
     Args:
         BaseParser (_type_): _description_
     """
+
     @classmethod
     def parse(cls, data: str) -> PlayBuilder:
         play_parser = configparser.ConfigParser()
@@ -243,15 +249,15 @@ class PlayParser(BaseParser):
         section = "LIST"
         items_num = int(play_parser.get(section, "ItemCount"))
         play_builder = PlayBuilder()
-        
+
         for i in range(items_num):
             option = f"Item{i:02d}"
             item = play_parser.get(section, option)
             item_builder = ItemParser.parse(item)
             play_builder.add_item_builder(item_builder)
-            
+
         return play_builder
-    
+
 
 class ItemParser(BaseParser):
     """播放项解析器
@@ -262,6 +268,7 @@ class ItemParser(BaseParser):
     Args:
         BaseParser (_type_): _description_2
     """
+
     # 预编译正则表达式以提高性能
     FONT_PATTERN = re.compile(r"\\F([a-zA-Z])(\d{2})")
     COLOR_PATTERN = re.compile(r"\\T(\d{12})")
@@ -273,53 +280,53 @@ class ItemParser(BaseParser):
 
     @classmethod
     def parse(cls, data: str) -> ItemBuilder:
-            fields = data.split(",")
-            
-            item_builder = ItemBuilder()
-            item_builder.duration = int(fields[0])
-            item_builder.screen_in = int(fields[1])
-            item_builder.play_effect = int(fields[2])
-            item_builder.screen_out = int(fields[3])
-            item_builder.play_speed = int(fields[4])
-            
-            media_builder = MediaBuilder()
-            media = fields[5]
+        fields = data.split(",")
 
-            # 字体、字号（通常在媒体字符串前部，优先匹配）
-            res = cls.FONT_PATTERN.search(media)
+        item_builder = ItemBuilder()
+        item_builder.duration = int(fields[0])
+        item_builder.screen_in = int(fields[1])
+        item_builder.play_effect = int(fields[2])
+        item_builder.screen_out = int(fields[3])
+        item_builder.play_speed = int(fields[4])
+
+        media_builder = MediaBuilder()
+        media = fields[5]
+
+        # 字体、字号（通常在媒体字符串前部，优先匹配）
+        res = cls.FONT_PATTERN.search(media)
+        if res:
+            media_builder.font = res.group(1)
+            media_builder.text_size = int(res.group(2))
+
+        # 字体颜色
+        res = cls.COLOR_PATTERN.search(media)
+        if res:
+            media_builder.text_color = res.group(1)
+
+        # 背景颜色
+        res = cls.BG_COLOR_PATTERN.search(media)
+        if res:
+            media_builder.background_color = res.group(1)
+
+        # 检查是否有文本内容（通常在末尾，可提前处理）
+        text_res = cls.TEXT_PATTERN.search(media)
+        if text_res:
+            text = text_res.group(1)
+            text = text.replace(EscEnum.LF.value, "")
+            media_builder.text = text
+        else:
+            # 只有在无文本时才检查图片/GIF/视频（互斥）
+            res = cls.IMAGE_PATTERN.search(media)
             if res:
-                media_builder.font = res.group(1)
-                media_builder.text_size = int(res.group(2))
-
-            # 字体颜色
-            res = cls.COLOR_PATTERN.search(media)
-            if res:
-                media_builder.text_color = res.group(1)
-
-            # 背景颜色
-            res = cls.BG_COLOR_PATTERN.search(media)
-            if res:
-                media_builder.background_color = res.group(1)
-
-            # 检查是否有文本内容（通常在末尾，可提前处理）
-            text_res = cls.TEXT_PATTERN.search(media)
-            if text_res:
-                text = text_res.group(1)
-                text = text.replace(EscEnum.LF.value, "")
-                media_builder.text = text
+                media_builder.bmp_file_name = res.group(1)
             else:
-                # 只有在无文本时才检查图片/GIF/视频（互斥）
-                res = cls.IMAGE_PATTERN.search(media)
+                res = cls.GIF_PATTERN.search(media)
                 if res:
-                    media_builder.bmp_file_name = res.group(1)
+                    media_builder.gif_file_name = res.group(1)
                 else:
-                    res = cls.GIF_PATTERN.search(media)
+                    res = cls.VIDEO_PATTERN.search(media)
                     if res:
-                        media_builder.gif_file_name = res.group(1)
-                    else:
-                        res = cls.VIDEO_PATTERN.search(media)
-                        if res:
-                            media_builder.video_file_name = res.group(1)
+                        media_builder.video_file_name = res.group(1)
 
-            item_builder._media = media_builder.build()
-            return item_builder
+        item_builder._media = media_builder.build()
+        return item_builder

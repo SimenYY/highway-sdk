@@ -8,7 +8,7 @@
 
 from collections.abc import Callable
 from functools import lru_cache, wraps
-from typing import Any, Protocol, Self
+from typing import Any, ClassVar, Protocol, Self
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -128,7 +128,7 @@ class BaseParser:
         ...         return ItemTags(text=data.decode())
     """
 
-    _parsers: dict[Any, Callable[..., BaseTags]] = {}
+    _parsers: ClassVar[dict[Any, Callable[..., BaseTags]]] = {}
 
     @classmethod
     @lru_cache

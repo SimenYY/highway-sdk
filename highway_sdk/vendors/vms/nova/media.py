@@ -1,21 +1,23 @@
+import configparser
 import io
+import re
 from abc import abstractmethod
+from enum import Enum
 from ftplib import CRLF
+from typing import Any
+
 from pydantic import (
     BaseModel,
-    NonNegativeInt,
-    Field,
-    field_validator,
-    HttpUrl,
-    PrivateAttr,
     ConfigDict,
+    Field,
+    HttpUrl,
+    NonNegativeInt,
+    PrivateAttr,
+    field_validator,
 )
-from enum import Enum
-from typing import List, Any
-import configparser
-import re
 
-#TODO: 修改
+# TODO: 修改
+
 
 # ==============================================================================
 # 枚举量
@@ -105,9 +107,7 @@ class VoiceSoundEnum(str, Enum):
 class BaseMedia(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
-    _index: NonNegativeInt = PrivateAttr(
-        default_factory=int
-    )  # 使用 PrivateAttr() 并允许初始化
+    _index: NonNegativeInt = PrivateAttr(default_factory=int)  # 使用 PrivateAttr() 并允许初始化
     x: NonNegativeInt  # x坐标
     y: NonNegativeInt  # y坐标
     width: NonNegativeInt  # 宽度
@@ -172,9 +172,7 @@ class _TextMedia(BaseMedia):
             f"{self.font_style}"
         )
 
-        protocol_2 = (
-            f"txtparam{self._index}={self.world_space},{self.alignment_direction}"
-        )
+        protocol_2 = f"txtparam{self._index}={self.world_space},{self.alignment_direction}"
 
         protocol = protocol_1 + CRLF + protocol_2
 
@@ -248,15 +246,7 @@ class _ImageMedia(BaseMedia):
     flash: str  # 闪烁
 
     def __str__(self) -> str:
-        protocol_1 = (
-            f"img{self._index}="
-            f"{self.x},"
-            f"{self.y},"
-            f"{self.file_path},"
-            f"{self.flash},"
-            f"{self.width},"
-            f"{self.height}"
-        )
+        protocol_1 = f"img{self._index}={self.x},{self.y},{self.file_path},{self.flash},{self.width},{self.height}"
         protocol_2 = (
             f"imgparam{self._index}="
             f"{self.duration},"
@@ -275,15 +265,7 @@ class _WebMedia(BaseMedia):
     refresh_time: int  # 刷新时间，单位100ms 为0时不刷新
 
     def __str__(self) -> str:
-        protocol = (
-            f"webview{self._index}="
-            f"{self.x},"
-            f"{self.y},"
-            f"{self.url},"
-            f"{self.refresh_time},"
-            f"{self.width},"
-            f"{self.height}"
-        )
+        protocol = f"webview{self._index}={self.x},{self.y},{self.url},{self.refresh_time},{self.width},{self.height}"
         return protocol
 
 
@@ -382,7 +364,7 @@ class WebMediaBuilder(BaseMediaBuilder):
 class _Item(BaseModel):
     """播放项，即表示单个页面"""
 
-    _media_list: List[BaseMedia] = PrivateAttr(default_factory=list)
+    _media_list: list[BaseMedia] = PrivateAttr(default_factory=list)
     _auto_media_index: NonNegativeInt = PrivateAttr(
         default_factory=int
     )  # item内媒体序号，默认从0开始，自动累加，不应该被修改
@@ -421,7 +403,7 @@ class _Item(BaseModel):
 
 class ItemBuilder:
     def __init__(self):
-        self._media_list: List[BaseMedia] = []
+        self._media_list: list[BaseMedia] = []
         self._auto_media_index: int = 0
         self._index: int = 0
         self.duration: int = 100
@@ -473,13 +455,10 @@ class _Play(BaseModel):
         _type_: _description_
     """
 
-    _item_list: List[_Item] = PrivateAttr(default_factory=list)  # 播放节目集合
+    _item_list: list[_Item] = PrivateAttr(default_factory=list)  # 播放节目集合
     _auto_item_index: NonNegativeInt = PrivateAttr(default_factory=int)
     push_protocol: str  # 播放节目对应的直接指令, 暂时没用到
-    play_id: int = Field(
-        ..., gt=0, le=100
-    )  # 节目id，一般不指定，默认1，支持播放列表1-100
-
+    play_id: int = Field(..., gt=0, le=100)  # 节目id，一般不指定，默认1，支持播放列表1-100
 
     def __str__(self) -> str:
         """play播放文件字符串"""
@@ -500,7 +479,7 @@ class PlayBuilder:
     """播放文件类构造器"""
 
     def __init__(self):
-        self._item_list: List[_Item] = []
+        self._item_list: list[_Item] = []
         self.push_protocol: str = ""
         self.play_id: int = 1
         self._auto_item_index: int = 0
@@ -528,6 +507,7 @@ class PlayBuilder:
 
 class BaseParser:
     """解析器基类"""
+
     @classmethod
     @abstractmethod
     def parse(cls, data: bytes) -> Any:
@@ -567,7 +547,7 @@ class PlayParser(BaseParser):
             with io.StringIO() as f:
                 section_config.write(f)
                 item = f.getvalue()
-                
+
             item_builder = ItemParser.parse(item)
             play_builer.add_item_builder(item_builder)
         return play_builer
@@ -585,11 +565,13 @@ class ItemParser(BaseParser):
     Args:
         BaseParser (_type_): _description_
     """
+
     TXT_PATTERN = re.compile(r"^txt\d+$")
     TXT_PARAM_PATTERN = re.compile(r"^txtparam\d+$")
     TXTEXT_PATTERN = re.compile(r"^txtext\d+$")
     IMAGE_PATTERN = re.compile(r"^img\d+$")
     IMAGE_PARAM_PATTERN = re.compile(r"^imgparam\d+$")
+
     @classmethod
     def parse(cls, data: str) -> ItemBuilder:
         config = configparser.ConfigParser()
@@ -601,7 +583,7 @@ class ItemParser(BaseParser):
 
         text_cache, img_cache = {}, {}
 
-        options = config.options(item_name)  # noqa: F811
+        options = config.options(item_name)
         for option in options:
             match option:
                 case "param":
@@ -616,7 +598,7 @@ class ItemParser(BaseParser):
                     item_builder.play_count = params[6]
 
                 case _ if cls.TXT_PATTERN.match(option):  # 文本媒体
-                    index = re.search(r"\d+", option).group()  
+                    index = re.search(r"\d+", option).group()
                     if index not in text_cache:
                         text_cache[index] = TextMediaBuilder()
 
@@ -636,7 +618,7 @@ class ItemParser(BaseParser):
                     text_builder.font_style = fields[10]
 
                 case _ if cls.TXT_PARAM_PATTERN.match(option):  # 文本参数媒体
-                    index = re.search(r"\d+", option).group()  
+                    index = re.search(r"\d+", option).group()
                     if index not in text_cache:
                         text_cache[index] = TextMediaBuilder()
 
@@ -677,7 +659,7 @@ class ItemParser(BaseParser):
                     item_builder.add_media_builder(textext_builder)
 
                 case _ if cls.IMAGE_PATTERN.match(option):  # 图片媒体
-                    index = re.search(r"\d+", option).group()  
+                    index = re.search(r"\d+", option).group()
                     if index not in img_cache:
                         img_cache[index] = ImageMediaBuilder()
 
@@ -692,7 +674,7 @@ class ItemParser(BaseParser):
                     img_builder.height = int(fields[5])
 
                 case _ if cls.IMAGE_PARAM_PATTERN.match(option):
-                    index = re.search(r"\d+", option).group()  
+                    index = re.search(r"\d+", option).group()
                     if index not in img_cache:
                         img_cache[index] = ImageMediaBuilder()
 

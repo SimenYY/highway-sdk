@@ -1,8 +1,9 @@
 import pytest
+
 from highway_sdk.platform.supaiot.client import SupaiotAsyncAPIClient
 from highway_sdk.platform.supaiot.models import (
-    Devices,
     APIResponse,
+    Devices,
     DevicesRealtimeData,
 )
 

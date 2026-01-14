@@ -1,9 +1,10 @@
-from typing import Self
 from enum import Enum
 from functools import lru_cache
+from typing import Self
+
 from pydantic import Field, computed_field
+
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.core.constants import ETX, STX
 from highway_sdk.vendors.vms._base import BaseFrame
 
 ENCODING = "gbk"
@@ -45,9 +46,7 @@ class Frame(BaseFrame):
 
     what: What = Field(..., description="帧类型")
     data: bytes = Field(default=b"", description="帧数据")
-    address: bytes = Field(
-        default=b"00", min_length=2, max_length=2, frozen=True, description="帧地址"
-    )
+    address: bytes = Field(default=b"00", min_length=2, max_length=2, frozen=True, description="帧地址")
 
     @computed_field
     @property

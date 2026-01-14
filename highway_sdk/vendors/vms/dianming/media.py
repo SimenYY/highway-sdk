@@ -8,12 +8,13 @@
 - 播放列表解析器
 """
 
-from abc import ABC, abstractmethod
 import configparser
+import re
+from abc import ABC, abstractmethod
 from enum import Enum, StrEnum
 from ftplib import CRLF
-import re
 from typing import Any, Self
+
 from pydantic import BaseModel, Field
 
 
@@ -543,11 +544,7 @@ class ItemParser(BaseParser):
         item_builder.screen_out = int(fields[3])
         item_builder.play_speed = int(fields[4])
 
-        media_list = [
-            Esc.XY.value + part
-            for part in fields[5].split(Esc.XY.value)
-            if part
-        ]
+        media_list = [Esc.XY.value + part for part in fields[5].split(Esc.XY.value) if part]
         for media in media_list:
             media_builder = cls.parse_media(media)
             item_builder.add_media_builder(media_builder)

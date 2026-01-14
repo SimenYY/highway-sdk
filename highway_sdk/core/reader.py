@@ -1,4 +1,4 @@
-from .constants import STX, ETX, BUFSIZE
+from .constants import BUFSIZE, ETX, STX
 
 
 class Reader:
@@ -92,9 +92,7 @@ class Reader:
                 # 没有找到结束符，等待更多数据
                 # 检查是否超出限制
                 if buflen - istart > self._limit:
-                    raise RuntimeError(
-                        "End marker not found, but chunk is longer than limit"
-                    )
+                    raise RuntimeError("End marker not found, but chunk is longer than limit")
                 break
 
             # 计算完整报文的结束位置

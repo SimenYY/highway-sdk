@@ -1,0 +1,111 @@
+# .gitlab-ci.yml
+
+stages:
+  - code_quality
+  - test
+  - build_docs
+  - publish
+
+variables:
+  PYTHON_VERSION: "3.11"
+  POETRY_VERSION: "1.8.0"
+  SPHINXOPTS: "-W"
+  LOCAL_PYPI_URL: "http://172.20.61.88:8080/simple/"
+  LOCAL_PYPI_REPOSITORY: "local"
+
+code_quality:
+  stage: code_quality
+  image: python:3.11-slim
+  tags:
+    - linux
+  script:
+    - pip install poetry==$POETRY_VERSION
+    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
+    - poetry install
+    - poetry run ruff check .
+    - poetry run ruff format --check .
+  artifacts:
+    when: always
+    paths:
+      - .ruff_cache/
+  except:
+    - tags
+
+test_linux:
+  stage: test
+  image: python:3.11-slim
+  tags:
+    - linux
+  script:
+    - pip install poetry==$POETRY_VERSION
+    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
+    - poetry install
+    - poetry run pytest --verbose
+  artifacts:
+    when: always
+    paths:
+      - .pytest_cache/
+  except:
+    - tags
+
+test_windows:
+  stage: test
+  tags:
+    - windows
+  script:
+    - python -m pip install poetry==$POETRY_VERSION
+    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
+    - poetry install
+    - poetry run pytest --verbose
+  artifacts:
+    when: always
+    paths:
+      - .pytest_cache/
+  except:
+    - tags
+
+build_docs:
+  stage: build_docs
+  image: python:3.11-slim
+  tags:
+    - linux
+  script:
+    - pip install poetry==$POETRY_VERSION
+    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
+    - poetry install
+    - sphinx-build $SPHINXOPTS -b html docs/source docs/build/html
+  artifacts:
+    paths:
+      - docs/build/html/
+  except:
+    - tags
+
+build_package:
+  stage: publish
+  image: python:3.11-slim
+  tags:
+    - linux
+  script:
+    - pip install poetry==$POETRY_VERSION
+    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
+    - poetry install
+    - poetry build
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - tags
+
+publish_to_local_pypi:
+  stage: publish
+  image: python:3.11-slim
+  tags:
+    - linux
+  script:
+    - pip install poetry==$POETRY_VERSION
+    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
+    - poetry publish --repository $LOCAL_PYPI_REPOSITORY --username $LOCAL_PYPI_USERNAME --password $LOCAL_PYPI_PASSWORD
+  dependencies:
+    - build_package
+  only:
+    - tags

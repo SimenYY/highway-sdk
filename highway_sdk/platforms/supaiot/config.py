@@ -6,9 +6,7 @@ __all__ = ["SupaiotConfig"]
 class SupaiotConfig(BaseSettings):
     """物联智控配置"""
 
-    model_config = SettingsConfigDict(
-        env_prefix="SUPAIOT_", env_file=[".env.local", ".env"], extra="allow"
-    )
+    model_config = SettingsConfigDict(env_prefix="SUPAIOT_", env_file=[".env.local", ".env"], extra="allow")
 
     API_BASE_URL: str = ""  # 物联智控服务地址，例如http://192.168.1.1:8080
     API_APP_ID: str = ""  # 物联智控APP_ID

@@ -5,6 +5,7 @@
 """
 
 from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -29,15 +30,11 @@ class _VmsTextModel(BaseModel):
     lf: str = Field(default="\n", description="换行符")
     word_space: int = Field(default=0, description="字间距")
     line_space: int = Field(default=0, description="行间距")
-    font_color: Literal["red", "yellow", "green", "black"] = Field(
-        default="red", description="字体颜色"
-    )
+    font_color: Literal["red", "yellow", "green", "black"] = Field(default="red", description="字体颜色")
     size: int = Field(default=16, description="字号")
     lines: list[str] = Field(default=[], description="文本行列表的形式")
     xy: tuple[int, int] = Field(default=(0, 0), description="文本起始坐标")
-    text_area: tuple[int, int] | None = Field(
-        default=None, description="文本占用区域尺寸, h, w"
-    )
+    text_area: tuple[int, int] | None = Field(default=None, description="文本占用区域尺寸, h, w")
 
 
 class VmsTextBuilder:
@@ -237,22 +234,14 @@ class VmsTextBuilder:
         for i, ch in enumerate(self.text):
             ch_list.append(ch)
 
-            ch_w = (
-                self.vms_text_model.size / 2
-                if ch.isascii()
-                else self.vms_text_model.size
-            )
+            ch_w = self.vms_text_model.size / 2 if ch.isascii() else self.vms_text_model.size
             if clw == 0:
                 clw += ch_w
             else:
                 clw += letter_s + ch_w
 
             if i != (len(self.text) - 1):
-                next_ch_w = (
-                    self.vms_text_model.size / 2
-                    if self.text[i + 1].isascii()
-                    else self.vms_text_model.size
-                )
+                next_ch_w = self.vms_text_model.size / 2 if self.text[i + 1].isascii() else self.vms_text_model.size
                 if (clw + letter_s > self.w) or (clw + letter_s + next_ch_w > self.w):
                     ch_list.append(self.vms_text_model.lf)
                     clw = 0

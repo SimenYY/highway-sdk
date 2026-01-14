@@ -1,27 +1,30 @@
-from datetime import datetime
 import itertools
-from typing import Protocol
 import logging
+from datetime import datetime
+from typing import Protocol
+
 import aiomqtt
+
 from highway_sdk.core.base import BaseTags
-from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
 from highway_sdk.vendors.vms._common import VmsTextBuilder
 from highway_sdk.vendors.vms.fenghai.media import (
-    FontSize as FenghaiFontSize,
-    Font as FenghaiFont,
+    Bmp as FenghaiBmp,
     Color as FenghaiColor,
-    Text as FenghaiText,
+    Font as FenghaiFont,
+    FontSize as FenghaiFontSize,
     Item as FenghaiItem,
     Play as FenghaiPlay,
-    Bmp as FenghaiBmp,
+    Text as FenghaiText,
 )
+from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
+
+from .models import DeviceInfoMode, RealtimeDataPublishModel
 from .tags import (
-    convert,
+    ControlVmsTagsModel,
     _ColorEnum,
     _FontEnum,
-    ControlVmsTagsModel,
+    convert,
 )
-from .models import DeviceInfoMode, RealtimeDataPublishModel
 
 __all__ = [
     "MQTTGatewayProtocol",
@@ -45,9 +48,7 @@ class MQTTGatewayProtocol(Protocol):
 class SupaiotVmsFenghaiProtocol(VmsFenghaiProtocol):
     """物联智控 情报板 丰海协议"""
 
-    def __init__(
-        self, *, device_info: DeviceInfoMode, mqtt_client: aiomqtt.Client, **kwargs
-    ):
+    def __init__(self, *, device_info: DeviceInfoMode, mqtt_client: aiomqtt.Client, **kwargs):
         super().__init__(**kwargs)
 
         self.device_info = device_info
@@ -57,9 +58,7 @@ class SupaiotVmsFenghaiProtocol(VmsFenghaiProtocol):
         try:
             data = convert(tags)
             if data:
-                self.mqtt_real_publish(
-                    self.device_info.series, self.device_info.sn, data
-                )
+                self.mqtt_real_publish(self.device_info.series, self.device_info.sn, data)
         except Exception as e:
             self.log.exception(e)
 
@@ -70,13 +69,9 @@ class SupaiotVmsFenghaiProtocol(VmsFenghaiProtocol):
 
     def mqtt_real_publish(self, series: str, sn: str, data: dict):
         # self.mqtt_client.publish_real_data(series, sn, data)
-        prmm = RealtimeDataPublishModel(
-            series=series, sn=sn, time=datetime.now(), timestamp=None, data=data
-        )
+        prmm = RealtimeDataPublishModel(series=series, sn=sn, time=datetime.now(), timestamp=None, data=data)
         self._loop.create_task(
-            self.mqtt_client.publish(
-                topic=prmm.get_topic(), payload=prmm.model_dump_json(exclude_none=True)
-            )
+            self.mqtt_client.publish(topic=prmm.get_topic(), payload=prmm.model_dump_json(exclude_none=True))
         )
 
     def play_speed_limit(self, speed_limit: int):
@@ -119,9 +114,7 @@ class SupaiotVmsFenghaiProtocol(VmsFenghaiProtocol):
                         x=vms_text.xy[0],
                         y=vms_text.xy[1],
                         text=vms_text.text,
-                        font_color=FenghaiColor(
-                            _ColorEnum.get_rgba_by_code(int(font_color_code))
-                        ),
+                        font_color=FenghaiColor(_ColorEnum.get_rgba_by_code(int(font_color_code))),
                         font=FenghaiFont(_FontEnum.get_font_by_code(int(font_code))),
                         font_size=FenghaiFontSize(value=vms_text.size),
                     )

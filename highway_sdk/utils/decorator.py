@@ -1,8 +1,9 @@
 import logging
 import threading
-from functools import wraps
-from typing import Any, Callable
 import time
+from collections.abc import Callable
+from functools import wraps
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

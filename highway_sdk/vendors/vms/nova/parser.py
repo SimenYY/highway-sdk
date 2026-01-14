@@ -1,11 +1,13 @@
 from functools import lru_cache
+
 from highway_sdk.core.exceptions import (
     DeviceOperationError,
 )
-from highway_sdk.vendors.vms._tags import ItemTags, BrightnessTags
 from highway_sdk.vendors.vms._base import BaseParser
-from .spec import What, ResultCode
+from highway_sdk.vendors.vms._tags import BrightnessTags, ItemTags
+
 from .media import PlayParser
+from .spec import ResultCode, What
 
 
 class Parser(BaseParser):

@@ -3,7 +3,7 @@
 该模块提供了点明VMS设备的帧工厂类，用于创建各种请求帧。
 """
 
-from .spec import Frame, What, ENCODING
+from .spec import ENCODING, Frame, What
 
 
 class FrameFactory:

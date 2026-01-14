@@ -93,6 +93,9 @@ ignore = [
     "E501",  # 忽略行长度（由 formatter 处理）
     "E203",  # 冒号前空格（与 formatter 兼容性）
     "B008",  # 允许函数参数中定义对象（对 Pydantic 友好）
+    "RUF001",  # 字符串中包含全角标点符号
+    "RUF002",  # 文档字符串中包含全角标点符号
+    "RUF003",  # 注释中包含全角标点符号
 ]
 
 [tool.ruff.lint.mccabe]

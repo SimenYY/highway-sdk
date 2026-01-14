@@ -1,9 +1,10 @@
-from typing import Self
 from enum import Enum
 from functools import lru_cache
+from typing import Self
+
 from pydantic import Field, computed_field
-from highway_sdk.core.exceptions import CrcValidationError, ValidationError
-from highway_sdk.core.constants import ESC, ETX, STX
+
+from highway_sdk.core.exceptions import CrcValidationError
 from highway_sdk.vendors.vms._base import BaseFrame
 
 ENCODING = "utf-8"
@@ -116,7 +117,6 @@ class Frame(BaseFrame):
             raise CrcValidationError("crc check failed")
 
         return frame
-
 
     @classmethod
     @lru_cache

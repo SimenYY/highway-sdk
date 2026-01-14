@@ -7,12 +7,13 @@
 - CRC校验和转义处理
 """
 
-from typing import Self
-from functools import lru_cache
-from pydantic import Field, computed_field
 from enum import Enum
+from functools import lru_cache
+from typing import Self
+
+from pydantic import Field, computed_field
+
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.core.constants import ETX, STX
 from highway_sdk.vendors.vms._base import BaseFrame
 
 ENCODING = "gbk"
@@ -83,9 +84,7 @@ class Frame(BaseFrame):
     @property
     def crc(self) -> bytes:
         """计算CRC校验码。"""
-        return self.calc_crc(
-            self.dst_addr + self.src_addr + self.what.value + self.data
-        )
+        return self.calc_crc(self.dst_addr + self.src_addr + self.what.value + self.data)
 
     def __bytes__(self) -> bytes:
         """将帧转换为字节数据。
@@ -94,11 +93,7 @@ class Frame(BaseFrame):
             bytes: 转义后的完整帧数据。
         """
         return (
-            self.start
-            + self.escape(
-                self.dst_addr + self.src_addr + self.what.value + self.data + self.crc
-            )
-            + self.end
+            self.start + self.escape(self.dst_addr + self.src_addr + self.what.value + self.data + self.crc) + self.end
         )
 
     @classmethod

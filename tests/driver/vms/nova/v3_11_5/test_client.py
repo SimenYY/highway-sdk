@@ -1,5 +1,7 @@
 import textwrap
+
 import pytest
+
 from highway_sdk.vendors.vms.nova.client import VmsNovaClient
 from highway_sdk.vendors.vms.nova.spec import NovaMsg
 from tests.mock.mock_server import VmsNovaMock_v3_11_5
@@ -7,6 +9,7 @@ from tests.mock.mock_server import VmsNovaMock_v3_11_5
 
 class TestVmsNovaClient:
     """VMS Nova Client 集成测试"""
+
     @pytest.fixture(scope="class")
     def mock_server(self):
         server = VmsNovaMock_v3_11_5(host="127.0.0.1", port=8888)
@@ -23,6 +26,7 @@ class TestVmsNovaClient:
         yield client
 
         client.disconnect()
+
     def test_client_connect(self, client: VmsNovaClient):
         assert client.is_connected
 
@@ -57,7 +61,6 @@ class TestVmsNovaClient:
                 txt1=10,0,3,1616,1,8,0,车牌：冀A318AA大货车,192,320,0
                 txtparam1=0,0""")
             .lstrip()
-            
             .encode(NovaMsg.encoding)
         )
         assert data[1:] == expected

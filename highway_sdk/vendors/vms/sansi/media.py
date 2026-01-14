@@ -1,11 +1,14 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from enum import IntEnum, StrEnum
 from ftplib import CRLF
-from pydantic import BaseModel, Field
-from enum import StrEnum, IntEnum
 from typing import Literal, Self
+
+from pydantic import BaseModel, Field
+
 from highway_sdk.vendors.vms._base import BaseMediaBuilder
 
-#TODO: 修改
+# TODO: 修改
+
 
 # ==============================================================================
 # 枚举类
@@ -87,9 +90,7 @@ class Bmp(BaseMedia):
     bmp_file_name: str
 
     def __str__(self):
-        protocol = (
-            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.BMP.value}{self.bmp_file_name}"
-        )
+        protocol = f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.BMP.value}{self.bmp_file_name}"
         return protocol
 
 
@@ -97,9 +98,7 @@ class Png(BaseMedia):
     png_file_name: str
 
     def __str__(self):
-        protocol = (
-            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.PNG.value}{self.png_file_name}"
-        )
+        protocol = f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.PNG.value}{self.png_file_name}"
         return protocol
 
 
@@ -107,9 +106,7 @@ class Jpg(BaseMedia):
     jpg_file_name: str
 
     def __str__(self):
-        protocol = (
-            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.JPG.value}{self.jpg_file_name}"
-        )
+        protocol = f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.JPG.value}{self.jpg_file_name}"
         return protocol
 
 
@@ -117,9 +114,7 @@ class Gif(BaseMedia):
     gif_file_name: str
 
     def __str__(self):
-        protocol = (
-            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.GIF.value}{self.gif_file_name}"
-        )
+        protocol = f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.GIF.value}{self.gif_file_name}"
         return protocol
 
 
@@ -131,9 +126,7 @@ class Mpg(BaseMedia):
     mpg_file_name: str
 
     def __str__(self):
-        protocol = (
-            f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.MPG.value}{self.mpg_file_name}"
-        )
+        protocol = f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.MPG.value}{self.mpg_file_name}"
         return protocol
 
 
@@ -513,9 +506,7 @@ class PlayFactory:
 
     def __init__(self, mode: Literal["single", "multiple"]) -> None:
         if mode not in self._play_builders:
-            raise ValueError(
-                f"Unsupported mode: {mode}. Available modes: {list(self._play_builders.keys())}"
-            )
+            raise ValueError(f"Unsupported mode: {mode}. Available modes: {list(self._play_builders.keys())}")
         self._mode = mode
         self._play_builder: BasePlayBuilder | None = None
 

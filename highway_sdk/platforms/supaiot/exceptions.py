@@ -1,11 +1,11 @@
 from highway_sdk.core.exceptions import HighwaySDKException
 
 __all__ = [
-    "SupaiotError",
     "SupaiotAPIError",
-    "SupaiotAPIconnectError",
-    "SupaiotAPIResponseValidateError",
     "SupaiotAPILoginError",
+    "SupaiotAPIResponseValidateError",
+    "SupaiotAPIconnectError",
+    "SupaiotError",
 ]
 
 

@@ -1,9 +1,10 @@
-from collections.abc import Callable
-import uuid
-import logging
 import asyncio
+import logging
 import threading
+import uuid
+from collections.abc import Callable
 from typing import Any
+
 import confluent_kafka
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,7 @@ __all__ = ["AIOProducer", "Producer"]
 class BaseProducer:
     """Base producer
 
-    github: https://github.com/confluentinc/confluent-kafka-python/tree/master  
+    github: https://github.com/confluentinc/confluent-kafka-python/tree/master
 
     Notes:
         2025-12-04：发现官方开始有实验性质的 from confluent_kafka.experimental.aio import AIOProducer
@@ -58,9 +59,7 @@ class BaseProducer:
         self._poll_thread.join()
 
     @staticmethod
-    def on_delivery(
-        err: confluent_kafka.KafkaError, msg: confluent_kafka.Message
-    ) -> None:
+    def on_delivery(err: confluent_kafka.KafkaError, msg: confluent_kafka.Message) -> None:
         if err is not None:
             logger.error(f"Message delivery failed: {err}")
         else:
@@ -72,11 +71,7 @@ class BaseProducer:
         Returns:
             dict: _description_
         """
-        return {
-            k.replace("_", "."): v
-            for k, v in self.__dict__.items()
-            if not k.startswith("_") and v is not None
-        }
+        return {k.replace("_", "."): v for k, v in self.__dict__.items() if not k.startswith("_") and v is not None}
 
     def produce(
         self,

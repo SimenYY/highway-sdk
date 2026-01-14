@@ -1,10 +1,12 @@
-import sys
 import logging
-from pathlib import Path
-from functools import wraps, partial
-from typing import Any
+import sys
 from collections.abc import Callable
-from filelock import FileLock, AsyncFileLock, BaseAsyncFileLock, BaseFileLock
+from functools import partial, wraps
+from pathlib import Path
+from typing import Any
+
+from filelock import AsyncFileLock, BaseAsyncFileLock, BaseFileLock, FileLock
+
 from highway_sdk import dirs
 
 logger = logging.getLogger(__name__)
@@ -31,7 +33,7 @@ class AppLock:
         lock_dir.mkdir(parents=True, exist_ok=True)
         self.lock_file: Path = lock_dir / "app.lock"
         self.lock: BaseAsyncFileLock | BaseFileLock | None = None
-        logger.info(f"lock file path: {str(self.lock_file)}")
+        logger.info(f"lock file path: {self.lock_file!s}")
 
     @classmethod
     def lock_this(cls, main: Callable[..., Any] | None = None, *, name: str = "app"):
@@ -61,9 +63,7 @@ class AppLock:
         return _lock_this
 
     @classmethod
-    def async_lock_this(
-        cls, main: Callable[..., Any] | None = None, *, name: str = "app_lock"
-    ):
+    def async_lock_this(cls, main: Callable[..., Any] | None = None, *, name: str = "app_lock"):
         """异步应用锁函数装饰器
 
         Args:

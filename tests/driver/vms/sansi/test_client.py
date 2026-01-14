@@ -1,5 +1,6 @@
 import pytest
 import pytest_asyncio
+
 from highway_sdk.vendors.vms.sansi.protocol import VmsSanSiClient
 
 
@@ -28,4 +29,3 @@ class TestVmsSanSiClient:
     @pytest.mark.asyncio
     async def test_set_brightness(self, client: VmsSanSiClient):
         await client.set_brightness(50)
-

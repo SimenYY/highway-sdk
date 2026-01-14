@@ -1,4 +1,4 @@
-from highway_sdk.platform.supaiot.prototypes import Vms, Csls
+from highway_sdk.platform.supaiot.prototypes import Csls, Vms
 
 
 class TestPrototype:

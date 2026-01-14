@@ -2,13 +2,10 @@ import ipaddress
 import re
 from typing import Final
 
-
 # ==============================================================================
 # 正则编译
 # ==============================================================================
-_CHAINAGE_PATTERN: Final[re.Pattern] = re.compile(
-    r"^[ZY]?K\d+\+\d{1,3}(\.\d{1,2})?$", re.IGNORECASE
-)
+_CHAINAGE_PATTERN: Final[re.Pattern] = re.compile(r"^[ZY]?K\d+\+\d{1,3}(\.\d{1,2})?$", re.IGNORECASE)
 
 
 # ==============================================================================

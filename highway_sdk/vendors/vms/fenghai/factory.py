@@ -3,7 +3,7 @@
 该模块提供了丰海VMS设备的帧工厂类，用于创建各种请求帧。
 """
 
-from .spec import ENCODING, What, Frame
+from .spec import ENCODING, Frame, What
 
 
 class FrameFactory:
@@ -69,10 +69,7 @@ class FrameFactory:
         return Frame(
             what=What.UPLOAD_FILE,
             data=(
-                file_name.encode(ENCODING, "ignore")
-                + b"+"
-                + b"\x00\x00\x00\x00"
-                + content.encode(ENCODING, "ignore")
+                file_name.encode(ENCODING, "ignore") + b"+" + b"\x00\x00\x00\x00" + content.encode(ENCODING, "ignore")
             ),
         )
 

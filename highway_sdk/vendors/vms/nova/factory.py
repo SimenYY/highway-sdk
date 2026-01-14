@@ -1,13 +1,11 @@
 import struct
-from .spec import Frame, What, ENCODING
+
+from .spec import ENCODING, Frame, What
 
 
 class FrameFactory:
-    
     @classmethod
-    def send_file_name(
-        cls, file_name: str = "play001.lst", block_size: int = 65535
-    ) -> Frame:
+    def send_file_name(cls, file_name: str = "play001.lst", block_size: int = 65535) -> Frame:
         """发送文件名
 
         上位机发送：

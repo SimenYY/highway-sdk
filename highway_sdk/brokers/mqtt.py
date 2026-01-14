@@ -1,10 +1,10 @@
-from collections.abc import Callable
-import uuid
 import logging
+import uuid
+from collections.abc import Callable
 from typing import Any
+
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion, MQTTErrorCode
-
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +46,7 @@ class MqttClientV2:
         if self.client_id is None:
             self.client_id = f"mqtt_client_v2_{uuid.uuid4()}"
 
-        self._client: mqtt.Client = mqtt.Client(
-            CallbackAPIVersion.VERSION2, client_id=self.client_id
-        )
+        self._client: mqtt.Client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=self.client_id)
 
         if self.auth is not None:
             self._client.username_pw_set(*self.auth)
@@ -83,13 +81,9 @@ class MqttClientV2:
 
             def on_connect(client, userdata, flags, reason_code, properties):
                 if reason_code.is_failure:
-                    logger.error(
-                        f"Failed to connect MQTT broker[{self.broker_addr}], reason code: {reason_code}."
-                    )
+                    logger.error(f"Failed to connect MQTT broker[{self.broker_addr}], reason code: {reason_code}.")
                 else:
-                    logger.info(
-                        f"Connected to MQTT Broker[{self.broker_addr}], client id: {self.client_id}."
-                    )
+                    logger.info(f"Connected to MQTT Broker[{self.broker_addr}], client id: {self.client_id}.")
                     if on_sucess is not None:
                         on_sucess()
 
@@ -97,9 +91,7 @@ class MqttClientV2:
         else:
             self._client.on_connect = callback
 
-    def set_on_connect_fail(
-        self, callback: mqtt.CallbackOnConnectFail | None = None
-    ) -> None:
+    def set_on_connect_fail(self, callback: mqtt.CallbackOnConnectFail | None = None) -> None:
         """set connect fail callback
 
         Notes:
@@ -116,9 +108,7 @@ class MqttClientV2:
         else:
             self._client.on_connect_fail = callback
 
-    def set_on_disconnect(
-        self, disconnect_callback: mqtt.CallbackOnDisconnect | None = None
-    ) -> None:
+    def set_on_disconnect(self, disconnect_callback: mqtt.CallbackOnDisconnect | None = None) -> None:
         """set disconnect callback
 
         Notes:
@@ -129,9 +119,7 @@ class MqttClientV2:
         if disconnect_callback is None:
 
             def on_disconnect(client, userdata, reason_code, properties):
-                logger.info(
-                    f"Disconnected from MQTT Broker[{self.broker_addr}], client id: {self.client_id}."
-                )
+                logger.info(f"Disconnected from MQTT Broker[{self.broker_addr}], client id: {self.client_id}.")
 
             self._client.on_disconnect = on_disconnect
         else:
@@ -151,9 +139,7 @@ class MqttClientV2:
         if publish_callback is None:
 
             def on_publish(client, userdata, mid, reason_code, properties):
-                logger.debug(
-                    f"mid: {mid}, reason_code: {reason_code}, properties: {properties}"
-                )
+                logger.debug(f"mid: {mid}, reason_code: {reason_code}, properties: {properties}")
 
             self._client.on_publish = on_publish
         else:
@@ -173,7 +159,7 @@ class MqttClientV2:
         if message_callback is None:
 
             def on_message(client, userdata, message):
-                logger.info(f"topic: {message.topic}, payload: {str(message.payload)}")
+                logger.info(f"topic: {message.topic}, payload: {message.payload!s}")
 
             self._client.on_message = on_message
         else:
@@ -194,13 +180,9 @@ class MqttClientV2:
 
             def on_subscribe(client, userdata, mid, reason_code_list, properties):
                 if reason_code_list[0].is_failure:
-                    logger.error(
-                        f"Broker rejected you subscription: {reason_code_list[0]}"
-                    )
+                    logger.error(f"Broker rejected you subscription: {reason_code_list[0]}")
                 else:
-                    logger.info(
-                        f"Broker granted the following QoS: {reason_code_list[0].value}"
-                    )
+                    logger.info(f"Broker granted the following QoS: {reason_code_list[0].value}")
 
             self._client.on_subscribe = on_subscribe
         else:
@@ -254,9 +236,7 @@ class MqttClientV2:
         finally:
             self._client.loop_stop()
 
-    def publish(
-        self, topic: str, payload: str | None = None, *args, **kwargs
-    ) -> mqtt.MQTTMessageInfo:
+    def publish(self, topic: str, payload: str | None = None, *args, **kwargs) -> mqtt.MQTTMessageInfo:
         """Publish a message to a topic
 
         :param str topic: _description_
@@ -270,9 +250,7 @@ class MqttClientV2:
         if not self._client.is_connected():
             raise RuntimeError("MQTT client is not connected")
 
-        return self._client.publish(
-            topic=topic, payload=payload, qos=self.qos, *args, **kwargs
-        )
+        return self._client.publish(topic, payload, *args, qos=self.qos, **kwargs)
 
     def subscribe(self, topic: str | tuple | list, *args, **kwargs) -> None:
         """Subscribe to one or more topics
@@ -289,16 +267,14 @@ class MqttClientV2:
         if not self._client.is_connected():
             raise RuntimeError("MQTT client is not connected")
 
-        self._client.subscribe(topic=topic, qos=self.qos, *args, **kwargs)
+        self._client.subscribe(topic, *args, qos=self.qos, **kwargs)
         logger.info(f"Subscribing topic: {topic}")
 
     def __enter__(self) -> None:
         if self._client is not None:
             self._client.loop_start()
         else:
-            raise RuntimeError(
-                "MQTT client is not initialized before entering context."
-            )
+            raise RuntimeError("MQTT client is not initialized before entering context.")
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         if self._client is not None:
@@ -307,16 +283,12 @@ class MqttClientV2:
             except Exception as e:
                 logger.error(f"Error occurred while stopping MQTT client loop: {e}")
         else:
-            logger.error(
-                "MQTT client is already closed or uninitialized when exiting context."
-            )
+            logger.error("MQTT client is already closed or uninitialized when exiting context.")
 
         if exc_type is not None:
             logger.error(f"Exception in context: {exc_val}")
 
-    def run(
-        self, timeout: float = 1.0, retry_first_connection: bool = True
-    ) -> MQTTErrorCode:
+    def run(self, timeout: float = 1.0, retry_first_connection: bool = True) -> MQTTErrorCode:
         """Blocked running
 
         :param float timeout: _description_, defaults to 1.0

@@ -174,7 +174,7 @@ class TestPlayParser:
 
         assert len(play_builder._item_list) == 5
 
-        item1, item2, item3, item4, item5 = play_builder._item_list
+        item1, item2, item3, item4, _ = play_builder._item_list
 
         expected = (
             textwrap.dedent("""

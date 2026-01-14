@@ -1,4 +1,5 @@
 import socketserver
+
 from highway_sdk.vendors.vms.fenghai.spec import Frame, What
 
 
@@ -47,6 +48,3 @@ class TCPDianmingHander(socketserver.BaseRequestHandler):
 class TCPJingxiaoHander(socketserver.BaseRequestHandler):
     def handle(self) -> None:
         return super().handle()
-
-
-

@@ -1,4 +1,4 @@
-from highway_sdk.vendors.vms.fenghai.parser import Parser, Frame
+from highway_sdk.vendors.vms.fenghai.parser import Frame, Parser
 
 
 def test_paresr():

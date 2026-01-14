@@ -1,4 +1,4 @@
-from .spec import Frame, What, ENCODING
+from .spec import ENCODING, Frame, What
 
 
 class FrameFactory:

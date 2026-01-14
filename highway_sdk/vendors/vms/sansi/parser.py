@@ -1,19 +1,21 @@
 import configparser
 import re
 from functools import lru_cache
-from highway_sdk.vendors.vms._tags import (
-    ItemTags,
-    WindowTags,
-    PlayTags,
-    BrightnessTags,
-)
-from highway_sdk.vendors.vms._base import BaseParser
+
 from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ProtocolNotSupportedError,
     ProtocolParsingError,
 )
-from .spec import Frame, ENCODING, What
+from highway_sdk.vendors.vms._base import BaseParser
+from highway_sdk.vendors.vms._tags import (
+    BrightnessTags,
+    ItemTags,
+    PlayTags,
+    WindowTags,
+)
+
+from .spec import ENCODING, Frame, What
 
 
 class Parser(BaseParser):
@@ -145,18 +147,14 @@ class Parser(BaseParser):
                     item_name_prefix = f"windows{i}_item"
                 for j in range(item_no):
                     item_name = f"{item_name_prefix}{j}"
-                    window_tags.items.append(
-                        cls._parse_play_item(play_parser.get(section, item_name))
-                    )
+                    window_tags.items.append(cls._parse_play_item(play_parser.get(section, item_name)))
                 tags.windows.append(window_tags)
         else:
             window_tags = WindowTags()
             item_no = int(play_parser.get(section, "item_no"))
             for i in range(item_no):
                 item_name = f"item{i}"
-                window_tags.items.append(
-                    cls._parse_play_item(play_parser.get(section, item_name))
-                )
+                window_tags.items.append(cls._parse_play_item(play_parser.get(section, item_name)))
             tags.windows.append(window_tags)
         return tags
 

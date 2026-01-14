@@ -1,7 +1,8 @@
+from highway_sdk.core.base import BaseTags
 from highway_sdk.core.protocols import (
     DriverTCPClientProtocol,
 )
-from highway_sdk.core.base import BaseTags
+
 from .factory import FrameFactory
 from .parser import Parser
 from .spec import Frame
@@ -90,9 +91,7 @@ class VmsFenghaiProtocol(DriverTCPClientProtocol):
             try:
                 tags = self.parser.parse(frame)
             except Exception as e:
-                self.log.exception(
-                    f"数据解析异常：{e}, 帧数据：{frame.model_dump(mode='json')}"
-                )
+                self.log.exception(f"数据解析异常：{e}, 帧数据：{frame.model_dump(mode='json')}")
                 return
 
             self.on_message_parsed(tags)

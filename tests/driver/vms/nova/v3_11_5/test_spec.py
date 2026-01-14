@@ -1,4 +1,5 @@
 import textwrap
+
 from highway_sdk.vendors.vms.nova.spec import NovaMsg
 
 
@@ -35,27 +36,27 @@ class TestNovaMsg:
         expected = "AA FF FF 1B 01 CC BF 28"
 
         assert actual.hex(" ").upper() == expected
-        
+
     def test_make_get_item(self):
         actual = NovaMsg.make_get_item()
         expected = "AA FF FF 2D CC EE 0A"
-        
+
         assert actual.hex(" ").upper() == expected
+
     def test_make_get_play(self):
         actual = NovaMsg.make_get_play()
         expected = "AA FF FF 3A CC 77 D2"
 
         assert actual.hex(" ").upper() == expected
-        
+
     def test_get_screen_size(self):
         actual = NovaMsg.make_get_screen_size()
         expected = "AA FF FF 82 CC D9 26"
-        
+
         assert actual.hex(" ").upper() == expected
-        
+
     def test_get_now_brightness(self):
         actual = NovaMsg.make_get_now_brightness()
         expected = "AA FF FF C3 CC 67 79"
-        
+
         assert actual.hex(" ").upper() == expected
-    

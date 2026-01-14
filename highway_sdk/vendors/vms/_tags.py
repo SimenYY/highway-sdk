@@ -4,8 +4,9 @@
 包括操作标签、播放项标签、窗口标签、播放标签和亮度标签。
 """
 
-from highway_sdk.core.base import BaseTags
 from pydantic import Field
+
+from highway_sdk.core.base import BaseTags
 
 
 class OperationTags(BaseTags):
@@ -56,9 +57,7 @@ class ItemTags(BaseTags):
     font_color: str | None = Field(default=None, description="字体颜色")
     background_color: str | None = Field(default=None, description="背景颜色")
     word_space: int | None = Field(default=None, description="字间距")
-    text: str | None = Field(
-        default=None, description="文本字符串（不带转义符，例如换行符）"
-    )
+    text: str | None = Field(default=None, description="文本字符串（不带转义符，例如换行符）")
     image_name: str | None = Field(default=None, description="图片名称(不包括扩展名)")
     image_type: str | None = Field(default=None, description="图片类型")
     bmp: str | None = Field(default=None, description="BMP格式图片")
@@ -118,4 +117,3 @@ class BrightnessTags(BaseTags):
 
     brightness: int | None = Field(default=None, ge=1, le=100, description="亮度百分比")
     mode: int | None = Field(default=None, description="调节模式")
-

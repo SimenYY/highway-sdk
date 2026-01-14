@@ -1,6 +1,5 @@
 from typing import Final
 
-
 STX: Final[bytes] = b"\x02"
 
 ETX: Final[bytes] = b"\x03"
