@@ -12,7 +12,7 @@ vcs = "git"
 
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 loguru = "^0.7.2"
 pydantic = "^2.8.2"
 paho-mqtt = "^2.1.0"
@@ -21,29 +21,14 @@ twisted = "^24.7.0"
 click = "^8.1.7"
 requests = "^2.32.3"
 colorlog = "^6.9.0"
-flask = "^3.1.0"
-python-json-logger = "^3.2.1"
-elasticsearch = "^8.17.0"
-deprecated = "^1.2.15"
-sphinx-rtd-theme = "^3.0.2"
-furo = "^2024.8.6"
-sphinx-autobuild = "^2024.10.3"
-sphinx-copybutton = "^0.5.2"
-sphinx-tabs = "^3.4.7"
-pillow = "^11.1.0"
 redis = "^5.2.1"
 filelock = "^3.18.0"
 httpx = "^0.28.1"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.44"}
-aioodbc = "^0.5.0"
-pyodb = "^0.1.5"
 pydantic-settings = "^2.11.0"
-bidict = "^0.23.1"
-pytest-asyncio = "^1.3.0"
 apscheduler = "^3.11.1"
 aiomqtt = "^2.4.0"
 confluent-kafka = "^2.12.2"
-pre-commit = "^4.5.0"
 platformdirs = "^4.5.1"
 prometheus-client = "^0.23.1"
 
@@ -62,7 +47,66 @@ priority = "supplemental"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
+pytest-asyncio = "^1.3.0"
+sphinx-rtd-theme = "^3.0.2"
+furo = "^2024.8.6"
+sphinx-autobuild = "^2024.10.3"
+sphinx-copybutton = "^0.5.2"
+sphinx-tabs = "^3.4.7"
+pre-commit = "^4.5.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+# Ruff配置
+[tool.ruff]
+# 选择规则集
+select = ["E", "F", "W", "C90", "I"]
+
+# 忽略的规则
+ignore = [
+    "E501",  # 行长度超过88个字符
+    "W503",  # 二元运算符出现在行尾
+    "E203",  # 冒号前有空格
+]
+
+# 每行最大长度
+line-length = 120
+
+# 缩进宽度
+indent-width = 4
+
+# 允许的导入排序
+[tool.ruff.import]
+order = "groups"
+
+# 允许的分组
+[tool.ruff.import.groups]
+# 标准库
+stdlib = ["import", "from"]
+# 第三方库
+third-party = ["import", "from"]
+# 本地库
+first-party = ["import", "from"]
+# 相对导入
+relative = ["import", "from"]
+
+# Ruff格式配置
+[tool.ruff.format]
+# 行长度
+line-length = 120
+# 缩进宽度
+indent-width = 4
+# 使用空格进行缩进
+indent-style = "space"
+# 尾随逗号策略
+trailing-comma = "all"
+# 引号样式
+quote-style = "double"
+
+# 文档构建命令
+# 注意：Poetry脚本不支持直接的shell命令，需要通过Python函数调用
+# 可以使用以下命令手动构建文档：
+# 构建：sphinx-build -b html docs/source docs/build/html
+# 预览：sphinx-autobuild docs/source docs/build/html
