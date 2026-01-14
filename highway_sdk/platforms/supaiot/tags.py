@@ -1,14 +1,16 @@
 import enum
 from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
+
 from highway_sdk.core.base import BaseTags
 from highway_sdk.vendors.vms._tags import (
+    BrightnessTags,
     ItemTags,
     PlayTags,
-    BrightnessTags,
 )
 
-__all__ = ["convert", "ControlVmsTagsModel"]
+__all__ = ["ControlVmsTagsModel", "convert"]
 
 
 # ==============================================================================
@@ -98,9 +100,7 @@ class _VmsPlayTagsModel(PlayTags):
                     f"TI{j}": item.duration,
                     f"SH{j}": item.screen_in_mode,
                 }
-                supaiot_tags.update(
-                    {k: v for k, v in item_tags.items() if v is not None}
-                )
+                supaiot_tags.update({k: v for k, v in item_tags.items() if v is not None})
 
         ret = self.model_dump(exclude_none=True)
         ret.update(supaiot_tags)
@@ -447,9 +447,7 @@ class ControlVmsTagsModel(BaseModel):
         description="第十条目显示内容",
     )
     # 亮度控制
-    TGKZ: str | None = Field(
-        default=None, alias="brightness", description="调光控制，用于情报板, 范围0-100"
-    )
+    TGKZ: str | None = Field(default=None, alias="brightness", description="调光控制，用于情报板, 范围0-100")
     # 以限速标发布
     KZCT: str | None = Field(
         default=None,

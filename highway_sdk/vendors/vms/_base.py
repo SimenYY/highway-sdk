@@ -6,17 +6,19 @@
 - BaseParser: 解析器基类，提供通用的解析功能
 """
 
+from collections.abc import Callable
+from functools import lru_cache, wraps
+from typing import Any, Protocol, Self
+
 from pydantic import BaseModel, Field, field_validator
-from typing import Any, Protocol, Self, Callable
-from functools import wraps, lru_cache
+
 from highway_sdk.core.base import BaseTags
+from highway_sdk.core.constants import STX
 from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ProtocolNotSupportedError,
     ProtocolParsingError,
 )
-
-from highway_sdk.core.constants import STX
 
 
 class BaseBuilder(Protocol):

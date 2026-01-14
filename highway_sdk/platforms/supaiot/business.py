@@ -1,8 +1,11 @@
-import logging
 import ipaddress
+import logging
 import re
+
 from pydantic.networks import IPvAnyAddress
-from highway_sdk.utils.judge import is_ip, is_user_port, is_chainage
+
+from highway_sdk.utils.judge import is_chainage, is_ip, is_user_port
+
 from .client import SupaiotAPIClient
 from .models import DeviceInfoMode
 
@@ -50,9 +53,7 @@ class SupaiotBusinessService:
                 for device in device_list:
                     extra = {}
                     device_id = device["ID"]
-                    description: str = device.get(
-                        "description", ""
-                    )  # 例如：ZK105+200/33.74.39.15/5009/h64w128
+                    description: str = device.get("description", "")  # 例如：ZK105+200/33.74.39.15/5009/h64w128
 
                     fields = description.split("/")
                     ip, port, chainage = None, None, None
@@ -122,9 +123,7 @@ class SupaiotBusinessService:
                     break
 
                 for device in device_list:
-                    description: str = device.get(
-                        "description", ""
-                    )  # 例如：ZK105+200/33.74.39.15/5009/h64w128
+                    description: str = device.get("description", "")  # 例如：ZK105+200/33.74.39.15/5009/h64w128
                     fields = description.split("/")
                     # 按照有则显示，无则静默，缺失需要软件查看
                     for field in fields:

@@ -1,13 +1,14 @@
 import textwrap
+
 from highway_sdk.vendors.vms.dianming.media import (
-    TextBuilder,
+    BmpBuilder,
+    Color,
+    Font,
+    FontSize,
     ItemBuilder,
     PlayBuilder,
-    BmpBuilder,
-    Font,
-    Color,
-    FontSize,
     PlayParser,
+    TextBuilder,
 )
 
 
@@ -66,5 +67,5 @@ class TestMedia:
         play_builder = PlayParser.parse(parsed)
 
         print(play_builder.build())
-        
+
         assert str(play_builder.build()) == parsed

@@ -9,20 +9,20 @@ from pydantic import ValidationError
 from highway_sdk.brokers.mqtt import MqttClientV2
 
 from .exceptions import (
-    SupaiotAPIResponseValidateError,
     SupaiotAPIconnectError,
     SupaiotAPIError,
     SupaiotAPILoginError,
+    SupaiotAPIResponseValidateError,
 )
 from .models import (
+    APIResponse,
     ClassListRequest,
+    ControlReqSubscribeModel,
+    ControlRespPublishModel,
     Devices,
     DevicesRealtimeData,
-    ControlRespPublishModel,
     HistoryDataPublishModel,
     RealtimeDataPublishModel,
-    ControlReqSubscribeModel,
-    APIResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,9 +55,7 @@ class SupaiotAPIClient:
         self._lock = asyncio.Lock()
         self.timeout = timeout
 
-        self._client = httpx.AsyncClient(
-            base_url=self.base_url, timeout=self.timeout, follow_redirects=True
-        )
+        self._client = httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout, follow_redirects=True)
 
     async def login(self) -> None:
         payload = {
@@ -81,9 +79,7 @@ class SupaiotAPIClient:
             supaiot_resp = APIResponse.model_validate(resp.json())
 
             if supaiot_resp.result.resultCode != "0":
-                raise SupaiotAPILoginError(
-                    f"Login failed: {supaiot_resp.result.resultError}"
-                )
+                raise SupaiotAPILoginError(f"Login failed: {supaiot_resp.result.resultError}")
 
             if not isinstance(supaiot_resp.data, dict):
                 raise SupaiotAPILoginError("Invalid login response")
@@ -257,9 +253,7 @@ class SupaiotAPIClient:
             params={"classID": class_id},
         )
 
-    async def get_devices_realtime_data(
-        self, device_ids: list | None = None
-    ) -> APIResponse:
+    async def get_devices_realtime_data(self, device_ids: list | None = None) -> APIResponse:
         """多设备实时状态查询
 
         Args:
@@ -286,9 +280,7 @@ class SupaiotAPIClient:
         Returns:
             SupaiotResponse: _description_
         """
-        return await self.request_with_login(
-            "GET", "/supaiot/api/v2/data/real/device", params={"ID": id_}
-        )
+        return await self.request_with_login("GET", "/supaiot/api/v2/data/real/device", params={"ID": id_})
 
     async def get_class_list(
         self,
@@ -355,28 +347,16 @@ class SupaiotMQTTClient(MqttClientV2):
         super().__init__(host, port, client_id, auth, user_data, qos)
 
     def publish_real_data(self, series: str, sn: str, data: dict):
-        prmm = RealtimeDataPublishModel(
-            series=series, sn=sn, time=datetime.now(), timestamp=None, data=data
-        )
-        return self.publish(
-            topic=prmm.get_topic(), payload=prmm.model_dump_json(exclude_none=True)
-        )
+        prmm = RealtimeDataPublishModel(series=series, sn=sn, time=datetime.now(), timestamp=None, data=data)
+        return self.publish(topic=prmm.get_topic(), payload=prmm.model_dump_json(exclude_none=True))
 
     def subscribe_control_req(self, series: str, sn: str):
         return self.subscribe(topic=ControlReqSubscribeModel.get_topic(series, sn))
 
     def publish_history_data(self, series: str, sn: str, data: list):
-        phm = HistoryDataPublishModel(
-            series=series, sn=sn, time=datetime.now(), data=data
-        )
-        return self.publish(
-            topic=phm.get_topic(), payload=phm.model_dump_json(exclude_none=True)
-        )
+        phm = HistoryDataPublishModel(series=series, sn=sn, time=datetime.now(), data=data)
+        return self.publish(topic=phm.get_topic(), payload=phm.model_dump_json(exclude_none=True))
 
     def publish_control_res(self, series: str, sn: str, sequence: int, data: dict):
-        pcrm = ControlRespPublishModel(
-            series=series, sn=sn, time=datetime.now(), sequence=sequence, data=data
-        )
-        return self.publish(
-            topic=pcrm.get_topic(), payload=pcrm.model_dump_json(exclude_none=True)
-        )
+        pcrm = ControlRespPublishModel(series=series, sn=sn, time=datetime.now(), sequence=sequence, data=data)
+        return self.publish(topic=pcrm.get_topic(), payload=pcrm.model_dump_json(exclude_none=True))

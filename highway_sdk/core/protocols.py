@@ -1,15 +1,23 @@
-from collections.abc import Callable
-import logging
+"""Highway SDK核心协议模块。
+
+该模块定义了SDK的核心通信协议，包括TCP客户端协议、请求响应协议等。
+"""
+
 import asyncio
+import logging
+from collections.abc import Callable
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 from highway_sdk.core.log import PrefixLoggerAdapter
+
+from .constants import BUFSIZE
 from .exceptions import (
-    HostResponseTimeoutError,
     ConnectionFailError,
     ConnectionLostError,
+    HostResponseTimeoutError,
 )
 from .reader import Reader
-from .constants import BUFSIZE
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +54,7 @@ class AioTCPClient:
     @property
     def is_connected(self) -> bool:
         return (
-            self._connected
-            and self._writer is not None
-            and self._reader is not None
-            and not self._writer.is_closing()
+            self._connected and self._writer is not None and self._reader is not None and not self._writer.is_closing()
         )
 
     async def connect(self):
@@ -63,7 +68,7 @@ class AioTCPClient:
             )
             self._connected = True
             logger.info(f"Connected to {self.host_addr}")
-        except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as e:
+        except (TimeoutError, ConnectionRefusedError, OSError) as e:
             msg = f"Failed to connect to {self.host_addr} - {e}"
             logger.error(msg)
             raise ConnectionFailError("connection fail") from e
@@ -112,7 +117,7 @@ class AioTCPClient:
             await self._writer.drain()
             try:
                 return await asyncio.wait_for(self._reader.read(self._bufsize), timeout)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise HostResponseTimeoutError("Host response timeout")
 
 
@@ -249,9 +254,7 @@ class DriverTCPClientProtocol(TCPClientProtocol):
 
         self.scheduler = AsyncIOScheduler()  # 调度器
 
-    def add_interval_job(
-        self, func: Callable[[], None], seconds: float, jitter: int = 1
-    ):
+    def add_interval_job(self, func: Callable[[], None], seconds: float, jitter: int = 1):
         """添加间隔任务， 有随机抖动"""
         self.scheduler.add_job(func, "interval", seconds=seconds, jitter=jitter)
 
@@ -275,9 +278,7 @@ class ReqRespTCPClientProtocol(DriverTCPClientProtocol):
         self._resp_queue = asyncio.Queue()  # 等待响应队列
         self._lock = asyncio.Lock()
 
-    async def request(
-        self, name: str, payload: bytes, timeout: float = 2.0
-    ) -> bytearray:
+    async def request(self, name: str, payload: bytes, timeout: float = 2.0) -> bytearray:
         """请求并等待响应
 
         Args:
@@ -301,11 +302,9 @@ class ReqRespTCPClientProtocol(DriverTCPClientProtocol):
             try:
                 self.send(payload)
 
-                resp = await asyncio.wait_for(
-                    resp_fut, timeout
-                )  # 超时自动取消传入的Future
+                resp = await asyncio.wait_for(resp_fut, timeout)  # 超时自动取消传入的Future
                 return bytearray(resp)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self.log.error(f"[REQ] {name}: timeout(>{timeout}s)")
                 raise HostResponseTimeoutError("Host response timeout")
             finally:

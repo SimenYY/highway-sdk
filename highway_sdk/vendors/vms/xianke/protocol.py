@@ -1,11 +1,12 @@
-from highway_sdk.core.protocols import DriverTCPClientProtocol
 from highway_sdk.core.base import BaseTags
+from highway_sdk.core.protocols import DriverTCPClientProtocol
+
 from .factory import FrameFactory
 from .parser import Parser
 from .spec import Frame, What
 
 
-class VmsXianKeProtocol(DriverTCPClientProtocol):
+class VmsXiankeProtocol(DriverTCPClientProtocol):
     """VMS XianKe 客户端协议
 
     Example:

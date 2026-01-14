@@ -1,21 +1,22 @@
 import asyncio
-from typing import Any
-from collections.abc import Callable
 import logging
-
-from pydantic.networks import IPvAnyAddress
+from collections.abc import Callable
 from functools import partial
-import aiomqtt
+from typing import Any
 
+import aiomqtt
+from pydantic.networks import IPvAnyAddress
+
+from highway_sdk.core.connectors import (
+    BaseConnector,
+    TCPReconnectingConnector,
+    UDPConnector,
+)
 from highway_sdk.core.protocols import (
     TCPClientProtocol,
     UDPProtocol,
 )
-from highway_sdk.core.connectors import (
-    TCPReconnectingConnector,
-    BaseConnector,
-    UDPConnector,
-)
+
 from .business import SupaiotBusinessService
 from .client import SupaiotAPIClient
 from .config import SupaiotConfig
@@ -35,9 +36,7 @@ class SupaiotMQTTGateway:
         2. 南向依赖：connector, protocol_class
     """
 
-    def __init__(
-        self, protocol_cls: type[MQTTGatewayProtocol], class_ids: list[str]
-    ) -> None:
+    def __init__(self, protocol_cls: type[MQTTGatewayProtocol], class_ids: list[str]) -> None:
         self.connector_cls: type[BaseConnector]
 
         if issubclass(protocol_cls, TCPClientProtocol):
@@ -45,9 +44,7 @@ class SupaiotMQTTGateway:
         elif issubclass(protocol_cls, UDPProtocol):
             self.connector_cls = UDPConnector
         else:
-            raise ValueError(
-                "protocol_class must be a subclass of TCPClientProtocol or UDPProtocol"
-            )
+            raise ValueError("protocol_class must be a subclass of TCPClientProtocol or UDPProtocol")
 
         self.protocol_cls = protocol_cls
         self.class_ids = class_ids  # 设备原型编码
@@ -82,9 +79,7 @@ class SupaiotMQTTGateway:
         if need_subsribe:
             await self.mqtt_client.__aenter__()
             for _, info in self.devices_info.items():
-                await self.mqtt_client.subscribe(
-                    ControlReqSubscribeModel.get_topic(info.series, info.sn)
-                )
+                await self.mqtt_client.subscribe(ControlReqSubscribeModel.get_topic(info.series, info.sn))
 
         self.north_finished = True
 
@@ -113,9 +108,7 @@ class SupaiotMQTTGateway:
                 conn = self.connector_cls(str(ip), info.port, protocol_cls, **kwargs)
 
                 tg.create_task(conn.create())
-                self.control_connectors[
-                    ControlReqSubscribeModel.get_topic(info.series, info.sn)
-                ] = conn
+                self.control_connectors[ControlReqSubscribeModel.get_topic(info.series, info.sn)] = conn
 
     async def run(self):
         await self.north_connect()

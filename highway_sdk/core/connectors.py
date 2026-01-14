@@ -1,9 +1,15 @@
-from collections.abc import Callable
+"""Highway SDK连接器模块。
+
+该模块提供了各种网络连接器，包括TCP重连连接器、UDP连接器等，用于与设备建立和管理连接。
+"""
+
+import asyncio
 import logging
 import random
-import asyncio
-from .protocols import TCPClientProtocol, UDPProtocol
+from collections.abc import Callable
+
 from .metrics import MetricsMixin
+from .protocols import TCPClientProtocol, UDPProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -201,9 +207,7 @@ class TCPReconnectingConnector(TCPConnector, MetricsMixin):
                     break
             except OSError as e:
                 self._increase_delay()
-                logger.error(
-                    f"Failed to connect to {self}: {e} Reconnecting...(after {self._retry_delay: 0.2f} s)"
-                )
+                logger.error(f"Failed to connect to {self}: {e} Reconnecting...(after {self._retry_delay: 0.2f} s)")
             finally:
                 # 断开后，在延时后再连接，避免二次触发protocol的连接回调
                 await asyncio.sleep(self._retry_delay)
@@ -225,6 +229,4 @@ class TCPReconnectingConnector(TCPConnector, MetricsMixin):
         """
         self._retry_delay = min(self._retry_delay * self.factor, self.max_delay)
         if self.use_jitter:
-            self._retry_delay = random.normalvariate(
-                self._retry_delay, self.jitter * self._retry_delay
-            )
+            self._retry_delay = random.normalvariate(self._retry_delay, self.jitter * self._retry_delay)
