@@ -430,6 +430,7 @@ class LoguruConfig:
         self,
         log_dir: Path | str = "logs",
         *,
+        split_by_name: bool = True,
         rotation: str = "00:00",
         retention: str = "3 days",
         compression: str = "zip",
@@ -439,6 +440,7 @@ class LoguruConfig:
 
         Args:
             log_dir: 日志目录
+            split_by_name: 是否按logger名称分目录存储
             rotation: 日志文件轮转规则，可以是时间或大小，如"00:00"或"100 MB"
             retention: 日志保留时间，如"7 days"或"1 month"
             compression: 日志压缩格式，如"zip"或"gz"
@@ -479,7 +481,10 @@ class LoguruConfig:
         """
         log_dir = Path(log_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
-        log_file = log_dir / self.name / (f"{self.name}" + "_{time:YYYY-MM-DD}.log")
+        if split_by_name:
+            log_file = log_dir / self.name / (f"{self.name}" + "_{time:YYYY-MM-DD}.log")
+        else:
+            log_file = log_dir / (f"{self.name}" + "_{time:YYYY-MM-DD}.log")
         loguru.logger.add(
             str(log_file),
             level=self.level,
