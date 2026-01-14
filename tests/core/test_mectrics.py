@@ -6,8 +6,9 @@ from highway_sdk.core.connectors import TCPReconnectingConnector
 from highway_sdk.core.log import LoguruConfig
 
 LoguruConfig.intercept_logging(["*"])
-
-LoguruConfig(name="test").set_console()
+loguru_config = LoguruConfig(name="test", serialize=True)
+loguru_config.set_console()
+loguru_config.set_file(log_dir="F:\\logs", split_by_name=False)
 
 
 class MyProtocol(DriverTCPClientProtocol):
