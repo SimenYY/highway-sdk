@@ -269,29 +269,3 @@ class MqttClientV2:
 
         self._client.subscribe(topic, *args, qos=self.qos, **kwargs)
         logger.info(f"Subscribing topic: {topic}")
-
-    def __enter__(self) -> None:
-        if self._client is not None:
-            self._client.loop_start()
-        else:
-            raise RuntimeError("MQTT client is not initialized before entering context.")
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        if self._client is not None:
-            try:
-                self._client.loop_stop()
-            except Exception as e:
-                logger.error(f"Error occurred while stopping MQTT client loop: {e}")
-        else:
-            logger.error("MQTT client is already closed or uninitialized when exiting context.")
-
-        if exc_type is not None:
-            logger.error(f"Exception in context: {exc_val}")
-
-    def run(self, timeout: float = 1.0, retry_first_connection: bool = True) -> MQTTErrorCode:
-        """Blocked running
-
-        :param float timeout: _description_, defaults to 1.0
-        :param bool retry_first_connection: _description_, defaults to False
-        """
-        return self._client.loop_forever(timeout, retry_first_connection)
