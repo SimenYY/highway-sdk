@@ -115,7 +115,7 @@ class _VmsBrightnessTagsModel(BrightnessTags):
         return ret
 
 
-def convert(tags: BaseTags):
+def convert(tags: BaseTags | None):
     """将SDK点位转为物联智控点位"""
     match tags:
         case ItemTags():
@@ -124,6 +124,8 @@ def convert(tags: BaseTags):
             return _VmsPlayTagsModel(**tags.model_dump()).to_supaiot_tags()
         case BrightnessTags():
             return _VmsBrightnessTagsModel(**tags.model_dump()).to_supaiot_tags()
+        case None:
+            pass
         case _:
             # TODO: 添加操作成功的处理
             raise ValueError(f"{type(tags)} is not supported")
