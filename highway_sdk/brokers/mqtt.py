@@ -1,5 +1,6 @@
 import logging
 import uuid
+import warnings
 from collections.abc import Callable
 from typing import Any
 
@@ -16,6 +17,10 @@ __all__ = [
 
 class MqttClientV2:
     """MQTT client wrapper based on Callback API Version 2
+
+    .. deprecated::
+        This class is deprecated and will be removed in version 2.1.0.
+        Please use the new async MQTT client implementation instead.
 
     Notes:
         Uses MQTT v5.0
@@ -36,6 +41,12 @@ class MqttClientV2:
         user_data: Any = None,
         qos: int = 0,
     ) -> None:
+        warnings.warn(
+            "MqttClientV2 is deprecated and will be removed in version 2.1.0. "
+            "Please use the new async MQTT client implementation instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.host = host
         self.port = port
         self.client_id = client_id
