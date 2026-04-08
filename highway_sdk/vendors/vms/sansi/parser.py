@@ -34,11 +34,11 @@ class Parser(BaseParser):
         try:
             return cls._parsers[what](frame.data)
         except KeyError as e:
-            raise ProtocolNotSupportedError(f"Unsupported what: {e}")
+            raise ProtocolNotSupportedError(f"Unsupported what: {e}") from e
         except DeviceOperationError:
             raise
         except Exception as e:
-            raise ProtocolParsingError(f"Failed to parse frame: {e}")
+            raise ProtocolParsingError(f"Failed to parse frame: {e}") from e
 
     @classmethod
     def _parse_media(cls, data_str: str) -> ItemTags:
