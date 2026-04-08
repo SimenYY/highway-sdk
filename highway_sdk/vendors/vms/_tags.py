@@ -112,8 +112,8 @@ class BrightnessTags(BaseTags):
 
     Attributes:
         brightness: 亮度百分比，范围1-100。
-        mode: 调节模式。
+        mode: 调节模式。0自动，1手动
     """
 
     brightness: int | None = Field(default=None, ge=1, le=100, description="亮度百分比")
-    mode: int | None = Field(default=None, description="调节模式")
+    mode: int | None = Field(default=None, description="调节模式。0自动，1手动")

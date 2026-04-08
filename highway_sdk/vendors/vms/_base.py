@@ -7,13 +7,13 @@
 """
 
 from collections.abc import Callable
-from functools import lru_cache, wraps
+from functools import wraps
 from typing import Any, ClassVar, Protocol, Self
 
 from pydantic import BaseModel, Field, field_validator
 
 from highway_sdk.core.base import BaseTags
-from highway_sdk.core.constants import STX
+from highway_sdk.core.constants import ETX, STX
 from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ProtocolNotSupportedError,
@@ -47,6 +47,8 @@ class BaseFrame(BaseModel):
         end: 帧结束符，默认为ETX（0x03）。
     """
 
+    what: bytes = Field(..., description="指令码")
+    data: bytes = Field(default=b"", description="数据域")
     start: bytes = Field(default=b"\x02", frozen=True, description="帧起始符")
     end: bytes = Field(default=b"\x03", frozen=True, description="帧结束符")
 
@@ -82,7 +84,7 @@ class BaseFrame(BaseModel):
         Raises:
             ValueError: 如果结束符不是ETX。
         """
-        if v != cls.end:
+        if v != ETX:
             raise ValueError("end must be ETX")
         return v
 
@@ -131,8 +133,7 @@ class BaseParser:
     _parsers: ClassVar[dict[Any, Callable[..., BaseTags]]] = {}
 
     @classmethod
-    @lru_cache
-    def parse(cls, frame):
+    def parse(cls, frame: BaseFrame) -> BaseTags:
         """解析帧数据。
 
         根据帧的what类型查找对应的解析函数并执行解析。
@@ -151,11 +152,11 @@ class BaseParser:
         try:
             return cls._parsers[frame.what](frame.data)
         except KeyError as e:
-            raise ProtocolNotSupportedError(f"Unsupported what: {e}")
+            raise ProtocolNotSupportedError(f"Unsupported what: {e}") from e
         except DeviceOperationError:
             raise
         except Exception as e:
-            raise ProtocolParsingError(f"Failed to parse frame: {e}")
+            raise ProtocolParsingError(f"Failed to parse frame: {e}") from e
 
     @classmethod
     def register(cls, what):
