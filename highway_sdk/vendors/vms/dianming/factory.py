@@ -69,3 +69,21 @@ class FrameFactory:
         data += b"+"
         data += b"\x30\x30\x30\x30\x30\x30\x30\x30"
         return Frame(what=What.DOWNLOAD_FILE_REQ, data=data)
+
+    @classmethod
+    def get_brightness_and_mode(cls):
+        """获取亮度和控制亮度模式"""
+        return Frame(what=What.GET_BRIGHTNESS_AND_MODE_REQ)
+
+    @classmethod
+    def set_brightness_or_mode(cls, brightness: int | None = None):
+        """设置亮度或控制亮度模式"""
+        if brightness is None:
+            data = b"FFFFFF"  # 自动调节亮度
+        else:
+            brightness = max(0, min(31, brightness))
+            first = brightness // 10
+            second = brightness % 10
+            # 红，绿，蓝三基色相同
+            data = b"".join([bytes([ord(str(first)), ord(str(second))])] * 3)
+        return Frame(what=What.SET_BRIGHTNESS_OR_MODE_REQ, data=data)

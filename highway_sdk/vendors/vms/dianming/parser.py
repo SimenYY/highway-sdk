@@ -10,10 +10,10 @@ from highway_sdk.core.exceptions import (
     ProtocolParsingError,
 )
 from highway_sdk.vendors.vms._base import BaseParser
-from highway_sdk.vendors.vms._tags import ItemTags
+from highway_sdk.vendors.vms._tags import BrightnessTags, ItemTags
 
 from .media import PlayParser
-from .spec import ResultCode, What
+from .spec import Frame, ResultCode, What
 
 
 class Parser(BaseParser):
@@ -33,6 +33,10 @@ class Parser(BaseParser):
             bool: 是否成功。
         """
         return data.startswith(ResultCode.SUCCESS.value)
+
+    @classmethod
+    def parse(cls, frame: Frame):
+        return super().parse(frame)
 
 
 @lru_cache
@@ -99,4 +103,48 @@ def _parse_set_play_list(data: bytes):
     """
     if not Parser._is_ok(data):
         raise DeviceOperationError("Failed to set play list")
+    return {"status": "success"}
+
+
+@lru_cache
+@Parser.register(What.GET_BRIGHTNESS_AND_MODE_RESP)
+def _parse_get_brightness_and_mode(data: bytes):
+    """解析获取亮度和控制亮度模式响应。
+
+    Args:
+        data: 响应数据。
+
+    Returns:
+        dict: 包含亮度和控制亮度模式的字典。
+
+    Raises:
+        DeviceOperationError: 获取亮度和控制亮度模式失败。
+    """
+    max_brightness = 31
+    tags = BrightnessTags()
+
+    value = int(data[6:8].decode("ascii"))
+    tags.brightness = round(value / max_brightness * 100)
+
+    tags.mode = 1 if data[0] == b"f" else 0
+
+    return tags
+
+
+@lru_cache
+@Parser.register(What.SET_BRIGHTNESS_OR_MODE_RESP)
+def _parse_set_brightness_or_mode(data: bytes):
+    """解析设置亮度或控制亮度模式响应。
+
+    Args:
+        data: 响应数据。
+
+    Returns:
+        dict: 包含状态信息的字典。
+
+    Raises:
+        DeviceOperationError: 设置亮度或控制亮度模式失败。
+    """
+    if not Parser._is_ok(data):
+        raise DeviceOperationError("Failed to set brightness or mode")
     return {"status": "success"}

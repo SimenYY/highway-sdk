@@ -11,14 +11,14 @@
 import configparser
 import re
 from abc import ABC, abstractmethod
-from enum import Enum, StrEnum
+from enum import IntEnum, StrEnum
 from ftplib import CRLF
 from typing import Any, Self
 
 from pydantic import BaseModel, Field
 
 
-class Color(str, Enum):
+class Color(StrEnum):
     """颜色枚举。
 
     定义了支持的RGB颜色值，格式为12位十六进制数（RRGGBB）。
@@ -30,7 +30,7 @@ class Color(str, Enum):
     BLACK = "000000000000"
 
 
-class Font(str, Enum):
+class Font(StrEnum):
     """字体枚举。
 
     定义了支持的字体类型。
@@ -42,7 +42,7 @@ class Font(str, Enum):
     FANG_SONG = "f"
 
 
-class FontSize(int, Enum):
+class FontSize(IntEnum):
     """字号枚举。
 
     定义了支持的字号大小。

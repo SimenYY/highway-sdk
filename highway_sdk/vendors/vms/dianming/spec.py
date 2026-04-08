@@ -37,6 +37,12 @@ class What(Enum):
     DOWNLOAD_FILE_REQ = b"07"
     DOWNLOAD_FILE_RESP = b"08"
 
+    GET_BRIGHTNESS_AND_MODE_REQ = b"21"
+    GET_BRIGHTNESS_AND_MODE_RESP = b"22"
+
+    SET_BRIGHTNESS_OR_MODE_REQ = b"23"
+    SET_BRIGHTNESS_OR_MODE_RESP = b"24"
+
 
 class ResultCode(Enum):
     """返回状态码枚举。
