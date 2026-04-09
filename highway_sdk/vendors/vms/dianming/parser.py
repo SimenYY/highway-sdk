@@ -12,6 +12,7 @@ from highway_sdk.core.exceptions import (
 from highway_sdk.vendors.vms._base import BaseParser
 from highway_sdk.vendors.vms._tags import BrightnessTags, ItemTags
 
+from .._tags import BrightnessMode
 from .media import PlayParser
 from .spec import Frame, ResultCode, What
 
@@ -126,7 +127,7 @@ def _parse_get_brightness_and_mode(data: bytes):
     value = int(data[6:8].decode("ascii"))
     tags.brightness = round(value / max_brightness * 100)
 
-    tags.mode = 1 if data[0] == b"f" else 0
+    tags.mode = BrightnessMode.AUTO if data[0] == b"f" else BrightnessMode.MANUAL
 
     return tags
 
