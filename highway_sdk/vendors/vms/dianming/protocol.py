@@ -8,7 +8,7 @@ from highway_sdk.core.protocols import DriverTCPClientProtocol
 
 from .factory import FrameFactory
 from .parser import Parser
-from .spec import Frame, What
+from .spec import Frame
 
 
 class VmsDianMingProtocol(DriverTCPClientProtocol):
@@ -26,6 +26,28 @@ class VmsDianMingProtocol(DriverTCPClientProtocol):
     """
 
     parser = Parser
+
+    def get_brightness_and_mode(self):
+        """获取亮度和控制亮度模式。
+
+        发送：
+            02 30 30 30 31 32 31 B8 9B 03
+
+        接收：
+            02 30 31 30 30 32 32 46 46 46 46 46 46 30 31 36 65 03
+        """
+        self.send(bytes(FrameFactory.get_brightness_and_mode()))
+
+    def set_brightness_or_mode(self, brightness: int | None = None):
+        """设置亮度或控制亮度模式。
+
+        发送：
+            02 30 30 30 31 32 33 46 46 46 46 46 46 0E 04 03
+
+        接收：
+            02 30 31 30 30 32 34 31 57 40 03
+        """
+        self.send(bytes(FrameFactory.set_brightness_or_mode(brightness)))
 
     def get_item(self):
         """获取当前播放项。
@@ -68,16 +90,15 @@ class VmsDianMingProtocol(DriverTCPClientProtocol):
         """
         for message in self.reader.iter_read_between():
             try:
-                packet = Frame.from_bytes(message)
+                frame = Frame.from_bytes(message)
             except Exception as e:
                 self.log.exception(f"数据解包异常：{e}, 报文：{message.hex(' ')}")
                 return
 
             try:
-                what_enum = What(packet.what)
-                tags = self.parser.parse(what_enum, packet.data)
+                tags = self.parser.parse(frame)
             except Exception as e:
-                self.log.exception(f"数据解析异常：{e}, 帧数据：{packet.data.hex(' ')}")
+                self.log.exception(f"数据解析异常：{e}, 帧数据：{frame.data.hex(' ')}")
                 return
 
             self.on_message_parsed(tags)
