@@ -4,9 +4,18 @@
 包括操作标签、播放项标签、窗口标签、播放标签和亮度标签。
 """
 
+from enum import IntEnum
+
 from pydantic import Field
 
 from highway_sdk.core.base import BaseTags
+
+
+class BrightnessMode(IntEnum):
+    """亮度模式。"""
+
+    AUTO = 0  # 自动模式
+    MANUAL = 1  # 手动模式
 
 
 class OperationTags(BaseTags):
@@ -116,4 +125,4 @@ class BrightnessTags(BaseTags):
     """
 
     brightness: int | None = Field(default=None, ge=1, le=100, description="亮度百分比")
-    mode: int | None = Field(default=None, description="调节模式。0自动，1手动")
+    mode: BrightnessMode | None = Field(default=None, description="调节模式,0自动，1手动")
