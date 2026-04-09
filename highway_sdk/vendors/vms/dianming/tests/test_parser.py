@@ -11,7 +11,7 @@ class TestParser:
 
         tags = Parser.parse(frame)
         expect_tags = {
-            "mode": 0,
+            "mode": 1,
             "brightness": 3,
         }
-        assert tags.model_dump() == expect_tags
+        assert tags.model_dump(mode="json") == expect_tags
