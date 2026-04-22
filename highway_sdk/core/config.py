@@ -20,7 +20,7 @@ class LogConfig(BaseSettings):
     LOG_FILE: bool = True
 
     def config_loguru(self) -> None:
-        LoguruConfig.intercept_logging()  # TODO 这里的拦截应该有问题
+        LoguruConfig.intercept_logging(["*"])  # 默认拦截所有的
         config = LoguruConfig(name=self.LOG_NAME, level=self.LOG_LEVEL)
         if self.LOG_CONSOLE:
             config.set_console()
