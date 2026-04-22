@@ -11,7 +11,7 @@ from .parser import Parser
 from .spec import Frame
 
 
-class VmsDianMingProtocol(DriverTCPClientProtocol):
+class VmsDianmingProtocol(DriverTCPClientProtocol):
     """点明VMS客户端协议。
 
     该类实现了点明VMS设备的TCP通信协议，提供了获取播放项、
@@ -49,7 +49,7 @@ class VmsDianMingProtocol(DriverTCPClientProtocol):
         """
         self.send(bytes(FrameFactory.set_brightness_or_mode(brightness)))
 
-    def get_item(self):
+    def get_play_item(self):
         """获取当前播放项。
 
         发送：

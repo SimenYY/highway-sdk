@@ -25,8 +25,8 @@ class FrameFactory:
         """
         file_name = f"play{play_id:02d}.lst"
 
-        data = b"\x2b"
-        data += b"\x30\x30\x30\x30\x30\x30\x30\x30"
+        data = b"+"
+        data += b"00000000"
         data += file_name.encode(ENCODING)
         data += content.encode(ENCODING)
 
