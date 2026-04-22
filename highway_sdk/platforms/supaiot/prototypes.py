@@ -97,7 +97,7 @@ class PlayMode(IntEnum):
     NORMAL = 1
 
 
-class PlayItem(BaseModel):
+class VmsTags(BaseModel):
     """情报板播放项"""
 
     font_color: FontColor = Field(..., validation_alias="KFC", serialization_alias="FC", description="字体颜色")
@@ -137,7 +137,7 @@ class Vms(NetworkNode):
 
     realtime_content: str = Field(default="", serialization_alias="CT", description="实时内容")
 
-    items: list[PlayItem] = Field(default_factory=list, description="播放项列表")
+    items: list[VmsTags] = Field(default_factory=list, description="播放项列表")
 
     @model_serializer(when_used="json-unless-none")
     def to_tags(self):

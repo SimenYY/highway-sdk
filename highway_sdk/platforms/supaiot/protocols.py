@@ -7,6 +7,7 @@ import aiomqtt
 
 from highway_sdk.core.base import BaseTags
 from highway_sdk.vendors.vms._common import VmsTextBuilder
+from highway_sdk.vendors.vms.dianming.protocol import VmsDianmingProtocol
 from highway_sdk.vendors.vms.fenghai.media import (
     Bmp as FenghaiBmp,
     Color as FenghaiColor,
@@ -18,13 +19,13 @@ from highway_sdk.vendors.vms.fenghai.media import (
 )
 from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
 
-from .models import DeviceInfoMode, RealtimeDataPublishModel
-from .tags import (
+from .convert import (
     ControlVmsTagsModel,
     _ColorEnum,
     _FontEnum,
     convert,
 )
+from .models import DeviceInfoMode, RealtimeDataPublishModel
 
 __all__ = [
     "MQTTGatewayProtocol",
@@ -122,3 +123,32 @@ class SupaiotVmsFenghaiProtocol(VmsFenghaiProtocol):
                 item = FenghaiItem(media_list=[media], duration=duration * 100)
                 play.item_list.append(item)
         self.upload_file(str(play))
+
+
+class SupaiotVmsDianmingProtocol(VmsDianmingProtocol):
+    """物联智控 情报板 点明协议"""
+
+    def __init__(self, *, device_info: DeviceInfoMode, mqtt_client: aiomqtt.Client, **kwargs):
+        super().__init__(**kwargs)
+
+        self.device_info = device_info
+        self.mqtt_client = mqtt_client
+
+    def on_message_parsed(self, tags: BaseTags):
+        try:
+            data = convert(tags)
+            if data:
+                self.mqtt_real_publish(self.device_info.series, self.device_info.sn, data)
+        except Exception as e:
+            self.log.exception(e)
+
+    def on_connected(self) -> None:
+        self.add_interval_job(self.get_play_item, 2.0, jitter=2)
+        self.add_interval_job(self.get_brightness_and_mode, 2.0, jitter=2)
+        self.add_interval_job(self.get_play_list, 2.0, jitter=2)
+
+    def mqtt_real_publish(self, series: str, sn: str, data: dict):
+        model = RealtimeDataPublishModel(series=series, sn=sn, time=datetime.now(), timestamp=None, data=data)
+        self._loop.create_task(
+            self.mqtt_client.publish(topic=model.get_topic(), payload=model.model_dump_json(exclude_none=True))
+        )

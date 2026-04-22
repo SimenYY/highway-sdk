@@ -73,7 +73,7 @@ class SupaiotAPIClient:
                     timeout=self.timeout,
                 )
             except httpx.ConnectError as e:
-                raise SupaiotAPIconnectError(e)
+                raise SupaiotAPIconnectError(e) from e
 
             resp.raise_for_status()
             supaiot_resp = APIResponse.model_validate(resp.json())
@@ -123,14 +123,14 @@ class SupaiotAPIClient:
             )
             resp.raise_for_status()
         except httpx.ConnectError as e:
-            raise SupaiotAPIconnectError(e)
+            raise SupaiotAPIconnectError(e) from e
         except Exception as e:
-            raise SupaiotAPIError(e)
+            raise SupaiotAPIError(e) from e
 
         try:
             return APIResponse.model_validate(resp.json())
         except ValidationError as e:
-            raise SupaiotAPIResponseValidateError(e)
+            raise SupaiotAPIResponseValidateError(e) from e
 
     async def request_with_login(
         self,
