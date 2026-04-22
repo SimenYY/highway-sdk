@@ -5,7 +5,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, Field
 
-from highway_sdk.vendors.vms._base import BaseMediaBuilder
+from highway_sdk.vendors.vms._base import BaseBuilder
 
 # TODO: 修改
 
@@ -133,7 +133,7 @@ class Mpg(BaseMedia):
 # ==============================================================================
 # 媒体构造类
 # ==============================================================================
-class MediaBuilder(BaseMediaBuilder):
+class MediaBuilder(BaseBuilder):
     def __init__(self):
         self.x: int = 0
         self.y: int = 0
@@ -214,9 +214,9 @@ class GifBuilder(MediaBuilder):
 
 
 class MpgBuilder(MediaBuilder):
-    def __init__(self, Mpg_file_name: str):
+    def __init__(self, mpg_file_name: str):
         super().__init__()
-        self.mpg_file_name = Mpg_file_name
+        self.mpg_file_name = mpg_file_name
 
     def build(self) -> Mpg:
         return Mpg(**self.__dict__)
@@ -240,7 +240,7 @@ class Item(BaseModel):
         return protocol
 
 
-class ItemBuilder(BaseMediaBuilder):
+class ItemBuilder(BaseBuilder):
     def __init__(
         self,
         duration: int = 1000,
@@ -381,7 +381,7 @@ class Window(BaseModel):
         return protocol
 
 
-class WindowBuilder(BaseMediaBuilder):
+class WindowBuilder(BaseBuilder):
     def __init__(self, x: int = 0, y: int = 0, w: int = 32, h: int = 32):
         self.item_list: list[Item] = []
         self.x = x
@@ -458,7 +458,7 @@ class SingleWinPlay(Play):
         return protocol
 
 
-class BasePlayBuilder(BaseMediaBuilder):
+class BasePlayBuilder(BaseBuilder):
     mode: str
 
     @abstractmethod
@@ -502,7 +502,7 @@ class PlayFactory:
     >>> print(pf.get_play())
     """
 
-    _play_builders: dict[str, type[BasePlayBuilder]] = {}
+    _play_builders: dict[str, type[BasePlayBuilder]] = {}  # noqa: RUF012
 
     def __init__(self, mode: Literal["single", "multiple"]) -> None:
         if mode not in self._play_builders:
