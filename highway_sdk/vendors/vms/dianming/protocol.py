@@ -75,11 +75,22 @@ class VmsDianmingProtocol(DriverTCPClientProtocol):
         self.send(bytes(FrameFactory.get_play_list(play_id)))
 
     def set_play_list(self, content: str, play_id: int = 0):
-        """设置播放列表。
+        """下发播放列表并立即显示.
 
         Args:
             content: 播放列表内容。
             play_id: 播放列表ID，默认为0。
+
+        发送：
+            02 30 31 30 31 37 31 2B 30 30 30 30 30 30 30 30 70 6C 61 79 30 30 2E
+            6C 73 74 5B 50 4C 41 59 4C 49 53 54 5D 0D 0A 49 54 45 4D 5F 4E 4F 3D 30 30
+            31 0D 0A 49 54 45 4D 30 30 30 3D 31 35 2C 30 2C 30 2C 30 2C 30 2C 5C 43 30
+            30 30 30 30 30 5C 46 73 33 32 33 32 5C 54 32 35 35 30 30 30 30 30 30 30 30
+            30 5C 4B 30 30 30 30 30 30 30 30 30 30 30 30 5C 57 C7 B0 B7 BD CA C2 B9 CA
+            20 BD BB CD A8 B6 C2 C8 FB D8 D6 03
+
+        接受：
+            02 30 31 30 31 37 32 31 60 A2 03
         """
         self.send(bytes(FrameFactory.set_play_list(content, play_id)))
 

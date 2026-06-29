@@ -24,29 +24,52 @@ class TestParser:
         )
 
         tags = Parser.parse(frame)
+        print(tags.model_dump(mode="json", exclude_none=True))
         expect_tags = {
             "index": "000",
-            "meida": "\\Fk4848\\C016012\\M10\\T255255000000\\W发生事故 车靠边人撤离即报警",
-            "font": "k",
-            "font_size": 4848,
-            "font_color": "255255000000",
-            "background_color": None,
-            "word_space": 10,
-            "text": "发生事故 车靠边人撤离即报警",
-            "image_name": None,
-            "image_type": None,
-            "bmp": None,
-            "gif": None,
-            "jpg": None,
-            "png": None,
-            "mpg": None,
+            "media": "\\Fk4848\\C016012\\M10\\T255255000000\\W发生事故 车靠边人撤离即报警",
+            "media_list": [
+                {
+                    "media": "\\Fk4848\\C016012\\M10\\T255255000000\\W发生事故 车靠边人撤离即报警",
+                    "font": "k",
+                    "font_size": 4848,
+                    "font_color": "255255000000",
+                    "word_space": 10,
+                    "text": "发生事故 车靠边人撤离即报警",
+                }
+            ],
             "duration": 100,
             "screen_in_mode": 0,
             "screen_out_mode": 0,
             "play_speed": 0,
             "play_effect": 0,
         }
-        assert tags.model_dump(mode="json") == expect_tags
+        assert tags.model_dump(mode="json", exclude_none=True) == expect_tags
+
+        frame = Frame.from_bytes(
+            bytes.fromhex(
+                "02 30 31 30 31 37 34 30 30 30 30 30 30 35 30 30 30 30 30 30 30 30 30 5C 43 30 30 30 30 30 30 5C 42 30 30 31 5C 43 30 32 34 30 30 30 5C 42 30 30 31 5C 43 30 34 38 30 30 30 5C 42 30 30 31 5C 43 30 37 32 30 30 30 5C 42 30 30 32 5C 43 30 39 36 30 30 30 5C 42 30 30 36 DD 85 03 "
+            )
+        )
+        tags = Parser.parse(frame)
+        print(tags.model_dump(mode="json", exclude_none=True))
+        expect_tags = {
+            "index": "000",
+            "media": "\\C000000\\B001\\C024000\\B001\\C048000\\B001\\C072000\\B002\\C096000\\B006",
+            "media_list": [
+                {"media": "\\C000000\\B001", "bmp": "001"},
+                {"media": "\\C024000\\B001", "bmp": "001"},
+                {"media": "\\C048000\\B001", "bmp": "001"},
+                {"media": "\\C072000\\B002", "bmp": "002"},
+                {"media": "\\C096000\\B006", "bmp": "006"},
+            ],
+            "duration": 50,
+            "screen_in_mode": 0,
+            "screen_out_mode": 0,
+            "play_speed": 0,
+            "play_effect": 0,
+        }
+        assert tags.model_dump(mode="json", exclude_none=True) == expect_tags
 
     def test_parse_get_play_list(self):
         frame = Frame.from_bytes(
@@ -56,27 +79,23 @@ class TestParser:
         )
 
         tags = Parser.parse(frame)
-        # print(tags.model_dump(mode="json"))
+        print(tags.model_dump(mode="json", exclude_none=True))
         expect_tags = {
             "windows": [
                 {
                     "items": [
                         {
-                            "index": None,
-                            "meida": "\\C000000\\Fs3232\\T000255000000\\K000000000000\\W以人为本\\A关爱生命",
-                            "font": "s",
-                            "font_size": 3232,
-                            "font_color": "000255000000",
-                            "background_color": "000000000000",
-                            "word_space": None,
-                            "text": "以人为本\\A关爱生命",
-                            "image_name": None,
-                            "image_type": None,
-                            "bmp": None,
-                            "gif": None,
-                            "jpg": None,
-                            "png": None,
-                            "mpg": None,
+                            "media": "\\C000000\\Fs3232\\T000255000000\\K000000000000\\W以人为本\\A关爱生命",
+                            "media_list": [
+                                {
+                                    "media": "\\C000000\\Fs3232\\T000255000000\\K000000000000\\W以人为本\\A关爱生命",
+                                    "font": "s",
+                                    "font_size": 3232,
+                                    "font_color": "000255000000",
+                                    "background_color": "000000000000",
+                                    "text": "以人为本\\A关爱生命",
+                                }
+                            ],
                             "duration": 50,
                             "screen_in_mode": 0,
                             "screen_out_mode": 0,
@@ -84,21 +103,17 @@ class TestParser:
                             "play_effect": 0,
                         },
                         {
-                            "index": None,
-                            "meida": "\\C000000\\Fs3232\\T255255000000\\K000000000000\\W安全第一\\A预防为主",
-                            "font": "s",
-                            "font_size": 3232,
-                            "font_color": "255255000000",
-                            "background_color": "000000000000",
-                            "word_space": None,
-                            "text": "安全第一\\A预防为主",
-                            "image_name": None,
-                            "image_type": None,
-                            "bmp": None,
-                            "gif": None,
-                            "jpg": None,
-                            "png": None,
-                            "mpg": None,
+                            "media": "\\C000000\\Fs3232\\T255255000000\\K000000000000\\W安全第一\\A预防为主",
+                            "media_list": [
+                                {
+                                    "media": "\\C000000\\Fs3232\\T255255000000\\K000000000000\\W安全第一\\A预防为主",
+                                    "font": "s",
+                                    "font_size": 3232,
+                                    "font_color": "255255000000",
+                                    "background_color": "000000000000",
+                                    "text": "安全第一\\A预防为主",
+                                }
+                            ],
                             "duration": 50,
                             "screen_in_mode": 0,
                             "screen_out_mode": 0,
@@ -106,33 +121,25 @@ class TestParser:
                             "play_effect": 0,
                         },
                         {
-                            "index": None,
-                            "meida": "\\C000000\\Fs3232\\T255000000000\\K000000000000\\W遵章守法\\A安全驾驶",
-                            "font": "s",
-                            "font_size": 3232,
-                            "font_color": "255000000000",
-                            "background_color": "000000000000",
-                            "word_space": None,
-                            "text": "遵章守法\\A安全驾驶",
-                            "image_name": None,
-                            "image_type": None,
-                            "bmp": None,
-                            "gif": None,
-                            "jpg": None,
-                            "png": None,
-                            "mpg": None,
+                            "media": "\\C000000\\Fs3232\\T255000000000\\K000000000000\\W遵章守法\\A安全驾驶",
+                            "media_list": [
+                                {
+                                    "media": "\\C000000\\Fs3232\\T255000000000\\K000000000000\\W遵章守法\\A安全驾驶",
+                                    "font": "s",
+                                    "font_size": 3232,
+                                    "font_color": "255000000000",
+                                    "background_color": "000000000000",
+                                    "text": "遵章守法\\A安全驾驶",
+                                }
+                            ],
                             "duration": 50,
                             "screen_in_mode": 0,
                             "screen_out_mode": 0,
                             "play_speed": 0,
                             "play_effect": 0,
                         },
-                    ],
-                    "w": None,
-                    "h": None,
-                    "x": None,
-                    "y": None,
+                    ]
                 }
             ]
         }
-        assert tags.model_dump(mode="json") == expect_tags
+        assert tags.model_dump(mode="json", exclude_none=True) == expect_tags

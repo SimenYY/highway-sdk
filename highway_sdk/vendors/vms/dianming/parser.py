@@ -14,7 +14,7 @@ from highway_sdk.core.exceptions import (
 from highway_sdk.vendors.vms._base import BaseParser
 from highway_sdk.vendors.vms._tags import BrightnessTags, ItemTags, PlayTags, WindowTags
 
-from .._tags import BrightnessMode
+from .._tags import BrightnessMode, MediaTags
 from .spec import Frame, ResultCode, What
 
 
@@ -53,75 +53,107 @@ class Parser(BaseParser):
         return super().parse(frame)
 
     @classmethod
-    def _parse_media(cls, data_str: str) -> ItemTags:
-        tags = ItemTags()
-        tags.meida = data_str
-        remaining = tags.meida
+    def _parse_media(cls, media: str) -> MediaTags:
+        media_tags = MediaTags()
+        media_tags.media = media
+        remaining = media_tags.media
         ret = cls.XY_PATTERN.search(remaining)
         if ret:
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
         ret = cls.COLOR_PATTERN.search(remaining)
         if ret:
-            tags.font_color = ret.group(1)
+            media_tags.font_color = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
             ret = cls.FONT_PATTERN.search(remaining)
         if ret:
-            tags.font = ret.group(1)
-            tags.font_size = int(ret.group(2))
+            media_tags.font = ret.group(1)
+            media_tags.font_size = int(ret.group(2))
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
         ret = cls.BG_COLOR_PATTERN.search(remaining)
         if ret:
-            tags.background_color = ret.group(1)
+            media_tags.background_color = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.WORD_SPACE_PATTERN.search(remaining)
         if ret:
-            tags.word_space = int(ret.group(1))
+            media_tags.word_space = int(ret.group(1))
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.BMP_PATTERN.search(remaining)
         if ret:
-            tags.bmp = ret.group(1)
+            media_tags.bmp = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.JPG_PATTERN.search(remaining)
         if ret:
-            tags.jpg = ret.group(1)
+            media_tags.jpg = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.GIF_PATTERN.search(remaining)
         if ret:
-            tags.gif = ret.group(1)
+            media_tags.gif = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.PNG_PATTERN.search(remaining)
         if ret:
-            tags.png = ret.group(1)
+            media_tags.png = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
         res = cls.TEXT_PATTERN.search(remaining)
         if res:
-            tags.text = res.group(1)
-
-        return tags
+            media_tags.text = res.group(1)
+        return media_tags
 
     @classmethod
     def _parse_play_item(cls, play_item: str) -> ItemTags:
         fields = play_item.split(",")
-        tags = cls._parse_media(fields[5])
+        # tags = cls._parse_media(fields[5])
+        tags = ItemTags()
+        tags.media = fields[5]
         tags.duration = int(fields[0])
         tags.screen_in_mode = int(fields[1])
         tags.play_effect = int(fields[2])
         tags.screen_out_mode = int(fields[3])
         tags.play_speed = int(fields[4])
+        media_list = tags.media.split("\\C")
+        media_list = ["\\C" + media for media in media_list if media.strip() != ""]
+
+        for media in media_list:
+            media_tags = cls._parse_media(media)
+            tags.media_list.append(media_tags)
+
+        return tags
+
+    @classmethod
+    def _parse_now_play_item(cls, data: bytes) -> ItemTags:
+        tags = ItemTags()
+        tags.index = data[0:3].decode("ascii", errors="ignore")
+        tags.duration = int(data[3:8].decode("ascii"))
+        tags.screen_in_mode = int(data[8:10].decode("ascii"))
+        tags.play_effect = int(data[10:12].decode("ascii"))
+        tags.screen_out_mode = int(data[12:14].decode("ascii"))
+        tags.play_speed = int(data[14:16].decode("ascii"))
+        tags.media = data[16:].decode("gbk", errors="ignore")
+
+        # 判断是否多个媒体
+        n = tags.media.count("\\C")
+        if n > 1:
+            media_list = tags.media.split("\\C")
+            media_list = ["\\C" + media for media in media_list if media.strip() != ""]
+        else:
+            media_list = [tags.media]
+        for media in media_list:
+            media_tags = cls._parse_media(media)
+            tags.media_list.append(media_tags)
+
         return tags
 
     @classmethod
@@ -156,19 +188,7 @@ def _parse_get_play_item(data: bytes):
     Raises:
         DeviceOperationError: 获取播放项失败。
     """
-    # tags = ItemTags()
-    # if Parser._is_ok(data):
-    #     tags.text = data[1:].decode("gbk", errors="ignore")
-    # else:
-    #     raise DeviceOperationError("Failed to get play item")
-    tags = Parser._parse_media(data[16:].decode("gbk", errors="ignore"))
-    tags.index = data[0:3].decode("ascii", errors="ignore")
-    tags.duration = int(data[3:8].decode("ascii"))
-    tags.screen_in_mode = int(data[8:10].decode("ascii"))
-    tags.play_effect = int(data[10:12].decode("ascii"))
-    tags.screen_out_mode = int(data[12:14].decode("ascii"))
-    tags.play_speed = int(data[14:16].decode("ascii"))
-    return tags
+    return Parser._parse_now_play_item(data)
 
 
 @lru_cache

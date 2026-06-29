@@ -81,7 +81,7 @@ class SupaiotVmsFenghaiProtocol(VmsFenghaiProtocol):
         play = FenghaiPlay(item_list=[item])
         self.upload_file(str(play))
 
-    def control(self, control_tags: ControlVmsTagsModel):
+    async def control(self, control_tags: ControlVmsTagsModel):
         tags = control_tags.model_dump(exclude_none=True)
         play = FenghaiPlay()
         if "KZCT" in tags:  # 兼容限速标，以图片发送
@@ -123,6 +123,7 @@ class SupaiotVmsFenghaiProtocol(VmsFenghaiProtocol):
                 item = FenghaiItem(media_list=[media], duration=duration * 100)
                 play.item_list.append(item)
         self.upload_file(str(play))
+        # await self._loop.run_in_executor(None, self.upload_file, str(play))
 
 
 class SupaiotVmsDianmingProtocol(VmsDianmingProtocol):

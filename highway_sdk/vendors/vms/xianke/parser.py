@@ -77,7 +77,7 @@ class Parser(BaseParser):
     @classmethod
     def _parse_media(cls, media: str):
         tags = ItemTags()
-        tags.meida, remaining = media, media
+        tags.media, remaining = media, media
 
         # 字体
         ret = cls.FONT_PATTERN.search(remaining)

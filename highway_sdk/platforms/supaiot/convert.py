@@ -74,12 +74,14 @@ class _ColorEnum(enum.Enum):
 # ==============================================================================
 class _VmsItemTagsModel(ItemTags):
     def to_supaiot_tags(self):
+        # 这套点位只能默认一个item只有单个media
+        meida = self.media_list[0]
         supaiot_tags = {
-            "CT": self.text or self.image_name or "",
-            "FC": _ColorEnum.get_code_by_rgba(str(self.font_color)),
+            "CT": meida.text or meida.image_name or "",
+            "FC": _ColorEnum.get_code_by_rgba(str(meida.font_color)),
             "SH": self.screen_in_mode,
             "TI": self.duration,
-            "FO": _FontEnum.get_code_by_font(str(self.font)),
+            "FO": _FontEnum.get_code_by_font(str(meida.font)),
         }
         ret = self.model_dump(exclude_none=True)
         ret.update({k: v for k, v in supaiot_tags.items() if v is not None})
@@ -92,10 +94,11 @@ class _VmsPlayTagsModel(PlayTags):
         for window in self.windows:
             for i, item in enumerate(window.items):
                 j = i + 1
-                content = item.text or item.image_name or ""  # 物联智控无法显示转义字符
+                meida = item.media_list[0]
+                content = meida.text or meida.image_name or ""  # 物联智控无法显示转义字符
                 item_tags = {
-                    f"FO{j}": _FontEnum.get_code_by_font(str(item.font)),
-                    f"FC{j}": _ColorEnum.get_code_by_rgba(str(item.font_color)),
+                    f"FO{j}": _FontEnum.get_code_by_font(str(meida.font)),
+                    f"FC{j}": _ColorEnum.get_code_by_rgba(str(meida.font_color)),
                     f"ZCT{j}": content,
                     f"TI{j}": item.duration,
                     f"SH{j}": item.screen_in_mode,

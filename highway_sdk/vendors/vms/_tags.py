@@ -30,6 +30,25 @@ class OperationTags(BaseTags):
     is_ok: bool | None = Field(default=None, description="操作是否成功")
 
 
+class MediaTags(BaseTags):
+    """媒体标签"""
+
+    media: str | None = Field(default=None, description="原始媒体")
+    font: str | None = Field(default=None, description="字体")
+    font_size: int | None = Field(default=None, description="字体大小")
+    font_color: str | None = Field(default=None, description="字体颜色")
+    background_color: str | None = Field(default=None, description="背景颜色")
+    word_space: int | None = Field(default=None, description="字间距")
+    text: str | None = Field(default=None, description="文本字符串（不带转义符，例如换行符）")
+    image_name: str | None = Field(default=None, description="图片名称(不包括扩展名)")
+    image_type: str | None = Field(default=None, description="图片类型")
+    bmp: str | None = Field(default=None, description="BMP格式图片")
+    gif: str | None = Field(default=None, description="GIF格式图片")
+    jpg: str | None = Field(default=None, description="JPG格式图片")
+    png: str | None = Field(default=None, description="PNG格式图片")
+    mpg: str | None = Field(default=None, description="MPG格式视频")
+
+
 class ItemTags(BaseTags):
     """播放项标签。
 
@@ -60,20 +79,8 @@ class ItemTags(BaseTags):
     """
 
     index: str | None = Field(default=None, description="播放项索引")
-    meida: str | None = Field(default=None, description="原始媒体")
-    font: str | None = Field(default=None, description="字体")
-    font_size: int | None = Field(default=None, description="字体大小")
-    font_color: str | None = Field(default=None, description="字体颜色")
-    background_color: str | None = Field(default=None, description="背景颜色")
-    word_space: int | None = Field(default=None, description="字间距")
-    text: str | None = Field(default=None, description="文本字符串（不带转义符，例如换行符）")
-    image_name: str | None = Field(default=None, description="图片名称(不包括扩展名)")
-    image_type: str | None = Field(default=None, description="图片类型")
-    bmp: str | None = Field(default=None, description="BMP格式图片")
-    gif: str | None = Field(default=None, description="GIF格式图片")
-    jpg: str | None = Field(default=None, description="JPG格式图片")
-    png: str | None = Field(default=None, description="PNG格式图片")
-    mpg: str | None = Field(default=None, description="MPG格式视频")
+    media: str | None = Field(default=None, description="原始媒体")
+    media_list: list[MediaTags] = Field(default_factory=list, description="媒体列表, 适配一个item有多个媒体的情况")
 
     duration: int | None = Field(default=None, description="停留时间，单位秒")
     screen_in_mode: int | None = Field(default=None, description="入屏方式")

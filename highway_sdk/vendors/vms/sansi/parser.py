@@ -43,8 +43,8 @@ class Parser(BaseParser):
     @classmethod
     def _parse_media(cls, data_str: str) -> ItemTags:
         tags = ItemTags()
-        tags.meida = data_str
-        remaining = tags.meida
+        tags.media = data_str
+        remaining = tags.media
         ret = cls.XY_PATTERN.search(remaining)
         if ret:
             start, end = ret.span()
@@ -109,7 +109,7 @@ class Parser(BaseParser):
         tags.duration = int(int(fields[0]) * 0.01)
         tags.screen_in_mode = int(fields[1])
         tags.play_speed = int(fields[2])
-        tags.meida = play_item
+        tags.media = play_item
         return tags
 
     @classmethod
