@@ -6,7 +6,7 @@ from pydantic import Field, computed_field
 
 from highway_sdk.core.constants import ESC, ETX, STX
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.vendors.vms._base import BaseFrame
+from highway_sdk.vendors.vms._base import VMSFrame
 
 ENCODING = "gbk"
 
@@ -30,7 +30,7 @@ class ResultCode(Enum):
     FAILLED = b"1"
 
 
-class Frame(BaseFrame):
+class Frame(VMSFrame):
     """帧格式
 
     帧格式：
@@ -96,7 +96,7 @@ class Frame(BaseFrame):
     @lru_cache
     def calc_crc(cls, payload: bytes) -> bytes:
         """计算CRC"""
-        CRC_TABLE = [
+        crc_table = [
             0x0000,
             0x1021,
             0x2042,
@@ -357,7 +357,7 @@ class Frame(BaseFrame):
 
         crc = 0
         for byte in payload:
-            crc = CRC_TABLE[((crc >> 8) ^ byte) & 0xFF] ^ (crc << 8)
+            crc = crc_table[((crc >> 8) ^ byte) & 0xFF] ^ (crc << 8)
             crc &= 0xFFFF  # 保持16位
 
         return crc.to_bytes(2, "big")

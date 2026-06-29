@@ -15,7 +15,7 @@ from pydantic import Field, ValidationError as PydanticValidationError, computed
 
 from highway_sdk.core.constants import ESC, ETX, STX
 from highway_sdk.core.exceptions import CrcValidationError, ValidationError
-from highway_sdk.vendors.vms._base import BaseFrame
+from highway_sdk.vendors.vms._base import VMSFrame
 
 ENCODING = "gbk"
 
@@ -46,7 +46,7 @@ class ResultCode(Enum):
     FAILLED = b"1"
 
 
-class Frame(BaseFrame):
+class Frame(VMSFrame):
     """丰海VMS帧数据结构。
 
     Attributes:
@@ -106,7 +106,7 @@ class Frame(BaseFrame):
         try:
             frame = cls(address=address, what=what, data=data)
         except PydanticValidationError as e:
-            raise ValidationError(e)
+            raise ValidationError(e) from e
         if frame.crc != crc:
             raise CrcValidationError("crc check failed")
         return frame

@@ -88,7 +88,7 @@ class ColoredStreamHandler(logging.StreamHandler):
         try:
             from colorlog import ColoredFormatter
         except ImportError:
-            raise ImportError("colorlog is not installed")
+            raise ImportError("colorlog is not installed") from None
 
         self.setFormatter(
             ColoredFormatter(
@@ -491,3 +491,27 @@ class LoguruConfig:
             enqueue=enqueue,
             serialize=self.serialize,  # 使用与loguru一致的参数名
         )
+
+
+# 向后兼容别名
+LogConfig = LoguruConfig
+
+
+def setup_logger(name: str = "highway_sdk", level: str = "DEBUG", **kwargs) -> LoguruConfig:
+    """快速设置日志配置。
+
+    Args:
+        name: 日志名称
+        level: 日志级别
+        **kwargs: 传递给 LoguruConfig 的其他参数
+
+    Returns:
+        LoguruConfig: 配置实例
+
+    Example:
+        >>> from highway_sdk.core import setup_logger
+        >>> logger = setup_logger("my_app", level="INFO")
+        >>> logger.set_console()
+    """
+    config = LoguruConfig(name=name, level=level, **kwargs)
+    return config

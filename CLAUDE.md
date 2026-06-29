@@ -18,24 +18,27 @@ The **Highway SDK** is a Python library for interfacing with highway electrical 
 ### Key Development Commands
 
 #### Installation
+
 ```bash
 poetry install              # Install dependencies
 ```
 
 #### Testing
+
 ```bash
-poetry run pytest          # Run all tests
-poetry run pytest tests/driver/vms/dianming/v2_3_0/  # Run specific vendor tests
-poetry run pytest tests/core/test_connector.py -v    # Run individual test file with verbose output
+poetry run pytest tests/    # Run all tests
+poetry run pytest tests/test_transport.py -v    # Run specific test file
 ```
 
 #### Build
+
 ```bash
 poetry build               # Build package
 poetry version             # Show version
 ```
 
 #### Development Tools
+
 ```bash
 pre-commit run --all-files # Run pre-commit hooks (linting, type checking)
 ```
@@ -43,115 +46,110 @@ pre-commit run --all-files # Run pre-commit hooks (linting, type checking)
 ### Codebase Architecture
 
 #### Directory Structure
+
 ```
 highway_sdk/
 ├── highway_sdk/           # Main package source
-│   ├── core/              # Core infrastructure (TCP/UDP, logging, config)
-│   ├── interface/         # Abstract interfaces
-│   ├── platform/          # Platform integrations (SupaIoT, Central Monitoring)
+│   ├── core/              # Core infrastructure
+│   │   ├── transport.py   # TCP transport with auto-reconnect
+│   │   ├── codec.py       # Base codec with decorator registration
+│   │   ├── device.py      # Base device class
+│   │   ├── frame.py       # Base frame class
+│   │   ├── tags.py        # Base tags class
+│   │   ├── exceptions.py  # Exception hierarchy
+│   │   ├── log.py         # Logging configuration
+│   │   ├── reader.py      # Data reader utilities
+│   │   ├── settings.py    # Configuration management
+│   │   └── constants.py   # Global constants
 │   ├── vendors/           # Vendor-specific VMS implementations
-│   ├── brokers/           # Message broker clients (MQTT, Kafka, Redis)
-│   ├── transport/         # Transport layer
-│   └── utils/             # Utility functions (locks, decorators, validation)
-├── tests/                 # Test suite with vendor-specific tests
+│   │   └── vms/           # VMS devices
+│   │       ├── _base.py   # VMS base classes (VMSFrame)
+│   │       ├── dianming/  # DianMing (电明)
+│   │       ├── fenghai/   # FengHai (丰海)
+│   │       ├── nova/      # Nova (诺瓦)
+│   │       ├── sansi/     # SanSi (三思)
+│   │       ├── xianke/    # XianKe (显科)
+│   │       └── jinxiao/   # JinXiao (锦效)
+│   └── utils/             # Utility functions
+├── tests/                 # Test suite
+├── examples/              # Demo scripts
+├── docs/                  # Documentation
 ├── pyproject.toml         # Poetry configuration
 └── README.md              # Documentation
 ```
 
 #### Core Modules
 
-**core/driver.py** - Asyncio-based TCP/UDP communication
-- `AioTCPClient`: Async TCP client with request-response pattern
-- `TCPReconnectingConnector`: Auto-reconnect with exponential backoff
-- `UDPConnector`: UDP protocol implementation
-- Various connection management classes
+**core/transport.py** - TCP transport layer
 
-**core/interface.py** - Protocol interfaces
-- `BaseMessageParser`: Message parsing protocol
-- `BaseTags`: Dataclass base for tag-based data structures
+- `Transport`: Async TCP client with request-response pattern
+- Built-in auto-reconnect with exponential backoff
+- Supports async context manager
+
+**core/codec.py** - Codec base class
+
+- `BaseCodec`: Base codec with decorator-based registration
+- `register()`: Class method decorator to register decoders
+
+**core/device.py** - Device base class
+
+- `BaseDevice`: Abstract device class with unified interface
+- `connect()`: Class method to create and connect device
+- Supports custom transport factory
+
+**core/frame.py** - Frame base class
+
+- `BaseFrame`: Pydantic-based frame structure
+- `__bytes__()`: Abstract method for frame serialization
+
+**core/tags.py** - Tags base class
+
+- `BaseTags`: Pydantic-based data structure for device responses
 
 **core/log.py** - Logging system
+
 - Loguru integration with custom handlers
 - Colorized console output
 - Log message prefixing
 
-**core/settings.py** - Configuration
-- YAML/JSON file-based config
-- pydantic-settings for environment variable support
-
 #### Vendor Implementations (vendors/vms/)
 
-Multiple VMS vendor protocols are supported, each with version-specific implementations:
-- **dianming/** (DianMing VMS) - v2_3_0
-- **fenghai/** (FengHai VMS)
-- **nova/** (Nova VMS) - v3_11_5
-- **sansi/** (SanSi VMS)
-- **xianke/** (XianKe VMS) - v1_4_2
-- **yingsha/** (YingSha VMS) - v2_2_0
-
 Each vendor module follows:
-- `client.py`: Main client interface
-- `media.py`: Media/playlist management
-- `spec.py`: Protocol specifications and packet structures
-- `parse.py`: Message parsing utilities (optional)
 
-#### Platform Integrations
+- `spec.py`: Frame definition (What enum, Frame class)
+- `codec.py`: Codec implementation
+- `device.py`: Device client
 
-**platform/supaiot/** - SupaIoT Platform
-- MQTT-based client for device communication
-- Gateway and business logic layers
-- Protocol implementations and data models
+Supported vendors:
 
-**platform/center/** - Central Monitoring System
-- Device data models
-- Protocol specifications
-
-#### Brokers (brokers/)
-
-- **mqtt.py**: MQTT v5.0 client wrapper (paho-mqtt v2+)
-- **kafka.py**: Apache Kafka client
-- **redis.py**: Redis client
-- **config.py**: Broker configuration management
-
-### Testing
-
-Comprehensive test coverage with pytest:
-- Tests organized by module: `tests/core/`, `tests/driver/vms/<vendor>/`, `tests/platform/`
-- Asyncio testing with `pytest-asyncio`
-- Mock servers for integration testing
-- Each vendor has tests for client, media, and protocol functionality
+- **dianming/** (电明 VMS)
+- **fenghai/** (丰海 VMS)
+- **nova/** (诺瓦 VMS)
+- **sansi/** (三思 VMS)
+- **xianke/** (显科 VMS)
 
 ### Key Dependencies
 
-Core: loguru, pydantic, paho-mqtt, twisted, click, requests
-Async: httpx, aiomqtt, pytest-asyncio
-Databases: sqlalchemy[asyncio], aioodbc
-Brokers: confluent-kafka, redis
-Utilities: filelock, apscheduler, bidict
+Core: loguru, pydantic, httpx, platformdirs, python-dotenv, filelock, bidict
+Async: pytest-asyncio
 
 ### Design Principles
 
 1. **Protocol Abstraction**: Each vendor protocol is implemented as a separate module with shared interfaces
 2. **Async-First Architecture**: Heavy use of asyncio for efficient I/O operations
-3. **Modular Design**: Clear separation between core infrastructure, vendor implementations, and platform integrations
+3. **Modular Design**: Clear separation between core infrastructure and vendor implementations
 4. **Tag-Based Data Structures**: `BaseTags` dataclass system for structured data exchange
-5. **Comprehensive Logging**: Integrated loguru logging with support for intercepting standard logging
+5. **Comprehensive Logging**: Integrated loguru logging
 6. **Automatic Recovery**: TCP reconnection with exponential backoff
 
 ### Common Development Tasks
 
 1. **Adding a new VMS vendor protocol**:
    - Create vendor directory under `vendors/vms/`
-   - Implement `client.py`, `media.py`, and `spec.py`
-   - Add tests in `tests/driver/vms/<vendor>/`
-   - Follow existing patterns from other vendor implementations
+   - Implement `spec.py`, `codec.py`, and `device.py`
+   - Add tests in `tests/`
 
-2. **Implementing a new platform integration**:
-   - Create module under `platform/`
-   - Implement client, protocol, and data model files
-   - Add tests in `tests/platform/`
-
-3. **Testing changes**:
+2. **Testing changes**:
    - Run affected tests using `poetry run pytest`
    - Add new tests for changes
    - Ensure all tests pass before committing
@@ -159,9 +157,16 @@ Utilities: filelock, apscheduler, bidict
 ### Important Files
 
 - `pyproject.toml`: Project configuration and dependencies
-- `highway_sdk/core/driver.py`: Core asyncio-based TCP/UDP protocol implementation
-- `highway_sdk/core/exceptions.py`: Exception hierarchy
-- `highway_sdk/core/log.py`: Logging system configuration
-- `highway_sdk/vendors/vms/*/client.py`: Vendor-specific VMS clients
-- `highway_sdk/platform/supaiot/client.py`: SupaIoT platform integration
-- `tests/*/test_*.py`: Comprehensive test suite
+- `highway_sdk/core/transport.py`: Core TCP transport implementation
+- `highway_sdk/core/codec.py`: Codec base class with registration mechanism
+- `highway_sdk/core/device.py`: Device base class
+- `highway_sdk/vendors/vms/*/device.py`: Vendor-specific VMS clients
+- `tests/test_*.py`: Test suite
+
+### Critical Rules
+
+- **Async-first**: Always use async versions of libraries where available
+- **Codec registration**: Use `CodecClass._decoders[what] = func` after class definition
+- **Frame serialization**: Each vendor's Frame class must implement `__bytes__()`
+- **Device inheritance**: Vendor devices inherit from `BaseDevice`, not `VMSDevice`
+- **No VMSCodec/VMSDevice**: These intermediate classes were removed; inherit directly from BaseCodec/BaseDevice

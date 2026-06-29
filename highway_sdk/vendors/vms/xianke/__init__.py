@@ -1,11 +1,13 @@
-#!/usr/bin/env python
-"""
-:FileName: __init__.py.py
-:Project:
-:Brand:
-:Version:
-:Description:
-:Author: He YinYu
-:Link:
-:Time: 2025/2/17 10:17
-"""
+"""显科厂商VMS协议模块。"""
+
+from .codec import XianKeCodec
+from .device import XianKeDevice
+from .spec import Frame, ResultCode, What
+
+__all__ = [
+    "Frame",
+    "ResultCode",
+    "What",
+    "XianKeCodec",
+    "XianKeDevice",
+]

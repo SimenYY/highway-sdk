@@ -5,7 +5,7 @@ from typing import Self
 from pydantic import Field, computed_field
 
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.vendors.vms._base import BaseFrame
+from highway_sdk.vendors.vms._base import VMSFrame
 
 ENCODING = "gbk"
 
@@ -35,7 +35,7 @@ class Esc(Enum):
     LF = "\\N"
 
 
-class Frame(BaseFrame):
+class Frame(VMSFrame):
     """
     显科数据帧格式：【帧头 1B】-【类型 2B】-【地址 2B】-【数据 nB】-【校验 2B】-【帧尾 1B】
 

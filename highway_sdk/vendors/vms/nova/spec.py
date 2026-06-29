@@ -5,7 +5,7 @@ from typing import Self
 from pydantic import Field, computed_field
 
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.vendors.vms._base import BaseFrame
+from highway_sdk.vendors.vms._base import VMSFrame
 
 ENCODING = "utf-8"
 
@@ -64,7 +64,7 @@ class What(Enum):
     GET_STATUS_RESP = b"\xba"
 
 
-class Frame(BaseFrame):
+class Frame(VMSFrame):
     """Nova报文格式
 
     Nova数据帧格式：【起始符 1B】-【设备地址 2B】-【指令码 1B】-【数据域 nB】-【结束符 1B】-【校验码 2B】

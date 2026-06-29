@@ -1,6 +1,6 @@
-"""点明厂商VMS协议规范模块。
+"""电明厂商VMS协议规范模块。
 
-该模块定义了点明厂商VMS设备的通信协议规范，包括：
+该模块定义了电明厂商VMS设备的通信协议规范，包括：
 - 指令码枚举（What）
 - 返回状态码枚举（ResultCode）
 - 帧数据结构（Frame）
@@ -14,7 +14,7 @@ from typing import Self
 from pydantic import Field, computed_field
 
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.vendors.vms._base import BaseFrame
+from highway_sdk.vendors.vms._base import VMSFrame
 
 ENCODING = "gbk"
 
@@ -22,7 +22,7 @@ ENCODING = "gbk"
 class What(Enum):
     """指令码枚举。
 
-    定义了点明VMS设备支持的所有指令类型，包括请求和响应。
+    定义了电明VMS设备支持的所有指令类型，包括请求和响应。
     """
 
     GET_PLAY_ITEM_REQ = b"73"
@@ -54,8 +54,8 @@ class ResultCode(Enum):
     FAILLED = b"0"
 
 
-class Frame(BaseFrame):
-    """点明VMS帧数据结构。
+class Frame(VMSFrame):
+    """电明VMS帧数据结构。
 
     帧格式：【起始符1B】【目的地址2B】【源地址2B】【控制码2B】【数据nB】【校验码2B】【结束符1B】
 

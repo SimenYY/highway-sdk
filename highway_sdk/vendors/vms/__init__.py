@@ -1,43 +1,34 @@
-"""VMS设备厂商实现模块。
+"""VMS设备厂商实现模块。"""
 
-该模块提供了各种VMS（可变信息标志）设备厂商的协议实现，包括丰海、Nova、Xianke等。
-"""
+# 电明厂商实现
+from .dianming.codec import DianMingCodec
+from .dianming.device import DianMingDevice
 
 # 丰海厂商实现
-from .fenghai.factory import FrameFactory as FenghaiFrameFactory
-from .fenghai.parser import Parser as FenghaiParser
-from .fenghai.protocol import VmsFenghaiProtocol
-from .nova.factory import FrameFactory as NovaFrameFactory
-from .nova.parser import Parser as NovaParser
+from .fenghai.codec import FengHaiCodec
+from .fenghai.device import FengHaiDevice
 
-# Nova厂商实现
-from .nova.protocol import VmsNovaProtocol
-from .sansi.factory import FrameFactory as SansiFrameFactory
-from .sansi.parser import Parser as SansiParser
+# 诺瓦厂商实现
+from .nova.codec import NovaCodec
+from .nova.device import NovaDevice
 
-# Sansi厂商实现
-from .sansi.protocol import VmsSansiProtocol
-from .xianke.factory import FrameFactory as XiankeFrameFactory
-from .xianke.parser import Parser as XiankeParser
+# 三思厂商实现
+from .sansi.codec import SanSiCodec
+from .sansi.device import SanSiDevice
 
-# Xianke厂商实现
-from .xianke.protocol import VmsXiankeProtocol
+# 显科厂商实现
+from .xianke.codec import XianKeCodec
+from .xianke.device import XianKeDevice
 
 __all__ = [
-    # 丰海
-    "VmsFenghaiProtocol",
-    "FenghaiFrameFactory",
-    "FenghaiParser",
-    # Nova
-    "VmsNovaProtocol",
-    "NovaFrameFactory",
-    "NovaParser",
-    # Sansi
-    "VmsSansiProtocol",
-    "SansiFrameFactory",
-    "SansiParser",
-    # Xianke
-    "VmsXiankeProtocol",
-    "XiankeFrameFactory",
-    "XiankeParser",
+    "DianMingCodec",
+    "DianMingDevice",
+    "FengHaiCodec",
+    "FengHaiDevice",
+    "NovaCodec",
+    "NovaDevice",
+    "SanSiCodec",
+    "SanSiDevice",
+    "XianKeCodec",
+    "XianKeDevice",
 ]
