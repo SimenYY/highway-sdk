@@ -13,9 +13,9 @@ from typing import Self
 
 from pydantic import Field, ValidationError as PydanticValidationError, computed_field
 
-from highway_sdk.core.constants import ESC, ETX, STX
+from highway_sdk.core.constants import ETX, STX
 from highway_sdk.core.exceptions import CrcValidationError, ValidationError
-from highway_sdk.vendors.vms._base import VMSFrame
+from highway_sdk.vendors.vms._base import VMSFrame, escape_bytes
 
 ENCODING = "gbk"
 
@@ -145,13 +145,4 @@ class Frame(VMSFrame):
         Returns:
             bytes: 转义后的数据。
         """
-        if reverse:
-            payload = payload.replace(b"\x1b\xe7", STX)
-            payload = payload.replace(b"\x1b\xe8", ETX)
-            payload = payload.replace(b"\x1b\x00", ESC)
-        else:
-            payload = payload.replace(ESC, b"\x1b\x00")
-            payload = payload.replace(STX, b"\x1b\xe7")
-            payload = payload.replace(ETX, b"\x1b\xe8")
-
-        return payload
+        return escape_bytes(payload, reverse=reverse)

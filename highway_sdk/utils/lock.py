@@ -1,4 +1,3 @@
-import logging
 import sys
 from collections.abc import Callable
 from functools import partial, wraps
@@ -6,10 +5,11 @@ from pathlib import Path
 from typing import Any
 
 from filelock import AsyncFileLock, BaseAsyncFileLock, BaseFileLock, FileLock
+from platformdirs import user_data_dir
 
-from highway_sdk import dirs
+from highway_sdk.core.log import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 __all__ = ["AppLock"]
 
@@ -28,8 +28,7 @@ class AppLock:
 
     def __init__(self, name: str = "app") -> None:
         self.name: str = name
-        dirs.appname = name
-        lock_dir = Path(dirs.user_data_dir)
+        lock_dir = Path(user_data_dir(appname=name))
         lock_dir.mkdir(parents=True, exist_ok=True)
         self.lock_file: Path = lock_dir / "app.lock"
         self.lock: BaseAsyncFileLock | BaseFileLock | None = None
@@ -41,7 +40,7 @@ class AppLock:
 
         Args:
             main (Callable[..., Any] | None, optional): 应用入口函数. Defaults to None.
-            name (str, optional): 应用名称. Defaults to "app_lock".
+            name (str, optional): 应用名称. Defaults to "app".
 
         Example:
         ... @AppLock.lock_this
@@ -63,12 +62,12 @@ class AppLock:
         return _lock_this
 
     @classmethod
-    def async_lock_this(cls, main: Callable[..., Any] | None = None, *, name: str = "app_lock"):
+    def async_lock_this(cls, main: Callable[..., Any] | None = None, *, name: str = "app"):
         """异步应用锁函数装饰器
 
         Args:
             main (Callable[..., Any] | None, optional): 应用入口函数. Defaults to None.
-            name (str, optional): 应用名称. Defaults to "app_lock".
+            name (str, optional): 应用名称. Defaults to "app".
 
         Example:
         ... @AppLock.async_lock_this
@@ -103,7 +102,7 @@ class AppLock:
             self.lock.release()
             self.lock = None
         else:
-            raise TypeError("elf.lock is not an instance of FileLock")
+            raise TypeError("self.lock is not an instance of FileLock")
         logger.info("The app is exited successfully")
 
         if exc_type is not None:

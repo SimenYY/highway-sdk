@@ -13,6 +13,10 @@ from highway_sdk import (
     SanSiDevice,
     Transport,
     XianKeDevice,
+    connect_device,
+    create_device,
+    get_vendor,
+    list_vendors,
 )
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
@@ -28,7 +32,7 @@ async def example_basic_usage():
     print("=" * 60)
 
     # 使用上下文管理器自动管理连接
-    async with await DianMingDevice.connect("192.168.1.100", 9000) as device:
+    async with await DianMingDevice.connect("127.0.0.1", 9000) as device:
         # 获取亮度信息
         brightness = await device.get_brightness()
         print(f"亮度信息: {brightness}")
@@ -50,7 +54,7 @@ async def example_custom_transport():
 
     # 创建带自动重连的传输层
     transport = Transport(
-        "192.168.1.100",
+        "127.0.0.1",
         9000,
         timeout=5.0,
         auto_reconnect=True,
@@ -86,11 +90,11 @@ async def example_multiple_vendors():
 
     # 设备配置
     devices_config = [
-        {"vendor": "dianming", "host": "192.168.1.100", "port": 9000},
-        {"vendor": "fenghai", "host": "192.168.1.101", "port": 9000},
-        {"vendor": "nova", "host": "192.168.1.102", "port": 9000},
-        {"vendor": "sansi", "host": "192.168.1.103", "port": 9000},
-        {"vendor": "xianke", "host": "192.168.1.104", "port": 9000},
+        {"vendor": "dianming", "host": "127.0.0.1", "port": 9000},
+        {"vendor": "fenghai", "host": "127.0.0.1", "port": 9001},
+        {"vendor": "nova", "host": "127.0.0.1", "port": 9002},
+        {"vendor": "sansi", "host": "127.0.0.1", "port": 9003},
+        {"vendor": "xianke", "host": "127.0.0.1", "port": 9004},
     ]
 
     # 厂商设备类映射
@@ -137,7 +141,7 @@ async def example_error_handling():
 
     try:
         async with await DianMingDevice.connect(
-            "192.168.1.100",
+            "127.0.0.1",
             9000,
             timeout=2.0,
         ) as device:
@@ -171,7 +175,7 @@ async def example_custom_transport_factory():
         )
 
     device = await NovaDevice.connect(
-        "192.168.1.102",
+        "127.0.0.3",
         9000,
         transport_factory=custom_transport_factory,
     )
@@ -189,7 +193,7 @@ async def example_concurrent_operations():
     print("示例 6: 并发操作")
     print("=" * 60)
 
-    async with await DianMingDevice.connect("192.168.1.100", 9000) as device:
+    async with await DianMingDevice.connect("127.0.0.1", 9000) as device:
         # 并发执行多个操作
         results = await asyncio.gather(
             device.get_brightness(),
@@ -205,6 +209,82 @@ async def example_concurrent_operations():
         print(f"播放列表: {play_list}")
 
 
+async def example_vendor_registry():
+    """厂商注册表示例：动态创建设备（物联网平台集成）。"""
+    print("\n" + "=" * 60)
+    print("示例 7: 厂商注册表（物联网平台集成）")
+    print("=" * 60)
+
+    # 1. 查看所有已注册厂商
+    print("\n已注册厂商列表:")
+    vendors = list_vendors()
+    for vendor in vendors:
+        print(f"  - {vendor.name}: {vendor.display_name} ({vendor.device_type})")
+
+    # 2. 获取特定厂商信息
+    print("\n获取电明厂商信息:")
+    dianming = get_vendor("dianming")
+    print(f"  名称: {dianming.display_name}")
+    print(f"  类型: {dianming.device_type}")
+    print(f"  描述: {dianming.description}")
+
+    # 3. 使用注册表创建设备（未连接）
+    print("\n使用注册表创建设备实例:")
+    device = create_device("dianming", "127.0.0.1", 9000)
+    print(f"  创建成功: {device.__class__.__name__}")
+    print(f"  传输层: {device.transport.host}:{device.transport.port}")
+
+    # 4. 使用注册表连接设备（配置驱动场景）
+    print("\n使用注册表连接设备:")
+    try:
+        device = await connect_device("fenghai", "127.0.0.1", 9001)
+        print(f"  连接成功: {device.__class__.__name__}")
+
+        # 执行操作
+        brightness = await device.get_brightness()
+        print(f"  亮度信息: {brightness}")
+
+        await device.disconnect()
+        print("  已断开连接")
+    except Exception as e:
+        print(f"  连接失败: {e}")
+
+    # 5. 物联网平台配置驱动示例
+    print("\n物联网平台配置驱动示例:")
+    platform_config = [
+        {"vendor": "dianming", "host": "127.0.0.1", "port": 9000, "name": "VMS-001"},
+        {"vendor": "fenghai", "host": "127.0.0.1", "port": 9001, "name": "VMS-002"},
+        {"vendor": "nova", "host": "127.0.0.1", "port": 9002, "name": "VMS-003"},
+    ]
+
+    devices = []
+    for config in platform_config:
+        try:
+            device = await connect_device(
+                vendor=config["vendor"],
+                host=config["host"],
+                port=config["port"],
+            )
+            devices.append((config["name"], device))
+            print(f"  ✓ {config['name']} ({config['vendor']}) 已连接")
+        except Exception as e:
+            print(f"  ✗ {config['name']} ({config['vendor']}) 连接失败: {e}")
+
+    # 批量操作
+    print("\n批量获取设备信息:")
+    for name, device in devices:
+        try:
+            brightness = await device.get_brightness()
+            print(f"  {name}: 亮度={brightness}")
+        except Exception as e:
+            print(f"  {name}: 获取失败 - {e}")
+
+    # 清理
+    for name, device in devices:
+        await device.disconnect()
+        print(f"  ✓ {name} 已断开")
+
+
 async def main():
     """运行所有示例。"""
     print("Highway SDK 使用示例\n")
@@ -212,12 +292,13 @@ async def main():
     # 注意：这些示例需要真实的设备或模拟服务器
     # 取消注释以运行特定示例
 
-    # await example_basic_usage()
+    await example_basic_usage()
     # await example_custom_transport()
     # await example_multiple_vendors()
     # await example_error_handling()
     # await example_custom_transport_factory()
     # await example_concurrent_operations()
+    # await example_vendor_registry()
 
     print("\n提示：取消注释相应的示例函数以运行测试")
     print("确保设备在线或配置正确的网络环境")

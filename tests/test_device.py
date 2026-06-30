@@ -12,6 +12,10 @@ from highway_sdk.core.transport import Transport
 class MockFrame(BaseFrame):
     """测试用帧。"""
 
+    @classmethod
+    def from_bytes(cls, message: bytes) -> "MockFrame":
+        return cls(what=message[:4], data=message[4:])
+
     def __bytes__(self) -> bytes:
         return self.what + self.data
 
@@ -19,12 +23,12 @@ class MockFrame(BaseFrame):
 class MockCodec(BaseCodec):
     """模拟编解码器。"""
 
-    @staticmethod
-    def decode_test(data: bytes) -> BaseTags:
+    @classmethod
+    def decode_test(cls, data: bytes) -> BaseTags:
         return BaseTags()
 
 
-MockCodec._decoders[b"test"] = MockCodec.decode_test
+MockCodec._decoders[b"test"] = MockCodec.decode_test.__func__
 
 
 class MockDevice(BaseDevice):

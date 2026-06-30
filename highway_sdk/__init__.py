@@ -4,10 +4,6 @@ This SDK provides a unified interface for communicating with various highway dev
 including VMS (Variable Message Signs) and VD (Vehicle Detectors) from different vendors.
 """
 
-import logging
-
-from platformdirs import PlatformDirs
-
 from ._version import __version__
 from .core import (
     BaseCodec,
@@ -15,7 +11,9 @@ from .core import (
     BaseFrame,
     BaseTags,
     LogConfig,
+    LoggerConfig,
     Transport,
+    get_logger,
     setup_logger,
 )
 from .vendors import (
@@ -27,8 +25,14 @@ from .vendors import (
     NovaDevice,
     SanSiCodec,
     SanSiDevice,
+    VendorMetadata,
     XianKeCodec,
     XianKeDevice,
+    connect_device,
+    create_device,
+    get_vendor,
+    list_vendors,
+    register_vendor,
 )
 
 __name__ = "highway_sdk"
@@ -42,16 +46,21 @@ __all__ = [
     "FengHaiCodec",
     "FengHaiDevice",
     "LogConfig",
+    "LoggerConfig",
     "NovaCodec",
     "NovaDevice",
     "SanSiCodec",
     "SanSiDevice",
     "Transport",
+    "VendorMetadata",
     "XianKeCodec",
     "XianKeDevice",
     "__version__",
+    "connect_device",
+    "create_device",
+    "get_logger",
+    "get_vendor",
+    "list_vendors",
+    "register_vendor",
     "setup_logger",
 ]
-
-logger = logging.getLogger(__name__)
-dirs = PlatformDirs(appauthor=__name__)

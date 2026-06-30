@@ -46,7 +46,7 @@ class BaseCodec:
             ValueError: 不支持的指令类型。
         """
         try:
-            return cls._decoders[frame.what](frame.data)
+            return cls._decoders[frame.what](cls, frame.data)
         except KeyError as e:
             raise ValueError(f"Unsupported command: {e}") from e
 

@@ -1,11 +1,12 @@
-import logging
 import threading
 import time
 from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from highway_sdk import get_logger
+
+logger = get_logger(__name__)
 
 
 def time_this(func: Callable[..., Any]):

@@ -4,7 +4,6 @@
 """
 
 import asyncio
-import logging
 import random
 
 from .exceptions import (
@@ -13,9 +12,9 @@ from .exceptions import (
     ConnectionTimeoutError,
     ResponseTimeoutError,
 )
-from .log import PrefixLoggerAdapter
+from .log import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Transport:
@@ -59,7 +58,8 @@ class Transport:
         self._reconnect_count = 0
         self._reconnect_task: asyncio.Task | None = None
 
-        self.log = PrefixLoggerAdapter(logger, prefix=f"{host}:{port}")
+        # ponytail: 直接用 bind 添加前缀，避免额外的 adapter 层
+        self.log = logger.bind(prefix=f"[{host}:{port}]")
 
     @property
     def is_connected(self) -> bool:

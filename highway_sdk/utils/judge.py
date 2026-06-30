@@ -15,10 +15,10 @@ def is_ip(ip: str) -> bool:
     """判断是否为IP地址
 
     Args:
-        ip (str): _description_
+        ip (str): 待判断的IP地址字符串
 
     Returns:
-        bool: _description_
+        bool: 是合法IP地址返回True，否则返回False
     """
     try:
         ipaddress.ip_address(ip)
@@ -28,13 +28,13 @@ def is_ip(ip: str) -> bool:
 
 
 def is_user_port(port: int | str) -> bool:
-    """判断是否是用户可用的port，1024~65535
+    """判断是否是用户可用的端口，1024~65535
 
     Args:
-        port (int | str): _description_
+        port (int | str): 待判断的端口号
 
     Returns:
-        bool: _description_
+        bool: 是用户端口返回True，否则返回False
     """
     return str(port).isdigit() and 1024 <= int(port) <= 65535
 

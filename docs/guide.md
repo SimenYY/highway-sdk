@@ -26,13 +26,13 @@ Highway SDK 是一个用于高速公路机电设备通信的 Python 异步库，
 
 ### 核心组件
 
-| 组件 | 职责 | 基类 |
-|------|------|------|
-| Transport | 字节流传输、连接管理 | `Transport` |
-| Frame | 帧数据结构定义 | `BaseFrame` |
-| Codec | 帧 ↔ 数据标签转换 | `BaseCodec` |
-| Device | 设备操作接口 | `BaseDevice` |
-| Tags | 设备返回数据标准化 | `BaseTags` |
+| 组件      | 职责                 | 基类         |
+| --------- | -------------------- | ------------ |
+| Transport | 字节流传输、连接管理 | `Transport`  |
+| Frame     | 帧数据结构定义       | `BaseFrame`  |
+| Codec     | 帧 ↔ 数据标签转换    | `BaseCodec`  |
+| Device    | 设备操作接口         | `BaseDevice` |
+| Tags      | 设备返回数据标准化   | `BaseTags`   |
 
 ## 快速开始
 
@@ -48,7 +48,7 @@ async def main():
         # 获取亮度
         brightness = await device.get_brightness()
         print(f"亮度: {brightness}")
-        
+
         # 获取播放项
         play_item = await device.get_play_item()
         print(f"当前播放: {play_item}")
@@ -70,10 +70,10 @@ async def main():
         reconnect_interval=5.0,
         max_reconnect_attempts=3,
     )
-    
+
     await transport.connect()
     device = DianMingDevice(transport)
-    
+
     try:
         brightness = await device.get_brightness()
         print(f"亮度: {brightness}")
@@ -98,7 +98,7 @@ class What(IntEnum):
 
 class Frame(VMSFrame):
     """厂商帧定义。"""
-    
+
     def __bytes__(self) -> bytes:
         # 实现帧序列化
         return self.start + bytes([self.what]) + self.data + self.end
@@ -118,7 +118,7 @@ class BrightnessTags(BaseTags):
 
 class MyCodec(BaseCodec):
     """厂商编解码器。"""
-    
+
     @staticmethod
     def decode_brightness(data: bytes) -> BrightnessTags:
         return BrightnessTags(value=data[0], mode=data[1])
@@ -138,9 +138,9 @@ from .spec import Frame, What
 
 class MyDevice(BaseDevice):
     """厂商设备客户端。"""
-    
+
     codec = MyCodec
-    
+
     async def get_brightness(self) -> BaseTags:
         """获取亮度信息。"""
         frame = Frame(what=What.GET_BRIGHTNESS)
@@ -164,13 +164,13 @@ class Transport:
         reconnect_interval: float = 1.0,
         max_reconnect_attempts: int = 0,
     )
-    
+
     async def connect(self) -> None
     async def disconnect(self) -> None
     async def send(self, data: bytes) -> None
     async def receive(self, bufsize: int = 1024) -> bytes
     async def request(self, data: bytes, timeout: float = 3.0) -> bytes
-    
+
     @property
     def is_connected(self) -> bool
 ```
@@ -181,9 +181,9 @@ class Transport:
 class BaseDevice(ABC):
     codec: type[BaseCodec]
     transport: Transport
-    
+
     def __init__(self, transport: Transport)
-    
+
     @classmethod
     async def connect(
         cls,
@@ -193,7 +193,7 @@ class BaseDevice(ABC):
         transport_factory: Callable[[str, int], Transport] | None = None,
         **kwargs,
     ) -> "BaseDevice"
-    
+
     async def disconnect(self) -> None
     async def send(self, frame: BaseFrame) -> None
     async def request(self, frame: BaseFrame, timeout: float = 3.0) -> bytes
@@ -205,20 +205,103 @@ class BaseDevice(ABC):
 class BaseCodec:
     @classmethod
     def decode(cls, frame: BaseFrame) -> BaseTags
-    
+
     @classmethod
     def register(cls, what: Any) -> Callable
 ```
 
+## 厂商注册表
+
+SDK 内置厂商注册表，支持通过厂商标识符动态创建设备实例，适用于物联网平台等配置驱动场景。
+
+### 查看已注册厂商
+
+```python
+from highway_sdk import list_vendors
+
+for vendor in list_vendors():
+    print(f"{vendor.name}: {vendor.display_name} ({vendor.device_type})")
+```
+
+### 动态创建设备
+
+```python
+from highway_sdk import connect_device, create_device
+
+# 创建并连接设备
+device = await connect_device("dianming", "192.168.1.100", 9000)
+brightness = await device.get_brightness()
+
+# 仅创建实例（不连接）
+device = create_device("fenghai", "192.168.1.101", 9000)
+```
+
+### 注册自定义厂商
+
+```python
+from highway_sdk import VendorMetadata, register_vendor
+
+metadata = VendorMetadata(
+    name="my_vendor",
+    display_name="我的厂商",
+    device_type="vms",
+    description="自定义厂商协议实现",
+    device_class=MyDevice,
+    codec_class=MyCodec,
+)
+register_vendor(metadata)
+```
+
 ## 支持的厂商
 
-| 厂商 | 设备类 | 编解码器 |
-|------|--------|----------|
-| 电明 | `DianMingDevice` | `DianMingCodec` |
-| 丰海 | `FengHaiDevice` | `FengHaiCodec` |
-| 诺瓦 | `NovaDevice` | `NovaCodec` |
-| 三思 | `SanSiDevice` | `SanSiCodec` |
-| 显科 | `XianKeDevice` | `XianKeCodec` |
+| 厂商 | 标识符     | 设备类           | 编解码器        |
+| ---- | ---------- | ---------------- | --------------- |
+| 电明 | `dianming` | `DianMingDevice` | `DianMingCodec` |
+| 丰海 | `fenghai`  | `FengHaiDevice`  | `FengHaiCodec`  |
+| 诺瓦 | `nova`     | `NovaDevice`     | `NovaCodec`     |
+| 三思 | `sansi`    | `SanSiDevice`    | `SanSiCodec`    |
+| 显科 | `xianke`   | `XianKeDevice`   | `XianKeCodec`   |
+
+## 日志使用
+
+```python
+from highway_sdk import get_logger
+
+# 获取日志实例（开箱即用，默认输出到控制台）
+logger = get_logger("my_app")
+logger.info("应用启动")
+
+# 配置日志文件输出
+logger = get_logger(
+    "my_app",
+    level="DEBUG",
+    log_dir="./logs",
+    rotation="00:00",
+    retention="3 days",
+    compression="zip"
+)
+
+# LoggerConfig 数据类
+from highway_sdk import LoggerConfig
+
+config = LoggerConfig(
+    name="my_app",
+    level="INFO",
+    log_dir="./logs"
+)
+```
+
+### get_logger 参数
+
+| 参数        | 类型 | 默认值   | 说明                              |
+| ----------- | ---- | -------- | --------------------------------- |
+| name        | str  | -        | 日志名称                          |
+| level       | str  | "DEBUG"  | 日志级别                          |
+| log_dir     | str  | None     | 日志文件目录，None 表示不输出文件 |
+| serialize   | bool | False    | 是否使用 JSON 格式输出            |
+| rotation    | str  | "00:00"  | 日志文件轮转规则                  |
+| retention   | str  | "3 days" | 日志保留时间                      |
+| compression | str  | "zip"    | 日志压缩格式                      |
 
 ## 异常处理
 

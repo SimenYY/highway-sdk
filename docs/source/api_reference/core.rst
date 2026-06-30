@@ -1,7 +1,7 @@
 核心模块API
 ============
 
-Highway SDK的核心模块提供了SDK的基础功能，包括协议定义、连接器、日志配置和监控等。
+Highway SDK的核心模块提供了SDK的基础功能，包括传输层、编解码、设备抽象、帧定义和日志配置等。
 
 模块概览
 --------
@@ -14,103 +14,88 @@ Highway SDK的核心模块提供了SDK的基础功能，包括协议定义、连
 核心类和函数
 ------------
 
+Transport
+^^^^^^^^^
+
+.. autoclass:: highway_sdk.core.transport.Transport
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+BaseDevice
+^^^^^^^^^^
+
+.. autoclass:: highway_sdk.core.device.BaseDevice
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+BaseCodec
+^^^^^^^^^
+
+.. autoclass:: highway_sdk.core.codec.BaseCodec
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+BaseFrame
+^^^^^^^^^
+
+.. autoclass:: highway_sdk.core.frame.BaseFrame
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 BaseTags
 ^^^^^^^^
 
-.. autoclass:: highway_sdk.core.base.BaseTags
+.. autoclass:: highway_sdk.core.tags.BaseTags
    :members:
    :undoc-members:
    :show-inheritance:
 
-LogConfig
-^^^^^^^^^
+LoggerConfig
+^^^^^^^^^^^^
 
-.. autoclass:: highway_sdk.core.config.LogConfig
+.. autoclass:: highway_sdk.core.log.LoggerConfig
    :members:
    :undoc-members:
    :show-inheritance:
 
-TCPReconnectingConnector
-^^^^^^^^^^^^^^^^^^^^^^^^
+get_logger
+^^^^^^^^^^
 
-.. autoclass:: highway_sdk.core.connectors.TCPReconnectingConnector
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. autofunction:: highway_sdk.core.log.get_logger
 
-UDPConnector
-^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.connectors.UDPConnector
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-HighwaySDKException
-^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.exceptions.HighwaySDKException
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-LoguruConfig
-^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.log.LoguruConfig
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-MetricsMixin
-^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.metrics.MetricsMixin
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-start_prometheus_server
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. autofunction:: highway_sdk.core.metrics.start_prometheus_server
-
-DriverTCPClientProtocol
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.protocols.DriverTCPClientProtocol
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-MonitoredDriverTCPClientProtocol
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.protocols.MonitoredDriverTCPClientProtocol
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-ReqRespTCPClientProtocol
-^^^^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.protocols.ReqRespTCPClientProtocol
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-MonitoredReqRespTCPClientProtocol
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.protocols.MonitoredReqRespTCPClientProtocol
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Reader
+异常类
 ^^^^^^
 
-.. autoclass:: highway_sdk.core.reader.Reader
+.. autoclass:: highway_sdk.core.exceptions.HighwaySDKError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: highway_sdk.core.exceptions.ConnectionError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: highway_sdk.core.exceptions.ConnectionTimeoutError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: highway_sdk.core.exceptions.ConnectionLostError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: highway_sdk.core.exceptions.ResponseTimeoutError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: highway_sdk.core.exceptions.ProtocolError
    :members:
    :undoc-members:
    :show-inheritance:

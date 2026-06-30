@@ -3,6 +3,8 @@
 定义了设备通信帧的基本结构。
 """
 
+from abc import abstractmethod
+
 from pydantic import BaseModel, Field
 
 
@@ -20,6 +22,7 @@ class BaseFrame(BaseModel):
     data: bytes = Field(default=b"", description="数据域")
 
     @classmethod
+    @abstractmethod
     def from_bytes(cls, message: bytes) -> "BaseFrame":
         """从字节数据解析帧。
 
@@ -29,12 +32,11 @@ class BaseFrame(BaseModel):
         Returns:
             BaseFrame: 解析后的帧对象。
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def __bytes__(self) -> bytes:
         """将帧转换为字节数据。
 
         Returns:
             bytes: 帧的字节表示。
         """
-        raise NotImplementedError

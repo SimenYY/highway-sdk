@@ -116,6 +116,20 @@ async def main():
         await device.disconnect()
 ```
 
+### 厂商注册表（物联网平台集成）
+
+```python
+from highway_sdk import list_vendors, get_vendor, connect_device
+
+# 查看所有已注册厂商
+for vendor in list_vendors():
+    print(f"{vendor.name}: {vendor.display_name} ({vendor.device_type})")
+
+# 通过厂商名动态创建设备（适合配置驱动场景）
+device = await connect_device("dianming", "192.168.1.100", 9000)
+brightness = await device.get_brightness()
+```
+
 ## 核心架构
 
 ```
@@ -197,6 +211,26 @@ class MyDevice(BaseDevice):
         frame = Frame(what=What.GET_BRIGHTNESS)
         response = await self.request(frame)
         return self.codec.decode(Frame(what=What.GET_BRIGHTNESS, data=response))
+```
+
+## 日志使用
+
+```python
+from highway_sdk import get_logger
+
+# 获取日志实例（开箱即用，默认输出到控制台）
+logger = get_logger("my_app")
+logger.info("应用启动")
+
+# 配置日志文件输出
+logger = get_logger(
+    "my_app",
+    level="DEBUG",
+    log_dir="./logs",
+    rotation="00:00",
+    retention="3 days",
+    compression="zip"
+)
 ```
 
 ## 异常处理

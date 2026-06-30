@@ -14,7 +14,7 @@ from typing import Self
 from pydantic import Field, computed_field
 
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.vendors.vms._base import VMSFrame
+from highway_sdk.vendors.vms._base import VMSFrame, escape_bytes
 
 ENCODING = "gbk"
 
@@ -72,13 +72,13 @@ class Frame(VMSFrame):
     """
 
     dst_addr: bytes = Field(
-        default=b"\x30\x30",
+        default=b"01",
         min_length=2,
         max_length=2,
         description="目的地址",
     )
     src_addr: bytes = Field(
-        default=b"\x30\x31",
+        default=b"01",
         min_length=2,
         max_length=2,
         description="源地址",
@@ -176,12 +176,4 @@ class Frame(VMSFrame):
             0x02 -> 0x1B 0xE7
             0x03 -> 0x1B 0xE8
         """
-        if reverse:
-            payload = payload.replace(b"\x1b\xe7", b"\x02")
-            payload = payload.replace(b"\x1b\xe8", b"\x03")
-            payload = payload.replace(b"\x1b\x00", b"\x1b")
-        else:
-            payload = payload.replace(b"\x1b", b"\x1b\x00")
-            payload = payload.replace(b"\x02", b"\x1b\xe7")
-            payload = payload.replace(b"\x03", b"\x1b\xe8")
-        return payload
+        return escape_bytes(payload, reverse=reverse)

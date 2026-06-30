@@ -62,6 +62,7 @@ highway_sdk/
 │   │   ├── settings.py    # Configuration management
 │   │   └── constants.py   # Global constants
 │   ├── vendors/           # Vendor-specific VMS implementations
+│   │   ├── registry.py    # Vendor registry and factory
 │   │   └── vms/           # VMS devices
 │   │       ├── _base.py   # VMS base classes (VMSFrame)
 │   │       ├── dianming/  # DianMing (电明)
@@ -108,9 +109,19 @@ highway_sdk/
 
 **core/log.py** - Logging system
 
-- Loguru integration with custom handlers
-- Colorized console output
-- Log message prefixing
+- `get_logger(name, **kwargs)`: Zero-config loguru logger with console output
+- `LoggerConfig`: Dataclass for configuring log file output (log_dir, rotation, retention)
+- Backward-compatible `setup_logger()` and `LogConfig` for existing code
+- Intercept handler for capturing standard logging to loguru
+
+**vendors/registry.py** - Vendor registry and factory
+
+- `VendorMetadata`: Frozen dataclass for vendor info (name, display_name, device_type, device_class, codec_class)
+- `VendorRegistry`: Registry class managing vendor registration and device creation
+- `list_vendors()`: List all registered vendors
+- `get_vendor(name)`: Get vendor metadata
+- `create_device(vendor, host, port)`: Create device instance (unconnected)
+- `connect_device(vendor, host, port)`: Create and connect device
 
 #### Vendor Implementations (vendors/vms/)
 
@@ -166,7 +177,8 @@ Async: pytest-asyncio
 ### Critical Rules
 
 - **Async-first**: Always use async versions of libraries where available
-- **Codec registration**: Use `CodecClass._decoders[what] = func` after class definition
+- **Codec registration**: Use `@BaseCodec.register(what)` decorator on classmethod
 - **Frame serialization**: Each vendor's Frame class must implement `__bytes__()`
 - **Device inheritance**: Vendor devices inherit from `BaseDevice`, not `VMSDevice`
 - **No VMSCodec/VMSDevice**: These intermediate classes were removed; inherit directly from BaseCodec/BaseDevice
+- **Vendor metadata**: Each vendor module must export `metadata` (VendorMetadata instance) and auto-register in `vendors/__init__.py`

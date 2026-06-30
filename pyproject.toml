@@ -14,11 +14,9 @@ vcs = "git"
 python = "^3.11"
 loguru = "^0.7.2"
 pydantic = "^2.8.2"
-colorlog = "^6.9.0"
 filelock = "^3.18.0"
 pydantic-settings = "^2.11.0"
 platformdirs = "^4.5.1"
-ruff = "^0.15.4"
 
 [[tool.poetry.source]]
 name = "tsinghua"
@@ -54,36 +52,31 @@ line-length = 120
 indent-width = 4
 
 # 排除不需要检查的目录
-exclude = [
-    ".git",
-    ".venv",
-    "build",
-    "dist",
-]
+exclude = [".git", ".venv", "build", "dist"]
 
 # ================= Ruff Lint 配置 =================
 [tool.ruff.lint]
 # 规则选择
 select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # pyflakes
-    "I",    # isort (导入排序)
-    "B",    # flake8-bugbear (发现潜在漏洞)
-    "C90",  # mccabe (检查代码复杂度)
-    "N",    # pep8-naming (规范命名)
-    "UP",   # pyupgrade (升级新版语法)
-    "RUF",  # Ruff 专用规则
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (导入排序)
+    "B",   # flake8-bugbear (发现潜在漏洞)
+    "C90", # mccabe (检查代码复杂度)
+    "N",   # pep8-naming (规范命名)
+    "UP",  # pyupgrade (升级新版语法)
+    "RUF", # Ruff 专用规则
 ]
 
 # 忽略的规则
 ignore = [
-    "E501",  # 忽略行长度（由 formatter 处理）
-    "E203",  # 冒号前空格（与 formatter 兼容性）
-    "B008",  # 允许函数参数中定义对象（对 Pydantic 友好）
-    "RUF001",  # 字符串中包含全角标点符号
-    "RUF002",  # 文档字符串中包含全角标点符号
-    "RUF003",  # 注释中包含全角标点符号
+    "E501",   # 忽略行长度（由 formatter 处理）
+    "E203",   # 冒号前空格（与 formatter 兼容性）
+    "B008",   # 允许函数参数中定义对象（对 Pydantic 友好）
+    "RUF001", # 字符串中包含全角标点符号
+    "RUF002", # 文档字符串中包含全角标点符号
+    "RUF003", # 注释中包含全角标点符号
 ]
 
 [tool.ruff.lint.mccabe]

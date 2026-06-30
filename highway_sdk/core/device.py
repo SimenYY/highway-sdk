@@ -5,7 +5,7 @@
 
 from abc import ABC
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Self
 
 from .codec import BaseCodec
 from .frame import BaseFrame
@@ -44,7 +44,7 @@ class BaseDevice(ABC):
         *,
         transport_factory: Callable[[str, int], Transport] | None = None,
         **kwargs: Any,
-    ) -> "BaseDevice":
+    ) -> Self:
         """连接到设备。
 
         Args:

@@ -8,74 +8,53 @@ Highway SDK 采用模块化的架构设计，具有良好的扩展性和可维�
 
 Highway SDK 的整体架构分为以下几个层次：
 
-1. **核心层 (Core)** - 提供SDK的核心功能
+1. **核心层 (Core)** - 提供 SDK 的核心功能
 2. **厂商实现层 (Vendors)** - 提供各厂商设备的协议实现
-3. **平台集成层 (Platforms)** - 提供与外部平台的集成
-4. **消息Broker层 (Brokers)** - 提供消息的发布和订阅功能
-5. **工具层 (Utils)** - 提供通用的工具函数
+3. **工具层 (Utils)** - 提供通用的工具函数
 
 核心层 (Core)
 --------------
 
-核心层是SDK的基础，提供了SDK的核心功能，包括：
-
-.. image:: /_static/architecture_core.png
-   :alt: 核心层架构
+核心层是 SDK 的基础，提供了 SDK 的核心功能，包括：
 
 **核心模块**：
 
-1. **base** - 基础类和工具，包括BaseTags等
-2. **config** - 配置管理，包括LogConfig等
-3. **connectors** - 网络连接器，包括TCPReconnectingConnector和UDPConnector等
-4. **exceptions** - 异常定义，包括HighwaySDKException等
-5. **log** - 日志配置，包括LoguruConfig等
-6. **metrics** - Prometheus监控，包括MetricsMixin和start_prometheus_server等
-7. **protocols** - 通信协议，包括DriverTCPClientProtocol和ReqRespTCPClientProtocol等
-8. **reader** - 数据读取工具，包括Reader等
-9. **settings** - 系统设置，包括各种配置项
+1. **transport** - TCP 传输层，支持自动重连和请求-响应模式
+2. **codec** - 统一编解码器基类，支持装饰器注册机制
+3. **device** - 设备基类，提供统一的设备操作接口
+4. **frame** - 帧基类，定义帧数据结构和序列化接口
+5. **tags** - 数据标签基类，标准化设备返回数据
+6. **log** - 日志配置，提供开箱即用的 loguru 日志功能
+7. **exceptions** - 异常定义，包括连接、超时、协议等异常
+8. **reader** - 数据读取工具
+9. **settings** - 系统设置
+10. **constants** - 全局常量
 
 厂商实现层 (Vendors)
 ----------------------
 
 厂商实现层提供了各厂商设备的协议实现，采用模块化设计，便于扩展新的厂商支持。
 
-.. image:: /_static/architecture_vendors.png
-   :alt: 厂商实现层架构
-
 **设备类型**：
 
-- **VMS (可变信息标志)** - 提供VMS设备的协议实现
-- **VD (车检器)** - 提供VD设备的协议实现
+- **VMS (可变信息标志)** - 提供 VMS 设备的协议实现
 
 **厂商实现结构**：
 
 对于每个厂商的设备实现，包含以下文件：
 
-- **factory.py** - 帧工厂实现，用于创建设备通信的请求帧
-- **parser.py** - 解析器实现，用于解析设备返回的数据
-- **protocol.py** - 协议实现，用于处理设备的通信
 - **spec.py** - 协议规范定义，包括指令码、帧结构等
-- **media.py** - 媒体管理实现，用于处理设备的媒体文件
+- **codec.py** - 编解码器实现，处理帧的编码和解码
+- **device.py** - 设备客户端实现，提供设备操作接口
+- **__init__.py** - 导出厂商元数据 (VendorMetadata)
 
-平台集成层 (Platforms)
-------------------------
+**厂商注册表 (registry.py)**：
 
-平台集成层提供了与外部平台的集成，实现设备数据的上传和管理。
+提供厂商元数据定义、注册和发现机制，支持物联网平台动态加载设备协议：
 
-**主要平台**：
-
-- **Supaiot** - 苏派物联网平台集成
-
-消息Broker层 (Brokers)
-------------------------
-
-消息Broker层提供了消息的发布和订阅功能，支持多种消息协议。
-
-**支持的Broker**：
-
-- **MQTT** - MQTT消息Broker
-- **Kafka** - Kafka消息Broker
-- **Redis** - Redis消息Broker
+- **VendorMetadata** - 厂商元数据类（name, display_name, device_type, device_class, codec_class）
+- **VendorRegistry** - 注册表类，管理厂商注册和查询
+- **全局函数** - list_vendors(), get_vendor(), create_device(), connect_device(), register_vendor()
 
 工具层 (Utils)
 ----------------
@@ -93,26 +72,27 @@ Highway SDK 的整体架构分为以下几个层次：
 
 设备通信的数据流图如下：
 
-.. image:: /_static/dataflow.png
-   :alt: 数据流图
-
-1. **应用层** - 应用程序调用SDK的API
-2. **SDK核心层** - 处理API请求，创建连接器和协议实例
-3. **网络层** - 通过网络发送请求和接收响应
-4. **设备层** - 设备处理请求并返回响应
-5. **SDK核心层** - 解析设备响应，生成结构化数据
-6. **应用层** - 应用程序处理结构化数据
+1. **应用层** - 应用程序调用 SDK 的 API
+2. **设备层** - Device 类接收请求，创建帧
+3. **编解码层** - Codec 类处理帧的编码
+4. **传输层** - Transport 类发送请求和接收响应
+5. **网络层** - 通过网络发送请求和接收响应
+6. **设备层** - 设备处理请求并返回响应
+7. **传输层** - Transport 类接收响应
+8. **编解码层** - Codec 类解析响应
+9. **应用层** - 应用程序处理结构化数据
 
 扩展设计
 ----------
 
-SDK采用了良好的扩展设计，便于扩展新的厂商支持和功能。
+SDK 采用了良好的扩展设计，便于扩展新的厂商支持和功能。
 
 **扩展厂商实现**：
 
 1. 在 `highway_sdk/vendors/<device_type>/` 目录下创建新的厂商目录
-2. 实现必要的文件：factory.py, parser.py, protocol.py, spec.py, media.py
-3. 在 `highway_sdk/vendors/<device_type>/__init__.py` 中导出新的厂商实现
+2. 实现必要的文件：spec.py, codec.py, device.py
+3. 在 `__init__.py` 中定义 `metadata = VendorMetadata(...)` 并导出
+4. 在 `highway_sdk/vendors/__init__.py` 中导入并注册到全局注册表
 
 **扩展核心功能**：
 
@@ -120,33 +100,19 @@ SDK采用了良好的扩展设计，便于扩展新的厂商支持和功能。
 2. 实现新的功能
 3. 在 `highway_sdk/core/__init__.py` 中导出新的功能
 
-**扩展平台集成**：
-
-1. 在 `highway_sdk/platforms/` 目录下创建新的平台目录
-2. 实现平台集成的相关功能
-3. 在 `highway_sdk/platforms/__init__.py` 中导出新的平台集成
-
-**扩展消息Broker**：
-
-1. 在 `highway_sdk/brokers/` 目录下创建新的Broker文件
-2. 实现Broker的相关功能
-3. 在 `highway_sdk/brokers/__init__.py` 中导出新的Broker
-
 设计原则
 ----------
 
-1. **模块化设计** - 采用模块化架构，便于扩展和维护
-2. **统一接口** - 提供一致的API接口，屏蔽不同厂商协议的差异
-3. **类型安全** - 提供完整的类型提示，提升开发体验
-4. **易于扩展** - 采用面向对象的设计，便于扩展新的厂商支持
-5. **可测试性** - 设计易于测试的代码结构，便于编写单元测试
-6. **高性能** - 采用异步编程，提高系统的性能和并发能力
-7. **可监控** - 集成Prometheus监控，便于系统的监控和调试
-8. **良好的文档** - 提供详细的文档，便于用户使用和扩展
+1. **异步优先** - 采用 asyncio 异步编程，提高系统的性能和并发能力
+2. **协议抽象** - 每个厂商协议实现为独立模块，共享统一接口
+3. **模块化设计** - 清晰分离核心基础设施和厂商实现
+4. **统一接口** - 提供一致的 API 接口，屏蔽不同厂商协议的差异
+5. **类型安全** - 提供完整的类型提示，提升开发体验
+6. **自动恢复** - TCP 重连支持指数退避策略
+7. **开箱即用** - 日志模块提供零配置默认行为
 
 下一步
 ------
 
-- 查看 `API 参考 <api_reference/index>`_ 了解详细的API文档
-- 探索 `使用示例 <usage_examples/index>`_ 学习更多使用场景
-- 了解 `厂商实现 <vendor_implementations/index>`_ 支持的设备
+- 查看 `API 参考 <api_reference/index>`_ 了解详细的 API 文档
+- 探索 `厂商实现 <vendor_implementations/index>`_ 支持的设备
