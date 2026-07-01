@@ -71,12 +71,6 @@ VD设备API规划
     import asyncio
     from highway_sdk.vendors.vd.vendor1.protocol import VmVendor1Protocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
-    from highway_sdk.core.log import LoguruConfig
-
-    # 配置日志
-    LoguruConfig.intercept_logging(["*"])
-    log_config = LoguruConfig(name="vd-vendor1", level="DEBUG")
-    log_config.set_console()
 
     # 自定义VD协议类
     class MyVDProtocol(VmVendor1Protocol):

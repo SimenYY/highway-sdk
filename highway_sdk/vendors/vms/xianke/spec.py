@@ -1,5 +1,4 @@
 from enum import Enum
-from functools import lru_cache
 from typing import Self
 
 from pydantic import Field, computed_field
@@ -14,7 +13,7 @@ class ResultCode(Enum):
     """显科返回码"""
 
     SUCCESS = b"\x01"
-    FAILLED = b"\x00"
+    FAILED = b"\x00"
 
 
 class What(Enum):
@@ -27,12 +26,6 @@ class What(Enum):
     GET_PLAY_LIST_NAME = b"23"  # 获取当前列表名称
     GET_PLAY_ITEM = b"24"  # 获取当前内容
     GET_BRIGHTNESS_AND_MODE = b"05"  # 获取当前亮度
-
-
-class Esc(Enum):
-    """显科转义字符"""
-
-    LF = "\\N"
 
 
 class Frame(VMSFrame):
@@ -80,7 +73,6 @@ class Frame(VMSFrame):
         return frame
 
     @classmethod
-    @lru_cache
     def calc_crc(cls, payload: bytes) -> bytes:
         """CRC校验计算"""
         return crc16_ccitt(payload)

@@ -264,44 +264,31 @@ register_vendor(metadata)
 
 ## 日志使用
 
+Highway SDK 使用 Python 标准 `logging` 模块作为日志接口。库只提供日志接口，不配置日志输出；应用负责配置日志（如输出到控制台、文件等）。
+
 ```python
+import logging
+
+# 配置应用日志（应用负责）
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+)
+
+# 从 SDK 获取 logger（仅返回 logging.Logger 实例）
 from highway_sdk import get_logger
 
-# 获取日志实例（开箱即用，默认输出到控制台）
-logger = get_logger("my_app")
+logger = get_logger("highway_sdk.transport")
 logger.info("应用启动")
-
-# 配置日志文件输出
-logger = get_logger(
-    "my_app",
-    level="DEBUG",
-    log_dir="./logs",
-    rotation="00:00",
-    retention="3 days",
-    compression="zip"
-)
-
-# LoggerConfig 数据类
-from highway_sdk import LoggerConfig
-
-config = LoggerConfig(
-    name="my_app",
-    level="INFO",
-    log_dir="./logs"
-)
 ```
+
+应用可自由选择日志后端：标准 `logging`、`loguru`、`structlog` 等，通过 `logging` 的 handler/adapter 机制或拦截器对接即可。
 
 ### get_logger 参数
 
-| 参数        | 类型 | 默认值   | 说明                              |
-| ----------- | ---- | -------- | --------------------------------- |
-| name        | str  | -        | 日志名称                          |
-| level       | str  | "DEBUG"  | 日志级别                          |
-| log_dir     | str  | None     | 日志文件目录，None 表示不输出文件 |
-| serialize   | bool | False    | 是否使用 JSON 格式输出            |
-| rotation    | str  | "00:00"  | 日志文件轮转规则                  |
-| retention   | str  | "3 days" | 日志保留时间                      |
-| compression | str  | "zip"    | 日志压缩格式                      |
+| 参数 | 类型 | 默认值 | 说明                       |
+| ---- | ---- | ------ | -------------------------- |
+| name | str  | -      | 日志名称，用于标识日志来源 |
 
 ## 异常处理
 

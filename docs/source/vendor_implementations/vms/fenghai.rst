@@ -46,12 +46,6 @@
     import asyncio
     from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
-    from highway_sdk.core.log import LoguruConfig
-
-    # 配置日志
-    LoguruConfig.intercept_logging(["*"])
-    log_config = LoguruConfig(name="fenghai-vms", level="DEBUG")
-    log_config.set_console()
 
     # 自定义丰海协议类
     class MyFenghaiProtocol(VmsFenghaiProtocol):
@@ -105,12 +99,6 @@
     import asyncio
     from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
-    from highway_sdk.core.log import LoguruConfig
-
-    # 配置日志
-    LoguruConfig.intercept_logging(["*"])
-    log_config = LoguruConfig(name="fenghai-vms", level="DEBUG")
-    log_config.set_console()
 
     # 自定义丰海协议类
     class MyFenghaiProtocol(VmsFenghaiProtocol):

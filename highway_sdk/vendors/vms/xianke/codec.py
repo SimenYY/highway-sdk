@@ -2,7 +2,6 @@
 
 import configparser
 import re
-from functools import lru_cache
 
 from highway_sdk.core.codec import BaseCodec
 from highway_sdk.core.exceptions import DeviceOperationError
@@ -113,7 +112,6 @@ class XianKeCodec(BaseCodec):
         return tags
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_PLAY_ITEM)
     def decode_get_play_item(cls, data: bytes) -> ItemTags:
         """解码获取播放项响应。"""
@@ -126,7 +124,6 @@ class XianKeCodec(BaseCodec):
         return tags
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_PLAY_LIST_NAME)
     def decode_get_play_list_name(cls, data: bytes) -> OperationTags:
         """解码获取播放列表响应。"""
@@ -136,7 +133,6 @@ class XianKeCodec(BaseCodec):
         return OperationTags(is_ok=True)
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_BRIGHTNESS_AND_MODE)
     def decode_get_brightness(cls, data: bytes) -> BrightnessTags:
         """解码获取亮度响应。"""
@@ -150,7 +146,6 @@ class XianKeCodec(BaseCodec):
         return tags
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.UPLOAD_FILE)
     def decode_upload_file(cls, data: bytes) -> OperationTags:
         """解码上传文件响应。"""
@@ -159,7 +154,6 @@ class XianKeCodec(BaseCodec):
         return OperationTags(is_ok=True)
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.DOWNLOAD_FILE)
     def decode_download_file(cls, data: bytes) -> PlayTags:
         """解码下载文件响应。"""
@@ -169,7 +163,6 @@ class XianKeCodec(BaseCodec):
         return cls._parse_play_list(data[1:].decode("gbk", errors="ignore"))
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.SELECT_PLAY_LIST)
     def decode_play_list(cls, data: bytes) -> OperationTags:
         """解码播放列表响应。"""

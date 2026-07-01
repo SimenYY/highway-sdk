@@ -1,8 +1,6 @@
 """电明厂商编解码器模块。"""
 
-import configparser
 import re
-from functools import lru_cache
 
 from highway_sdk.core.codec import BaseCodec
 from highway_sdk.core.exceptions import DeviceOperationError, ProtocolParsingError
@@ -34,6 +32,14 @@ class DianMingCodec(BaseCodec):
         (re.compile(r"\\P(\d{3})"), "png", None, None),
     )
     _TEXT_PATTERN = re.compile(r"\\W(.+)")
+
+    @staticmethod
+    def _to_int(value: bytes | str, field: str) -> int:
+        """将字节或字符串转为 int，失败抛 ProtocolParsingError。"""
+        try:
+            return int(value)
+        except (ValueError, TypeError) as e:
+            raise ProtocolParsingError(f"Invalid {field}: {value!r}") from e
 
     @classmethod
     def _is_ok(cls, data: bytes) -> bool:
@@ -73,11 +79,11 @@ class DianMingCodec(BaseCodec):
         """解析当前播放项。"""
         tags = ItemTags(
             index=data[0:3].decode("ascii", errors="ignore"),
-            duration=int(data[3:8].decode("ascii")),
-            screen_in_mode=int(data[8:10].decode("ascii")),
-            play_effect=int(data[10:12].decode("ascii")),
-            screen_out_mode=int(data[12:14].decode("ascii")),
-            play_speed=int(data[14:16].decode("ascii")),
+            duration=cls._to_int(data[3:8].decode("ascii"), "duration"),
+            screen_in_mode=cls._to_int(data[8:10].decode("ascii"), "screen_in_mode"),
+            play_effect=cls._to_int(data[10:12].decode("ascii"), "play_effect"),
+            screen_out_mode=cls._to_int(data[12:14].decode("ascii"), "screen_out_mode"),
+            play_speed=cls._to_int(data[14:16].decode("ascii"), "play_speed"),
         )
         tags.media = data[16:].decode(ENCODING, errors="ignore")
         for media in cls._split_media(tags.media):
@@ -88,13 +94,15 @@ class DianMingCodec(BaseCodec):
     def _parse_play_item(cls, play_item: str) -> ItemTags:
         """解析播放项字符串。"""
         fields = play_item.split(",")
+        if len(fields) < 6:
+            raise ProtocolParsingError(f"Invalid play item format: {play_item!r}")
         tags = ItemTags(
             media=fields[5],
-            duration=int(fields[0]),
-            screen_in_mode=int(fields[1]),
-            play_effect=int(fields[2]),
-            screen_out_mode=int(fields[3]),
-            play_speed=int(fields[4]),
+            duration=cls._to_int(fields[0], "duration"),
+            screen_in_mode=cls._to_int(fields[1], "screen_in_mode"),
+            play_effect=cls._to_int(fields[2], "play_effect"),
+            screen_out_mode=cls._to_int(fields[3], "screen_out_mode"),
+            play_speed=cls._to_int(fields[4], "play_speed"),
         )
         for media in cls._split_media(tags.media):
             tags.media_list.append(cls._parse_media(media))
@@ -102,58 +110,81 @@ class DianMingCodec(BaseCodec):
 
     @classmethod
     def _parse_play_list(cls, play_list: str) -> PlayTags:
-        """解析播放列表。"""
+        """解析播放列表。
+
+        格式: ITEM_NO=003\\r\\nITEM000=50,0,0,0,0,\\C000000\\Fs3232...
+        """
         lines = play_list.splitlines()
-        fixed_play = "\r\n".join(line.replace("\n", "\\n") for line in lines)
 
-        parser = configparser.ConfigParser()
-        parser.read_string(fixed_play)
+        item_lines = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("ITEM_NO="):
+                continue
+            if line.startswith("ITEM"):
+                item_lines.append(line)
 
-        section = "PLAYLIST"
+        # 解析每个 ITEM
         window = WindowTags()
-        for i in range(int(parser.get(section, "item_no"))):
-            window.items.append(cls._parse_play_item(parser.get(section, f"item{i:03d}")))
+        for line in item_lines:
+            eq_pos = line.find("=")
+            if eq_pos < 0:
+                continue
+            play_item = line[eq_pos + 1 :]
+            window.items.append(cls._parse_play_item(play_item))
 
         return PlayTags(windows=[window])
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_BRIGHTNESS_AND_MODE_RESP)
     def decode_get_brightness(cls, data: bytes) -> BrightnessTags:
         """解码亮度和模式响应。
 
-        数据域（ASCII）：[0:2]目的 [2:4]源 [4:6]指令 [6:8]红 [8:10]绿 [10:12]蓝 [12:14]当前亮度
+        数据域（ASCII）：[0:2]红 [2:4]绿 [4:6]蓝 [6]模式指示 [7]当前亮度值
+
+        实际设备返回 8 字节数据，如 "FFFFFFI5" (0x46*6 + 0x49 + 0x35)
+        - RGB 均为 "FF" 表示自动模式
+        - data[6] 为模式指示字节 (0x49)
+        - data[7] 为当前亮度值（原始字节，0-255）
         """
-        max_brightness = 0x31  # 49
-        red = data[6:8].decode("ascii")
+        red = data[0:2].decode("ascii", errors="ignore")
         if red == "FF":
             mode = BrightnessMode.AUTO
-            current = int(data[12:14].decode("ascii"), 16)
         else:
             mode = BrightnessMode.MANUAL
-            current = int(red, 16)
-        return BrightnessTags(mode=mode, brightness=round(current / max_brightness * 100))
+
+        # data[7] 为原始字节值，截断到 BrightnessTags.brightness 范围 0-100
+        brightness = min(data[7], 100)
+
+        return BrightnessTags(mode=mode, brightness=brightness)
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_PLAY_ITEM_RESP)
     def decode_get_play_item(cls, data: bytes) -> ItemTags:
         """解码获取播放项响应。"""
         return cls._parse_now_play_item(data)
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_PLAY_LIST_RESP)
     def decode_get_play_list(cls, data: bytes) -> PlayTags:
-        """解码获取播放列表响应。"""
-        pos = data.find(b"+")
+        """解码获取播放列表响应。
+
+        数据域格式: +00000000play00.lst[PLAYLIST]\\r\\nITEM_NO=003\\r\\n...
+        或: +00000000play00.lst\\r\\nITEM_NO=003\\r\\n...
+        """
+        # 查找 ITEM_NO= 标记
+        marker = b"ITEM_NO="
+        pos = data.find(marker)
         if pos < 0:
-            raise ProtocolParsingError("Invalid play list data format")
-        content = data[pos + 19 :].decode(ENCODING, errors="ignore")
+            raise ProtocolParsingError("Invalid play list data format: missing ITEM_NO marker")
+
+        # 从 ITEM_NO= 开始提取内容
+        content = data[pos:].decode(ENCODING, errors="ignore")
         return cls._parse_play_list(content)
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.SET_PLAY_LIST_AND_PLAY_RESP)
     def decode_set_play_list(cls, data: bytes) -> OperationTags:
         """解码设置播放列表响应。"""
@@ -162,7 +193,6 @@ class DianMingCodec(BaseCodec):
         return OperationTags(is_ok=True)
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.SET_BRIGHTNESS_OR_MODE_RESP)
     def decode_set_brightness(cls, data: bytes) -> OperationTags:
         """解码设置亮度或模式响应。"""

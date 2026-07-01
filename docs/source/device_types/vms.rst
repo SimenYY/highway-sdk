@@ -62,12 +62,6 @@ VMS设备API使用
     import asyncio
     from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
-    from highway_sdk.core.log import LoguruConfig
-
-    # 配置日志
-    LoguruConfig.intercept_logging(["*"])
-    log_config = LoguruConfig(name="fenghai-vms", level="DEBUG")
-    log_config.set_console()
 
     # 使用厂商特定协议
     class MyFenghaiProtocol(VmsFenghaiProtocol):

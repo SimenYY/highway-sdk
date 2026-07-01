@@ -2,14 +2,12 @@
 
 import configparser
 import re
-from functools import lru_cache
 from pathlib import Path
 
 from highway_sdk.core.codec import BaseCodec
 from highway_sdk.core.exceptions import DeviceOperationError
-from highway_sdk.core.tags import BaseTags
 
-from ..tags import BrightnessTags, ItemTags, PlayTags, WindowTags
+from ..tags import BrightnessTags, ItemTags, OperationTags, PlayTags, WindowTags
 from .spec import ENCODING, ResultCode, What
 
 
@@ -74,7 +72,6 @@ class FengHaiCodec(BaseCodec):
         return tags
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_BRIGHTNESS_AND_MODE)
     def decode_get_brightness(cls, data: bytes) -> BrightnessTags:
         """解码亮度和模式响应。"""
@@ -88,7 +85,6 @@ class FengHaiCodec(BaseCodec):
         return tags
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_PLAY_ITEM)
     def decode_get_play_item(cls, data: bytes) -> ItemTags:
         """解码获取播放项响应。"""
@@ -109,20 +105,29 @@ class FengHaiCodec(BaseCodec):
         return tags
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.DOWNLOAD_FILE)
     def decode_download_file(cls, data: bytes) -> PlayTags:
         """解码下载文件响应。"""
         if not cls._is_ok(data):
             raise DeviceOperationError("Failed to get play list")
 
-        return cls._parse_play_list(data[(data.find(b"+") + 4 + 1) :].decode(ENCODING))
+        sep = data.find(b"+")
+        if sep < 0:
+            raise DeviceOperationError("Invalid download response: missing '+' separator")
+        return cls._parse_play_list(data[sep + 5 :].decode(ENCODING))
 
     @classmethod
-    @lru_cache
+    @BaseCodec.register(What.SET_BRIGHTNESS)
+    def decode_set_brightness(cls, data: bytes) -> OperationTags:
+        """解码设置亮度响应。"""
+        if not cls._is_ok(data):
+            raise DeviceOperationError("Failed to set brightness")
+        return OperationTags(is_ok=True)
+
+    @classmethod
     @BaseCodec.register(What.UPLOAD_FILE)
-    def decode_upload_file(cls, data: bytes) -> BaseTags:
+    def decode_upload_file(cls, data: bytes) -> OperationTags:
         """解码上传文件响应。"""
         if not cls._is_ok(data):
             raise DeviceOperationError("Failed to upload file")
-        return BaseTags()
+        return OperationTags(is_ok=True)

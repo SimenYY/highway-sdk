@@ -30,6 +30,19 @@ class BaseCodec:
 
     _decoders: ClassVar[dict[Any, Callable[..., BaseTags]]] = {}
 
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """子类创建时扫描带 _decoder_what 标记的方法，注册到子类独立的 _decoders。"""
+        super().__init_subclass__(**kwargs)
+        cls._decoders = {}
+        for value in cls.__dict__.values():
+            # 解包 classmethod → 获取 __func__（可调用）
+            method = getattr(value, "__func__", value)
+            # 解包 lru_cache → 查找 _decoder_what 标记
+            raw = getattr(method, "__wrapped__", method)
+            what = getattr(raw, "_decoder_what", None)
+            if what is not None:
+                cls._decoders[what] = method
+
     @classmethod
     def decode(cls, frame: BaseFrame) -> BaseTags:
         """解码：帧 → 数据标签。
@@ -50,9 +63,11 @@ class BaseCodec:
         except KeyError as e:
             raise ValueError(f"Unsupported command: {e}") from e
 
-    @classmethod
-    def register(cls, what: Any):
+    @staticmethod
+    def register(what: Any):
         """注册解码函数的装饰器。
+
+        在函数上标记 _decoder_what，由 __init_subclass__ 统一注册到子类独立的 _decoders。
 
         Args:
             what: 指令标识。
@@ -62,10 +77,7 @@ class BaseCodec:
         """
 
         def decorator(func: Callable[..., BaseTags]) -> Callable[..., BaseTags]:
-            # 确保注册到调用类自身的 _decoders，而非父类
-            if "_decoders" not in cls.__dict__:
-                cls._decoders = dict(cls._decoders)
-            cls._decoders[what] = func
+            func._decoder_what = what  # type: ignore[attr-defined]
             return func
 
         return decorator

@@ -1,5 +1,4 @@
 from enum import Enum
-from functools import lru_cache
 from typing import Self
 
 from pydantic import Field, computed_field
@@ -14,7 +13,7 @@ class ResultCode(Enum):
     """Nova返回码"""
 
     SUCCESS = b"\x01"
-    FAILLED = b"\x00"
+    FAILED = b"\x00"
 
 
 class What(Enum):
@@ -100,17 +99,11 @@ class Frame(VMSFrame):
 
     @classmethod
     def from_bytes(cls, message: bytes) -> Self:
-        start, address, what, data, end, crc = (
-            message[:1],
-            message[1:3],
-            message[3:4],
-            message[4:-3],
-            message[-3:-2],
-            message[-2:],
-        )
-        start, end, crc = message[:1], message[-3:-2], message[-2:]
+        start = message[:1]
+        end = message[-3:-2]
+        crc = message[-2:]
         unescaped = cls.escape(message[1:-3], reverse=True)
-        address, what, data = unescaped[1:3], unescaped[3:4], unescaped[4:]
+        address, what, data = unescaped[:2], unescaped[2:3], unescaped[3:]
 
         frame = cls(start=start, address=address, what=What(what), data=data, end=end)
         if frame.crc != crc:
@@ -119,7 +112,6 @@ class Frame(VMSFrame):
         return frame
 
     @classmethod
-    @lru_cache
     def calc_crc(cls, payload: bytes) -> bytes:
         """CRC校验计算"""
         crc_table = [

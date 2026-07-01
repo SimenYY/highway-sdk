@@ -2,11 +2,11 @@
 
 import configparser
 import re
-from functools import lru_cache
 
 from highway_sdk.core.codec import BaseCodec
+from highway_sdk.core.exceptions import DeviceOperationError
 
-from ..tags import BrightnessTags, ItemTags, PlayTags, WindowTags
+from ..tags import BrightnessTags, ItemTags, OperationTags, PlayTags, WindowTags
 from .spec import ENCODING, ResultCode, What
 
 
@@ -109,7 +109,7 @@ class SanSiCodec(BaseCodec):
         max_brightness = 31
         tags = BrightnessTags()
         tags.mode = int(chr(data[1]))
-        tags.brightness = round(int(data[2:3].decode("ascii")) / max_brightness * 100)
+        tags.brightness = round(int(data[2:4].decode("ascii", errors="ignore")) / max_brightness * 100)
         return tags
 
     @classmethod
@@ -152,7 +152,6 @@ class SanSiCodec(BaseCodec):
         return tags
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_PLAY_ITEM)
     def decode_get_play_item(cls, data: bytes) -> ItemTags:
         """解码获取播放项响应。"""
@@ -164,22 +163,29 @@ class SanSiCodec(BaseCodec):
         return tags
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.GET_BRIGHTNESS_AND_MODE)
     def decode_get_brightness(cls, data: bytes) -> BrightnessTags:
         """解码获取亮度和模式响应。"""
         return cls._parse_brightness_and_mode(data)
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.UPLOAD_FILE)
-    def decode_upload_file(cls, data: bytes) -> PlayTags:
-        """解码上传播放表响应。"""
-        return cls._parse_play_list(data.decode(ENCODING))
+    def decode_upload_file(cls, data: bytes) -> OperationTags:
+        """解码上传文件响应。"""
+        if not cls._is_ok(data):
+            raise DeviceOperationError("Failed to upload file")
+        return OperationTags(is_ok=True)
 
     @classmethod
-    @lru_cache
     @BaseCodec.register(What.DOWNLOAD_FILE)
     def decode_download_file(cls, data: bytes) -> PlayTags:
         """解码下载播放表响应。"""
         return cls._parse_play_list(data.decode(ENCODING))
+
+    @classmethod
+    @BaseCodec.register(What.SET_BRIGHTNESS)
+    def decode_set_brightness(cls, data: bytes) -> OperationTags:
+        """解码设置亮度响应。"""
+        if not cls._is_ok(data):
+            raise DeviceOperationError("Failed to set brightness")
+        return OperationTags(is_ok=True)

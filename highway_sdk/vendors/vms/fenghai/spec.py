@@ -8,7 +8,6 @@
 """
 
 from enum import Enum
-from functools import lru_cache
 from typing import Self
 
 from pydantic import Field, ValidationError as PydanticValidationError, computed_field
@@ -43,7 +42,7 @@ class ResultCode(Enum):
     """
 
     SUCCESS = b"0"
-    FAILLED = b"1"
+    FAILED = b"1"
 
 
 class Frame(VMSFrame):
@@ -112,7 +111,6 @@ class Frame(VMSFrame):
         return frame
 
     @classmethod
-    @lru_cache
     def calc_crc(cls, payload: bytes):
         """计算CRC校验码。
 

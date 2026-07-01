@@ -48,7 +48,7 @@ class ItemTags(BaseTags):
     index: str | None = Field(default=None, description="播放项索引")
     media: str | None = Field(default=None, description="原始媒体")
     media_list: list[MediaTags] = Field(default_factory=list, description="媒体列表")
-    duration: int | None = Field(default=None, description="停留时间，单位秒")
+    duration: int | None = Field(default=None, description="停留时间，单位十分之一秒")
     screen_in_mode: int | None = Field(default=None, description="入屏方式")
     screen_out_mode: int | None = Field(default=None, description="出屏方式")
     play_speed: int | None = Field(default=None, description="播放速度")
@@ -76,3 +76,10 @@ class BrightnessTags(BaseTags):
 
     brightness: int | None = Field(default=None, ge=0, le=100, description="亮度百分比")
     mode: BrightnessMode | None = Field(default=None, description="调节模式")
+
+
+class ScreenTags(BaseTags):
+    """屏幕尺寸标签。"""
+
+    width: int | None = Field(default=None, description="屏幕宽度")
+    height: int | None = Field(default=None, description="屏幕高度")

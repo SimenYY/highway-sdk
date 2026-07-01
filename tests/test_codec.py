@@ -28,13 +28,10 @@ class TestCodec(BaseCodec):
     """测试用编解码器。"""
 
     @classmethod
+    @BaseCodec.register(b"test_cmd")
     def decode_test(cls, data: bytes) -> ItemTags:
         """解码测试命令。"""
         return ItemTags(text=data.decode("utf-8"))
-
-
-# 类定义后手动注册（类体内无法引用自身名称）
-TestCodec._decoders[b"test_cmd"] = TestCodec.decode_test.__func__
 
 
 class TestBaseCodec:
@@ -64,16 +61,14 @@ class TestBaseCodec:
 
         class MultiCodec(BaseCodec):
             @classmethod
+            @BaseCodec.register(b"cmd1")
             def decode_cmd1(cls, data: bytes) -> ItemTags:
                 return ItemTags(text="cmd1")
 
             @classmethod
+            @BaseCodec.register(b"cmd2")
             def decode_cmd2(cls, data: bytes) -> ItemTags:
                 return ItemTags(text="cmd2")
-
-        # 用装饰器注册
-        MultiCodec.register(b"cmd1")(MultiCodec.decode_cmd1.__func__)
-        MultiCodec.register(b"cmd2")(MultiCodec.decode_cmd2.__func__)
 
         assert b"cmd1" in MultiCodec._decoders
         assert b"cmd2" in MultiCodec._decoders

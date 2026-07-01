@@ -4,6 +4,7 @@
 """
 
 import asyncio
+import logging
 import random
 
 from .exceptions import (
@@ -12,9 +13,8 @@ from .exceptions import (
     ConnectionTimeoutError,
     ResponseTimeoutError,
 )
-from .log import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Transport:
@@ -58,8 +58,9 @@ class Transport:
         self._reconnect_count = 0
         self._reconnect_task: asyncio.Task | None = None
 
-        # ponytail: 直接用 bind 添加前缀，避免额外的 adapter 层
-        self.log = logger.bind(prefix=f"[{host}:{port}]")
+        # 使用标准 logging，通过 extra 传递设备信息
+        self.logger = logger
+        self._log_prefix = f"[{host}:{port}]"
 
     @property
     def is_connected(self) -> bool:
@@ -80,7 +81,7 @@ class Transport:
             )
             self._connected = True
             self._reconnect_count = 0
-            self.log.info("Connected")
+            self.logger.info(f"{self._log_prefix} Connected")
         except TimeoutError:
             raise ConnectionTimeoutError(f"Connection timeout after {self.timeout}s") from None
         except OSError as e:
@@ -102,7 +103,7 @@ class Transport:
         self._reader = None
         self._writer = None
         self._connected = False
-        self.log.info("Disconnected")
+        self.logger.info(f"{self._log_prefix} Disconnected")
 
     async def send(self, data: bytes) -> None:
         """发送数据。
@@ -122,7 +123,7 @@ class Transport:
         assert self._writer is not None
         self._writer.write(data)
         await self._writer.drain()
-        self.log.debug(f"TXD >> {data.hex(' ')}")
+        self.logger.debug(f"{self._log_prefix} TXD >> {data.hex(' ')}")
 
     async def receive(self, bufsize: int = 1024) -> bytes:
         """接收数据。
@@ -147,7 +148,7 @@ class Transport:
         if not data:
             raise ConnectionLostError("Connection closed by peer")
 
-        self.log.debug(f"RXD << {data.hex(' ')}")
+        self.logger.debug(f"{self._log_prefix} RXD << {data.hex(' ')}")
         return data
 
     async def request(self, data: bytes, timeout: float = 3.0) -> bytes:
@@ -176,11 +177,11 @@ class Transport:
 
         self._writer.write(data)
         await self._writer.drain()
-        self.log.debug(f"TXD >> {data.hex(' ')}")
+        self.logger.debug(f"{self._log_prefix} TXD >> {data.hex(' ')}")
 
         try:
             response = await asyncio.wait_for(self._reader.read(1024), timeout)
-            self.log.debug(f"RXD << {response.hex(' ')}")
+            self.logger.debug(f"{self._log_prefix} RXD << {response.hex(' ')}")
             return response
         except TimeoutError:
             raise ResponseTimeoutError(f"Response timeout after {timeout}s") from None
@@ -192,14 +193,16 @@ class Transport:
         while self.auto_reconnect:
             try:
                 await self.connect()
-                self.log.info("Reconnected successfully")
+                self.logger.info(f"{self._log_prefix} Reconnected successfully")
                 return
             except Exception as e:
                 self._reconnect_count += 1
-                self.log.error(f"Reconnect failed: {e}")
+                self.logger.error(f"{self._log_prefix} Reconnect failed: {e}")
 
                 if self.max_reconnect_attempts > 0 and self._reconnect_count >= self.max_reconnect_attempts:
-                    self.log.error(f"Max reconnect attempts ({self.max_reconnect_attempts}) reached")
+                    self.logger.error(
+                        f"{self._log_prefix} Max reconnect attempts ({self.max_reconnect_attempts}) reached"
+                    )
                     self.auto_reconnect = False
                     return
 
@@ -207,7 +210,9 @@ class Transport:
                 if self.reconnect_interval > 0:
                     interval += random.uniform(-0.1 * interval, 0.1 * interval)
 
-                self.log.info(f"Reconnecting in {interval:.2f}s (attempt {self._reconnect_count})")
+                self.logger.info(
+                    f"{self._log_prefix} Reconnecting in {interval:.2f}s (attempt {self._reconnect_count})"
+                )
                 await asyncio.sleep(interval)
 
     async def _wait_for_reconnect(self) -> None:
@@ -218,7 +223,7 @@ class Transport:
         try:
             await asyncio.wait_for(self._reconnect_task, timeout=self.timeout * 3)
         except TimeoutError:
-            self.log.error("Reconnect timeout")
+            self.logger.error(f"{self._log_prefix} Reconnect timeout")
 
     async def __aenter__(self):
         """异步上下文管理器入口。"""

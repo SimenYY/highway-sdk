@@ -4,7 +4,23 @@ from highway_sdk.vendors.registry import VendorMetadata
 
 from .codec import DianMingCodec
 from .device import DianMingDevice
-from .spec import Frame, ResultCode, What
+from .spec import (
+    BaseMedia,
+    Bmp,
+    Color,
+    Esc,
+    Font,
+    FontSize,
+    Frame,
+    Gif,
+    Item,
+    Jpg,
+    Play,
+    Png,
+    ResultCode,
+    Text,
+    What,
+)
 
 metadata = VendorMetadata(
     name="dianming",
@@ -16,10 +32,22 @@ metadata = VendorMetadata(
 )
 
 __all__ = [
+    "BaseMedia",
+    "Bmp",
+    "Color",
     "DianMingCodec",
     "DianMingDevice",
+    "Esc",
+    "Font",
+    "FontSize",
     "Frame",
+    "Gif",
+    "Item",
+    "Jpg",
+    "Play",
+    "Png",
     "ResultCode",
+    "Text",
     "What",
     "metadata",
 ]

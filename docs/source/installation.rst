@@ -34,35 +34,14 @@ Highway SDK 提供了多种安装方式，您可以根据需要选择适合的�
 依赖要求
 ----------
 
-Highway SDK 需要 Python 3.10 或更高版本。
+Highway SDK 需要 Python 3.11 或更高版本。
 
 主要依赖包：
 
-- loguru - 日志管理
 - pydantic - 数据验证和序列化
-- paho-mqtt - MQTT 客户端
-- twisted - 异步网络编程
-- click - 命令行接口
-- requests - HTTP 客户端
-- colorlog - 彩色日志
-- flask - Web 框架
-- python-json-logger - JSON 日志格式化
-- elasticsearch - Elasticsearch 客户端
-- deprecated - 废弃功能标记
-- pillow - 图像处理
-- redis - Redis 客户端
 - filelock - 文件锁
-- httpx - 异步 HTTP 客户端
-- sqlalchemy - 数据库 ORM
-- aioodbc - 异步 ODBC 客户端
-- pyodb - Python ODBC 包装器
 - pydantic-settings - 配置管理
-- bidict - 双向字典
-- apscheduler - 定时任务调度
-- aiomqtt - 异步 MQTT 客户端
-- confluent-kafka - Kafka 客户端
 - platformdirs - 平台特定目录
-- prometheus-client - Prometheus 监控
 
 开发依赖：
 

@@ -54,14 +54,6 @@ BaseTags
    :undoc-members:
    :show-inheritance:
 
-LoggerConfig
-^^^^^^^^^^^^
-
-.. autoclass:: highway_sdk.core.log.LoggerConfig
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 get_logger
 ^^^^^^^^^^
 

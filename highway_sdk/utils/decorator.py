@@ -39,11 +39,11 @@ def synchronized(func: Callable[..., Any]):
     Returns:
         Callable[..., Any]: 返回一个装饰器函数
     """
-    func.__lock__ = threading.Lock()
+    lock = threading.Lock()
 
     @wraps(func)
     def lock_func(*args, **kwargs):
-        with func.__lock__:
+        with lock:
             return func(*args, **kwargs)
 
     return lock_func

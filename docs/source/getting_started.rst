@@ -23,14 +23,8 @@
     import asyncio
     from highway_sdk.core.protocols import DriverTCPClientProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
-    from highway_sdk.core.log import LoguruConfig
 
-    # 1. 配置日志
-    LoguruConfig.intercept_logging(["*"])
-    log_config = LoguruConfig(name="vms-sdk", level="INFO")
-    log_config.set_console()
-
-    # 2. 创建自定义协议类
+    # 1. 创建自定义协议类
     class MyProtocol(DriverTCPClientProtocol):
         """自定义协议类，用于处理设备响应"""
         def on_message_parsed(self, tags):
@@ -71,16 +65,9 @@
     import asyncio
     from highway_sdk.core.protocols import DriverTCPClientProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
-    from highway_sdk.core.log import LoguruConfig
     from highway_sdk.core.metrics import start_prometheus_server
 
-    # 1. 配置日志（支持JSON格式）
-    LoguruConfig.intercept_logging(["*"])
-    log_config = LoguruConfig(name="vms-sdk", level="INFO", serialize=True)
-    log_config.set_console()
-    log_config.set_file(log_dir="logs")
-
-    # 2. 创建自定义协议类
+    # 1. 创建自定义协议类
     class MyProtocol(DriverTCPClientProtocol):
         """自定义协议类，用于处理设备响应"""
         def on_message_parsed(self, tags):
@@ -146,14 +133,8 @@
     import asyncio
     from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
-    from highway_sdk.core.log import LoguruConfig
 
-    # 1. 配置日志
-    LoguruConfig.intercept_logging(["*"])
-    log_config = LoguruConfig(name="fenghai-vms", level="DEBUG")
-    log_config.set_console()
-
-    # 2. 使用厂商特定协议
+    # 1. 使用厂商特定协议
     class MyFenghaiProtocol(VmsFenghaiProtocol):
         """丰海VMS协议处理类"""
         def on_message_parsed(self, tags):

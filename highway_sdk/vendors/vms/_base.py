@@ -6,7 +6,7 @@
 - escape_bytes: 字节转义/反转义函数
 """
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from highway_sdk.core.constants import ESC, ETX, STX
 from highway_sdk.core.frame import BaseFrame
@@ -186,8 +186,8 @@ _CRC16_TABLE = [
     0x6067,
     0x83B9,
     0x9398,
-    0xB3FB,
-    0xA3DA,
+    0xA3FB,
+    0xB3DA,
     0xC33D,
     0xD31C,
     0xE37F,
@@ -295,7 +295,7 @@ _CRC16_TABLE = [
     0x2E93,
     0x3EB2,
     0x0ED1,
-    0x0000,
+    0x1EF0,
 ]
 
 
@@ -318,7 +318,7 @@ def crc16_ccitt(data: bytes) -> bytes:
 class VMSFrame(BaseFrame):
     """VMS 帧基类。
 
-    在 BaseFrame 基础上增加了起始符和结束符的验证。
+    在 BaseFrame 基础上增加了起始符和结束符。
 
     Attributes:
         start: 帧起始符，默认为 STX (0x02)。
@@ -327,19 +327,3 @@ class VMSFrame(BaseFrame):
 
     start: bytes = Field(default=STX, frozen=True, description="帧起始符")
     end: bytes = Field(default=ETX, frozen=True, description="帧结束符")
-
-    @field_validator("start")
-    @classmethod
-    def ensure_start(cls, v: bytes) -> bytes:
-        """验证起始符是否为 STX。"""
-        if v != STX:
-            raise ValueError("start must be STX")
-        return v
-
-    @field_validator("end")
-    @classmethod
-    def ensure_end(cls, v: bytes) -> bytes:
-        """验证结束符是否为 ETX。"""
-        if v != ETX:
-            raise ValueError("end must be ETX")
-        return v
