@@ -26,13 +26,13 @@ Highway SDK 是一个用于高速公路机电设备通信的 Python 异步库，
 
 ### 核心组件
 
-| 组件      | 职责                 | 基类         |
-| --------- | -------------------- | ------------ |
-| Transport | 字节流传输、连接管理 | `Transport`  |
-| Frame     | 帧数据结构定义       | `BaseFrame`  |
-| Codec     | 帧 ↔ 数据标签转换    | `BaseCodec`  |
-| Device    | 设备操作接口         | `BaseDevice` |
-| Tags      | 设备返回数据标准化   | `BaseTags`   |
+| 组件      | 职责                                               | 基类         |
+| --------- | -------------------------------------------------- | ------------ |
+| Transport | 字节流传输、连接管理                               | `Transport`  |
+| Frame     | 帧数据结构定义                                     | `BaseFrame`  |
+| Codec     | 帧 ↔ 数据标签转换                                  | `BaseCodec`  |
+| Device    | 设备操作接口                                       | `BaseDevice` |
+| Tags      | 设备返回数据标准化（v3.0.0 起已弃用于 codec 路径） | `BaseTags`   |
 
 ## 快速开始
 
@@ -209,7 +209,7 @@ class BaseDevice(ABC):
 ```python
 class BaseCodec:
     @classmethod
-    def decode(cls, frame: BaseFrame) -> BaseTags
+    def decode(cls, frame: BaseFrame) -> dict
 
     @classmethod
     def register(cls, what: Any) -> Callable

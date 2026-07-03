@@ -49,6 +49,9 @@ BaseFrame
 BaseTags
 ^^^^^^^^
 
+.. deprecated:: 3.0.0
+   `BaseCodec.decode()` 现返回 `dict`，`BaseTags` 仅作为公共 API 兼容保留。
+
 .. autoclass:: highway_sdk.core.tags.BaseTags
    :members:
    :undoc-members:

@@ -19,7 +19,7 @@ from highway_sdk.core.exceptions import (
 )
 
 
-async def main():  # noqa: C901
+async def main():
     """诺瓦 CMS 设备完整使用示例。"""
     print("=" * 60)
     print("诺瓦（Nova）CMS 设备示例")
@@ -37,7 +37,7 @@ async def main():  # noqa: C901
             # ----------------------------------------------------------
             print("\n--- 1. 获取亮度信息 ---")
             response = await device.get_brightness()
-            if response.status == "success":
+            if response.status == "success" and response.data is not None:
                 data = response.data
                 print(f"  亮度值: {data['brightness']}%")
                 print(f"  控制模式: {data['brightness_mode']}")
@@ -50,7 +50,7 @@ async def main():  # noqa: C901
             # ----------------------------------------------------------
             print("\n--- 2. 获取当前播放项 ---")
             response = await device.get_play_item()
-            if response.status == "success":
+            if response.status == "success" and response.data is not None:
                 data = response.data
                 item = data["play_item"]
                 print(f"  原始文本: {data['orig_play_item']}")
@@ -65,13 +65,11 @@ async def main():  # noqa: C901
             # ----------------------------------------------------------
             print("\n--- 3. 获取播放列表 ---")
             response = await device.get_play_list()
-            if response.status == "success":
+            if response.status == "success" and response.data is not None:
                 data = response.data
-                play_list = data["play_list"]
-                print(f"  共 {len(play_list)} 个播放项:")
-                for i, item in enumerate(play_list):
-                    text = item.get("text") or "(图片)"
-                    print(f"    [{i}] {text} (停留 {item['duration']}s)")
+                # Nova 0x3B 响应为类 INI 文本，结构化解析未实现，仅展示原始文本
+                orig = data.get("orig_play_list") or "(空)"
+                print(f"  原始内容:\n{orig}")
             else:
                 print(f"  获取失败: {response.error_msg}")
 

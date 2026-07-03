@@ -102,9 +102,9 @@ highway_sdk/
 - `BaseFrame`: Pydantic-based frame structure
 - `__bytes__()`: Abstract method for frame serialization
 
-**core/tags.py** - Tags base class
+**core/tags.py** - Tags base class (deprecated for codec decode path since v3.0.0)
 
-- `BaseTags`: Pydantic-based data structure for device responses
+- `BaseTags`: Pydantic-based data structure (kept for public API compatibility; `BaseCodec.decode()` now returns `dict`)
 
 **core/log.py** - Logging system
 
@@ -147,7 +147,7 @@ Async: pytest-asyncio
 1. **Protocol Abstraction**: Each vendor protocol is implemented as a separate module with shared interfaces
 2. **Async-First Architecture**: Heavy use of asyncio for efficient I/O operations
 3. **Modular Design**: Clear separation between core infrastructure and vendor implementations
-4. **Tag-Based Data Structures**: `BaseTags` dataclass system for structured data exchange
+4. **Dict-Based Codec Returns**: `BaseCodec.decode()` returns `dict` (since v3.0.0); `BaseTags` kept for public API compatibility only
 5. **Standard Logging**: Uses Python's built-in logging module
 6. **Automatic Recovery**: TCP reconnection with exponential backoff
 

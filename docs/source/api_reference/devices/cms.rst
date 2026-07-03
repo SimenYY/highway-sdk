@@ -43,17 +43,17 @@ Nova 厂商实现
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.cms.nova.protocol.VmsNovaProtocol
+.. autoclass:: highway_sdk.vendors.cms.nova.device.NovaDevice
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.cms.nova.factory.FrameFactory
+.. autoclass:: highway_sdk.vendors.cms.nova.codec.NovaCodec
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.cms.nova.parser.Parser
+.. autoclass:: highway_sdk.vendors.cms.nova.spec.Frame
    :members:
    :undoc-members:
    :show-inheritance:

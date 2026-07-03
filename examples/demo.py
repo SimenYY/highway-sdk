@@ -5,6 +5,7 @@
 """
 
 import asyncio
+from typing import cast
 
 from highway_sdk import (
     DianMingDevice,
@@ -109,8 +110,8 @@ async def example_multiple_vendors():
     # 连接所有设备
     devices = []
     for config in devices_config:
+        vendor = config.get("vendor", "unknown")
         try:
-            vendor = config["vendor"]
             device_class = vendor_map[vendor]
             device = await device_class.connect(config["host"], config["port"])
             devices.append((vendor, device))
@@ -237,7 +238,8 @@ async def example_vendor_registry():
     # 4. 使用注册表连接设备（配置驱动场景）
     print("\n使用注册表连接设备:")
     try:
-        device = await connect_device("fenghai", "127.0.0.1", 9001)
+        # 工厂函数返回 BaseDevice，需 cast 为厂商类型以获取厂商特有方法的类型安全
+        device = cast(FengHaiDevice, await connect_device("fenghai", "127.0.0.1", 9001))
         print(f"  连接成功: {device.__class__.__name__}")
 
         # 执行操作

@@ -156,7 +156,7 @@ brightness = await device.get_brightness()
 | Frame     | 帧数据结构定义       | `BaseFrame`  |
 | Codec     | 帧 ↔ 数据标签转换    | `BaseCodec`  |
 | Device    | 设备操作接口         | `BaseDevice` |
-| Tags      | 设备返回数据标准化   | `BaseTags`   |
+| Tags      | 设备返回数据标准化（v3.0.0 起已弃用于 codec 路径） | `BaseTags`   |
 
 ## 开发新厂商协议
 

@@ -11,7 +11,7 @@ from .codec import FengHaiCodec
 from .spec import ENCODING, Frame, What
 
 
-class FengHaiDevice(BaseDevice):
+class FengHaiDevice(BaseDevice[FengHaiCodec]):
     """丰海CMS设备客户端。"""
 
     codec = FengHaiCodec

@@ -5,28 +5,32 @@
 
 from abc import ABC
 from collections.abc import Callable
-from typing import Any, Self
+from typing import Any, Generic, Self, TypeVar
 
 from .codec import BaseCodec
 from .frame import BaseFrame
 from .transport import Transport
 
+CodecT = TypeVar("CodecT", bound=BaseCodec)
 
-class BaseDevice(ABC):
+
+class BaseDevice(ABC, Generic[CodecT]):
     """设备基类。
 
     所有设备客户端都应该继承此类，实现统一的设备操作接口。
 
+    子类应通过类变量 ``codec`` 指定厂商编解码器类型，并通过泛型参数声明具体类型：
+
     Example:
-        >>> class MyDevice(BaseDevice):
+        >>> class MyDevice(BaseDevice[MyCodec]):
         ...     codec = MyCodec
         ...
-        ...     async def get_item(self) -> BaseTags:
+        ...     async def get_item(self) -> dict:
         ...         response = await self.transport.request(b"...")
         ...         return self.codec.decode(response)
     """
 
-    codec: type[BaseCodec]
+    codec: type[CodecT]
 
     def __init__(self, transport: Transport):
         """初始化设备。

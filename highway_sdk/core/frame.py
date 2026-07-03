@@ -3,6 +3,8 @@
 定义了设备通信帧的基本结构。
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -12,11 +14,11 @@ class BaseFrame(BaseModel):
     所有厂商的帧类都应该继承此类，定义自己的帧结构。
 
     Attributes:
-        what: 指令码，标识帧的类型。
+        what: 指令码，标识帧的类型。子类通常使用厂商特定的枚举类型覆盖。
         data: 数据域，帧携带的有效载荷。
     """
 
-    what: bytes = Field(..., description="指令码")
+    what: Any = Field(..., description="指令码")
     data: bytes = Field(default=b"", description="数据域")
 
     @classmethod

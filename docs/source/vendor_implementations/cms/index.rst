@@ -68,12 +68,11 @@ Sansi是知名的照明和显示设备厂商，Highway SDK提供了Sansi CMS设�
 
 1. 在 `highway_sdk/vendors/cms/` 目录下创建新的厂商目录
 2. 实现以下核心文件：
-   - `factory.py` - 帧工厂，用于创建设备通信的请求帧
-   - `parser.py` - 解析器，用于解析设备返回的数据
-   - `protocol.py` - 协议实现，用于处理设备通信
-   - `spec.py` - 协议规范，定义指令码、帧结构等
-   - `media.py` - 媒体管理，用于处理设备的媒体文件
-3. 编写测试用例
-4. 更新文档
+   - `spec.py` - 协议规范，定义指令码（What 枚举）、帧结构、CRC 计算、转义规则
+   - `codec.py` - 编解码器，继承 `BaseCodec`，使用 `@BaseCodec.register(What.XXX)` 注册解码器
+   - `device.py` - 设备客户端，继承 `BaseDevice[VendorCodec]`，实现数据采集与控制 API
+3. 在厂商 `__init__.py` 中导出 `metadata`（`VendorMetadata` 实例），SDK 会在 `vendors/__init__.py` 自动注册
+4. 编写测试用例（参考 `tests/vendors/cms/`）
+5. 更新文档
 
 如果您有兴趣贡献新的CMS厂商实现，欢迎提交PR或联系项目维护者。

@@ -37,7 +37,7 @@ async def main():
             # ----------------------------------------------------------
             print("\n--- 1. 获取亮度信息 ---")
             response = await device.get_brightness()
-            if response.status == "success":
+            if response.status == "success" and response.data is not None:
                 data = response.data
                 print(f"  亮度值: {data['brightness']}%")
                 print(f"  控制模式: {data['brightness_mode']}")
@@ -50,7 +50,7 @@ async def main():
             # ----------------------------------------------------------
             print("\n--- 2. 获取当前播放项 ---")
             response = await device.get_play_item()
-            if response.status == "success":
+            if response.status == "success" and response.data is not None:
                 data = response.data
                 item = data["play_item"]
                 print(f"  原始格式: {data['orig_play_item']}")
@@ -68,7 +68,7 @@ async def main():
             # ----------------------------------------------------------
             print("\n--- 3. 获取播放列表 ---")
             response = await device.get_play_list()
-            if response.status == "success":
+            if response.status == "success" and response.data is not None:
                 data = response.data
                 play_list = data["play_list"]
                 print(f"  共 {len(play_list)} 个播放项:")

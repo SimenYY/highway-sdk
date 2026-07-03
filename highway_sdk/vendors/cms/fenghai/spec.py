@@ -103,7 +103,7 @@ class Frame(CMSFrame):
         crc = unescaped[-2:]
 
         try:
-            frame = cls(address=address, what=what, data=data)
+            frame = cls(address=address, what=What(what), data=data)
         except PydanticValidationError as e:
             raise ValidationError(e) from e
         if frame.crc != crc:

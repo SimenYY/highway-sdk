@@ -5,7 +5,6 @@ import pytest
 from highway_sdk.core.codec import BaseCodec
 from highway_sdk.core.device import BaseDevice
 from highway_sdk.core.frame import BaseFrame
-from highway_sdk.core.tags import BaseTags
 from highway_sdk.core.transport import Transport
 
 
@@ -24,8 +23,8 @@ class MockCodec(BaseCodec):
     """模拟编解码器。"""
 
     @classmethod
-    def decode_test(cls, data: bytes) -> BaseTags:
-        return BaseTags()
+    def decode_test(cls, data: bytes) -> dict:
+        return {"text": data.decode("utf-8")}
 
 
 MockCodec._decoders[b"test"] = MockCodec.decode_test.__func__
@@ -36,7 +35,7 @@ class MockDevice(BaseDevice):
 
     codec = MockCodec
 
-    async def test_operation(self) -> BaseTags:
+    async def test_operation(self) -> dict:
         """测试操作。"""
         frame = MockFrame(what=b"test", data=b"test_data")
         response = await self.request(frame)
@@ -107,7 +106,8 @@ class TestBaseDevice:
 
         async with await MockDevice.connect(host, port, timeout=1.0) as device:
             result = await device.test_operation()
-            assert isinstance(result, BaseTags)
+            assert isinstance(result, dict)
+            assert result["text"] == "testtest_data"
 
     @pytest.mark.asyncio
     async def test_custom_transport_factory(self, mock_tcp_server):

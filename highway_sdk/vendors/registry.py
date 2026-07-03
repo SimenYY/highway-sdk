@@ -1,6 +1,12 @@
 """厂商注册表模块。
 
 提供厂商元数据定义、注册和发现机制，支持物联网平台动态加载设备协议。
+
+Note:
+    工厂函数 `create_device`/`connect_device` 返回未参数化的 `BaseDevice`。
+    由于 `BaseDevice.codec` 属性使泛型参数 `CodecT` 不变（invariant），
+    无法通过 `@overload` 为各厂商提供精确返回类型（pyright reportInconsistentOverload）。
+    调用方需使用 `cast(VendorDevice, ...)` 或直接使用厂商设备类以获取类型安全。
 """
 
 from dataclasses import dataclass, field
@@ -183,7 +189,9 @@ def create_device(vendor: str, host: str, port: int, **kwargs: Any) -> "BaseDevi
         **kwargs: 传递给 Transport 的参数。
 
     Returns:
-        BaseDevice: 设备实例。
+        BaseDevice: 设备实例。调用方如需厂商特有方法类型安全，
+            请使用 ``cast(VendorDevice, create_device(...))`` 或直接使用厂商设备类。
+
     """
     return registry.create_device(vendor, host, port, **kwargs)
 
@@ -198,6 +206,8 @@ async def connect_device(vendor: str, host: str, port: int, **kwargs: Any) -> "B
         **kwargs: 传递给设备连接的参数。
 
     Returns:
-        BaseDevice: 已连接的设备实例。
+        BaseDevice: 已连接的设备实例。调用方如需厂商特有方法类型安全，
+            请使用 ``cast(VendorDevice, await connect_device(...))`` 或直接使用厂商设备类。
+
     """
     return await registry.connect_device(vendor, host, port, **kwargs)

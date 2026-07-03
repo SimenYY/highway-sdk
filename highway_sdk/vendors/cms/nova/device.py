@@ -12,7 +12,7 @@ from .codec import NovaCodec
 from .spec import ENCODING, Frame, What
 
 
-class NovaDevice(BaseDevice):
+class NovaDevice(BaseDevice[NovaCodec]):
     """诺瓦CMS设备客户端。"""
 
     codec = NovaCodec
@@ -29,16 +29,25 @@ class NovaDevice(BaseDevice):
     async def get_brightness(self) -> Response:
         """获取亮度百分比和亮度控制模式。
 
+        通过查询设备状态（0x01/0x02）获取亮度信息。
+
         Returns:
             Response: data 为 CmsTags，仅填充 brightness、brightness_mode、timestamp。
+
+        注：
+            亮度级别 1-255 按 round(level * 100 / 255) 折算为百分比 0-100；
+            亮度控制方式 1-自动 / 2-手动 / 3-定时。
         """
         try:
-            frame = Frame(what=What.GET_BRIGHTNESS_REQ)
+            frame = Frame(what=What.GET_DEVICE_STATUS_REQ)
             response = await self._request(frame)
             data = self.codec.decode(response)
+            # 1-auto / 2-manual / 3-timed
+            mode_map = {1: "auto", 2: "manual", 3: "timed"}
+            brightness_pct = round(data["brightness_level"] * 100 / 255)
             cms_tags = CmsTags(
-                brightness=data["brightness"],
-                brightness_mode="auto" if data["mode"] == 0 else "manual",
+                brightness=brightness_pct,
+                brightness_mode=mode_map[data["mode"]],
                 timestamp=datetime.now(),
             )
             return Response.success(data=cms_tags.model_dump())
@@ -77,29 +86,27 @@ class NovaDevice(BaseDevice):
             return Response.error(str(e))
 
     async def get_play_list(self, play_id: int = 0) -> Response:
-        """获取当前播放列表（结构化 + 原始格式）。
+        """获取当前播放列表（原始格式）。
+
+        Nova 0x3B 响应内容为类 INI 文本（见协议附录一），结构复杂，
+        本方法仅保留原始文本字符串，不做结构化解析。
 
         Args:
-            play_id: 播放列表 ID，默认为 0。
+            play_id: 播放列表 ID，默认为 0（仅用于接口兼容，实际使用设备返回的 list_no）。
 
         Returns:
-            Response: data 为 CmsTags，填充 play_list、orig_play_list、timestamp。
+            Response: data 为 CmsTags，填充 orig_play_list、timestamp；
+            play_list 为空列表（结构化解析未实现）。
         """
         try:
             frame = Frame(what=What.GET_PLAY_LIST_REQ)
             response = await self._request(frame)
             data = self.codec.decode(response)
 
-            play_list = []
-            orig_play_list_parts = []
-            for window in data.get("windows", []):
-                for item in window.get("items", []):
-                    play_list.append(self._dict_to_cms_play_item(item))
-                    orig_play_list_parts.append(item.get("media") or item.get("text") or "")
-
+            orig_play_list = data.get("text") or ""
             cms_tags = CmsTags(
-                orig_play_list="\r\n".join(orig_play_list_parts),
-                play_list=play_list,
+                orig_play_list=orig_play_list,
+                play_list=[],
                 timestamp=datetime.now(),
             )
             return Response.success(data=cms_tags.model_dump())
@@ -165,30 +172,3 @@ class NovaDevice(BaseDevice):
             return Response.success()
         except HighwaySDKError as e:
             return Response.error(str(e))
-
-    # ------------------------------------------------------------------
-    # 内部工具方法
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _dict_to_cms_play_item(item: dict) -> CmsPlayItem:
-        """将厂商解析结果转换为统一 CmsPlayItem。"""
-        text = item.get("text")
-        font = None
-        font_color = None
-        font_size = None
-        image_name = item.get("image_name")
-
-        duration = None
-        if item.get("duration") is not None:
-            duration = item["duration"] // 10  # 十分之一秒 → 秒
-
-        return CmsPlayItem(
-            index=None,
-            text=text,
-            font=font,
-            font_color=font_color,
-            font_size=font_size,
-            image_name=image_name,
-            duration=duration,
-        )

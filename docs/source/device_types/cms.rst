@@ -114,12 +114,10 @@ Highway SDK支持多种CMS设备厂商，包括：
 要扩展新的CMS设备厂商支持，需要：
 
 1. 在 `highway_sdk/vendors/cms/` 目录下创建厂商实现目录
-2. 实现以下文件：
-   - `factory.py` - 帧工厂，用于创建请求帧
-   - `parser.py` - 解析器，用于解析设备响应
-   - `protocol.py` - 协议类，用于处理设备通信
-   - `spec.py` - 协议规范，定义指令码和帧结构
-   - `media.py` - 媒体管理，用于处理媒体文件
-3. 在 `highway_sdk/vendors/cms/__init__.py` 中导出新的厂商实现
-4. 编写测试用例
+2. 实现以下核心文件：
+   - `spec.py` - 协议规范，定义指令码（What 枚举）、帧结构、CRC 计算、转义规则
+   - `codec.py` - 编解码器，继承 `BaseCodec`，使用 `@BaseCodec.register(What.XXX)` 注册解码器
+   - `device.py` - 设备客户端，继承 `BaseDevice[VendorCodec]`，实现数据采集与控制 API
+3. 在厂商 `__init__.py` 中导出 `metadata`（`VendorMetadata` 实例），SDK 会在 `vendors/__init__.py` 自动注册
+4. 编写测试用例（参考 `tests/vendors/cms/`）
 5. 更新文档，添加新厂商实现的说明

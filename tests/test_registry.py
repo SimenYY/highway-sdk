@@ -40,7 +40,7 @@ class TestVendorMetadata:
             codec_class="test.TestCodec",
         )
         with pytest.raises(AttributeError):
-            metadata.name = "new_name"
+            metadata.name = "new_name"  # type: ignore[misc]  # frozen dataclass raises at runtime
 
 
 class TestVendorRegistry:

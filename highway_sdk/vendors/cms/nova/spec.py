@@ -21,8 +21,13 @@ class What(Enum):
 
     注：
     1. req表示发送，rsp表示回复
+    2. 0xBA 为查询开关屏状态，req/resp共用同一指令码（协议设计）
 
     """
+
+    # 查询设备状态（含亮度、温度等，详见 0x02 响应）
+    GET_DEVICE_STATUS_REQ = b"\x01"
+    GET_DEVICE_STATUS_RESP = b"\x02"
 
     # 获取当前内容
     GET_PLAY_ITEM_REQ = b"\x2d"
@@ -54,13 +59,9 @@ class What(Enum):
     GET_SCREEN_SIZE_REQ = b"\x82"
     GET_SCREEN_SIZE_RESP = b"\x83"
 
-    # 获取当前亮度
-    GET_BRIGHTNESS_REQ = b"\xc3"
-    GET_BRIGHTNESS_RESP = b"\xc3"
-
-    # 获取开关屏状态
-    GET_STATUS_REQ = b"\xba"
-    GET_STATUS_RESP = b"\xba"
+    # 查询开关屏状态（req/resp共用 0xBA）
+    GET_SCREEN_STATUS_REQ = b"\xba"
+    GET_SCREEN_STATUS_RESP = b"\xba"
 
 
 class Frame(CMSFrame):

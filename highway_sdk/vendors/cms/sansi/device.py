@@ -11,7 +11,7 @@ from .codec import SanSiCodec
 from .spec import ENCODING, Frame, What
 
 
-class SanSiDevice(BaseDevice):
+class SanSiDevice(BaseDevice[SanSiCodec]):
     """三思CMS设备客户端。"""
 
     codec = SanSiCodec

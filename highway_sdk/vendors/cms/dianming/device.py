@@ -11,7 +11,7 @@ from .codec import DianMingCodec
 from .spec import ENCODING, Frame, What
 
 
-class DianMingDevice(BaseDevice):
+class DianMingDevice(BaseDevice[DianMingCodec]):
     """电明CMS设备客户端。"""
 
     codec = DianMingCodec

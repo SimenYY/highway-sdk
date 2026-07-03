@@ -1,0 +1,8 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "standard",
+  "include": ["highway_sdk", "examples", "tests"],
+  "exclude": ["**/__pycache__", ".venv", "build", "dist"]
+}

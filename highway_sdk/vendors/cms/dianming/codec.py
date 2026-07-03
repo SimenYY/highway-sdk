@@ -40,7 +40,7 @@ class DianMingCodec(BaseCodec):
     @classmethod
     def _parse_media(cls, media: str) -> dict:
         """解析媒体字符串。"""
-        result = {"media": media}
+        result: dict = {"media": media}
         remaining = media
 
         for pattern, field, cast, size_group in cls._MEDIA_PATTERNS:

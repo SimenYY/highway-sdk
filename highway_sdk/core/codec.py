@@ -7,7 +7,6 @@ from collections.abc import Callable
 from typing import Any, ClassVar
 
 from .frame import BaseFrame
-from .tags import BaseTags
 
 
 class BaseCodec:
@@ -17,18 +16,18 @@ class BaseCodec:
 
     设计原则：
         - 编码（encode）：参数 → 帧
-        - 解码（decode）：帧 → 数据标签
+        - 解码（decode）：帧 → 数据字典
         - 通过装饰器注册具体的编解码实现
 
     Example:
         >>> class MyCodec(BaseCodec):
         ...     @classmethod
         ...     @MyCodec.register(b"\\x01")
-        ...     def decode_get_item(cls, data: bytes) -> BaseTags:
-        ...         return ItemTags(text=data.decode())
+        ...     def decode_get_item(cls, data: bytes) -> dict:
+        ...         return {"text": data.decode()}
     """
 
-    _decoders: ClassVar[dict[Any, Callable[..., BaseTags]]] = {}
+    _decoders: ClassVar[dict[Any, Callable[..., dict]]] = {}
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """子类创建时扫描带 _decoder_what 标记的方法，注册到子类独立的 _decoders。"""
@@ -44,8 +43,8 @@ class BaseCodec:
                 cls._decoders[what] = method
 
     @classmethod
-    def decode(cls, frame: BaseFrame) -> BaseTags:
-        """解码：帧 → 数据标签。
+    def decode(cls, frame: BaseFrame) -> dict:
+        """解码：帧 → 数据字典。
 
         根据帧的指令类型查找对应的解码函数并执行。
 
@@ -53,7 +52,7 @@ class BaseCodec:
             frame: 待解码的帧对象。
 
         Returns:
-            BaseTags: 解码后的数据标签。
+            dict: 解码后的数据字典。
 
         Raises:
             ValueError: 不支持的指令类型。
@@ -76,7 +75,7 @@ class BaseCodec:
             Callable: 装饰器函数。
         """
 
-        def decorator(func: Callable[..., BaseTags]) -> Callable[..., BaseTags]:
+        def decorator(func: Callable[..., dict]) -> Callable[..., dict]:
             func._decoder_what = what  # type: ignore[attr-defined]
             return func
 

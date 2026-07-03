@@ -11,7 +11,7 @@ from .codec import XianKeCodec
 from .spec import ENCODING, Frame, What
 
 
-class XianKeDevice(BaseDevice):
+class XianKeDevice(BaseDevice[XianKeCodec]):
     """显科CMS设备客户端。"""
 
     codec = XianKeCodec
