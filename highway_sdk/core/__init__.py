@@ -18,6 +18,7 @@ from .exceptions import (
 )
 from .frame import BaseFrame
 from .log import get_logger
+from .response import Response
 from .tags import BaseTags
 from .transport import Transport
 
@@ -31,6 +32,7 @@ __all__ = [
     "ConnectionTimeoutError",
     "HighwaySDKError",
     "ProtocolError",
+    "Response",
     "ResponseTimeoutError",
     "Transport",
     "get_logger",
