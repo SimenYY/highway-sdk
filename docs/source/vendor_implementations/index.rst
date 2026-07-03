@@ -7,7 +7,7 @@ Highway SDK支持多种设备厂商的实现，按照设备类型进行分类管
    :maxdepth: 2
    :caption: 设备类型厂商实现
 
-   vms/index
+   cms/index
    vd/index
 
 厂商实现概述

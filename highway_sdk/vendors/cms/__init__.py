@@ -1,4 +1,4 @@
-"""VMS设备厂商实现模块。"""
+"""CMS设备厂商实现模块。"""
 
 # 电明厂商实现
 from .dianming.codec import DianMingCodec

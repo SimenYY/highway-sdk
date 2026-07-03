@@ -1,34 +1,34 @@
-VMS设备API
+CMS设备API
 ==========
 
-VMS (Variable Message Sign) 是可变信息标志设备，用于在高速公路上显示可变信息，如路况、天气、事故信息等。
+CMS (Variable Message Sign) 是可变信息标志设备，用于在高速公路上显示可变信息，如路况、天气、事故信息等。
 
-VMS设备厂商实现
+CMS设备厂商实现
 ----------------
 
-Highway SDK支持多种VMS设备厂商，包括丰海、Nova、Xianke和Sansi等。
+Highway SDK支持多种CMS设备厂商，包括丰海、Nova、Xianke和Sansi等。
 
 丰海 (Fenghai) 厂商实现
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: highway_sdk.vendors.vms.fenghai
+.. automodule:: highway_sdk.vendors.cms.fenghai
    :members:
    :undoc-members:
    :show-inheritance:
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.vms.fenghai.protocol.VmsFenghaiProtocol
+.. autoclass:: highway_sdk.vendors.cms.fenghai.protocol.VmsFenghaiProtocol
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.vms.fenghai.factory.FrameFactory
+.. autoclass:: highway_sdk.vendors.cms.fenghai.factory.FrameFactory
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.vms.fenghai.parser.Parser
+.. autoclass:: highway_sdk.vendors.cms.fenghai.parser.Parser
    :members:
    :undoc-members:
    :show-inheritance:
@@ -36,24 +36,24 @@ Highway SDK支持多种VMS设备厂商，包括丰海、Nova、Xianke和Sansi等
 Nova 厂商实现
 ^^^^^^^^^^^^
 
-.. automodule:: highway_sdk.vendors.vms.nova
+.. automodule:: highway_sdk.vendors.cms.nova
    :members:
    :undoc-members:
    :show-inheritance:
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.vms.nova.protocol.VmsNovaProtocol
+.. autoclass:: highway_sdk.vendors.cms.nova.protocol.VmsNovaProtocol
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.vms.nova.factory.FrameFactory
+.. autoclass:: highway_sdk.vendors.cms.nova.factory.FrameFactory
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.vms.nova.parser.Parser
+.. autoclass:: highway_sdk.vendors.cms.nova.parser.Parser
    :members:
    :undoc-members:
    :show-inheritance:
@@ -61,24 +61,24 @@ Nova 厂商实现
 Xianke 厂商实现
 ^^^^^^^^^^^^^^^
 
-.. automodule:: highway_sdk.vendors.vms.xianke
+.. automodule:: highway_sdk.vendors.cms.xianke
    :members:
    :undoc-members:
    :show-inheritance:
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.vms.xianke.protocol.VmsXiankeProtocol
+.. autoclass:: highway_sdk.vendors.cms.xianke.protocol.VmsXiankeProtocol
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.vms.xianke.factory.FrameFactory
+.. autoclass:: highway_sdk.vendors.cms.xianke.factory.FrameFactory
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.vms.xianke.parser.Parser
+.. autoclass:: highway_sdk.vendors.cms.xianke.parser.Parser
    :members:
    :undoc-members:
    :show-inheritance:
@@ -86,24 +86,24 @@ Xianke 厂商实现
 Sansi 厂商实现
 ^^^^^^^^^^^^^^
 
-.. automodule:: highway_sdk.vendors.vms.sansi
+.. automodule:: highway_sdk.vendors.cms.sansi
    :members:
    :undoc-members:
    :show-inheritance:
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.vms.sansi.protocol.VmsSansiProtocol
+.. autoclass:: highway_sdk.vendors.cms.sansi.protocol.VmsSansiProtocol
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.vms.sansi.factory.FrameFactory
+.. autoclass:: highway_sdk.vendors.cms.sansi.factory.FrameFactory
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.vendors.vms.sansi.parser.Parser
+.. autoclass:: highway_sdk.vendors.cms.sansi.parser.Parser
    :members:
    :undoc-members:
    :show-inheritance:

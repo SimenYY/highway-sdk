@@ -6,8 +6,8 @@
 import pytest
 
 from highway_sdk.core.exceptions import DeviceOperationError
-from highway_sdk.vendors.vms.fenghai.codec import FengHaiCodec
-from highway_sdk.vendors.vms.fenghai.spec import ENCODING, Frame, What
+from highway_sdk.vendors.cms.fenghai.codec import FengHaiCodec
+from highway_sdk.vendors.cms.fenghai.spec import ENCODING, Frame, What
 
 
 class TestFengHaiFrameSerialization:
@@ -110,8 +110,8 @@ class TestFengHaiCodec:
 
     def test_decode_set_brightness_success(self):
         """验证设置亮度成功响应解码。"""
-        tags = FengHaiCodec.decode_set_brightness(b"0")
-        assert tags.is_ok is True
+        result = FengHaiCodec.decode_set_brightness(b"0")
+        assert result["is_ok"] is True
 
     def test_decode_set_brightness_failure(self):
         """验证设置亮度失败响应解码。"""
@@ -120,8 +120,8 @@ class TestFengHaiCodec:
 
     def test_decode_upload_file_success(self):
         """验证上传文件成功响应解码。"""
-        tags = FengHaiCodec.decode_upload_file(b"0")
-        assert tags.is_ok is True
+        result = FengHaiCodec.decode_upload_file(b"0")
+        assert result["is_ok"] is True
 
     def test_decode_upload_file_failure(self):
         """验证上传文件失败响应解码。"""

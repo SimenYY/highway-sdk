@@ -86,9 +86,9 @@ async def main():
 ### 1. 定义帧结构
 
 ```python
-# highway_sdk/vendors/vms/myvendor/spec.py
+# highway_sdk/vendors/cms/myvendor/spec.py
 from enum import IntEnum
-from highway_sdk.vendors.vms._base import VMSFrame
+from highway_sdk.vendors.cms._base import CMSFrame
 
 class What(IntEnum):
     """指令码定义。"""
@@ -96,7 +96,7 @@ class What(IntEnum):
     SET_BRIGHTNESS = 0x02
     GET_PLAY_ITEM = 0x10
 
-class Frame(VMSFrame):
+class Frame(CMSFrame):
     """厂商帧定义。"""
 
     def __bytes__(self) -> bytes:
@@ -107,32 +107,27 @@ class Frame(VMSFrame):
 ### 2. 实现编解码器
 
 ```python
-# highway_sdk/vendors/vms/myvendor/codec.py
+# highway_sdk/vendors/cms/myvendor/codec.py
 from highway_sdk.core.codec import BaseCodec
-from highway_sdk.core.tags import BaseTags
-
-class BrightnessTags(BaseTags):
-    """亮度数据标签。"""
-    value: int
-    mode: int
 
 class MyCodec(BaseCodec):
     """厂商编解码器。"""
 
-    @staticmethod
-    def decode_brightness(data: bytes) -> BrightnessTags:
-        return BrightnessTags(value=data[0], mode=data[1])
-
-# 注册解码函数
-MyCodec._decoders[What.GET_BRIGHTNESS] = MyCodec.decode_brightness
+    @classmethod
+    @BaseCodec.register(What.GET_BRIGHTNESS)
+    def decode_brightness(cls, data: bytes) -> dict:
+        return {"value": data[0], "mode": data[1]}
 ```
 
 ### 3. 实现设备类
 
 ```python
-# highway_sdk/vendors/vms/myvendor/device.py
+# highway_sdk/vendors/cms/myvendor/device.py
+from datetime import datetime
+
 from highway_sdk.core.device import BaseDevice
-from highway_sdk.core.tags import BaseTags
+from highway_sdk.core.response import Response
+from highway_sdk.vendors.cms.tags import CmsTags
 from .codec import MyCodec
 from .spec import Frame, What
 
@@ -141,11 +136,21 @@ class MyDevice(BaseDevice):
 
     codec = MyCodec
 
-    async def get_brightness(self) -> BaseTags:
+    async def _request(self, frame: Frame, timeout: float = 3.0) -> Frame:
+        response = await self.request(frame, timeout)
+        return Frame.from_bytes(response)
+
+    async def get_brightness(self) -> Response:
         """获取亮度信息。"""
         frame = Frame(what=What.GET_BRIGHTNESS)
-        response = await self.request(frame)
-        return self.codec.decode(Frame(what=What.GET_BRIGHTNESS, data=response))
+        response = await self._request(frame)
+        data = self.codec.decode(response)
+        cms_tags = CmsTags(
+            brightness=data["value"],
+            brightness_mode="auto" if data["mode"] == 0 else "manual",
+            timestamp=datetime.now(),
+        )
+        return Response.success(data=cms_tags.model_dump())
 ```
 
 ## API 参考
@@ -244,7 +249,7 @@ from highway_sdk import VendorMetadata, register_vendor
 metadata = VendorMetadata(
     name="my_vendor",
     display_name="我的厂商",
-    device_type="vms",
+    device_type="cms",
     description="自定义厂商协议实现",
     device_class=MyDevice,
     codec_class=MyCodec,

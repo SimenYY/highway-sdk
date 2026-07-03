@@ -11,8 +11,8 @@ import struct
 import pytest
 
 from highway_sdk.core.exceptions import DeviceOperationError
-from highway_sdk.vendors.vms.nova.codec import NovaCodec
-from highway_sdk.vendors.vms.nova.spec import ENCODING, Frame, What
+from highway_sdk.vendors.cms.nova.codec import NovaCodec
+from highway_sdk.vendors.cms.nova.spec import ENCODING, Frame, What
 
 
 class TestNovaFrameSerialization:

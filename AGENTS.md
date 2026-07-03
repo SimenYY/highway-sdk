@@ -8,7 +8,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ### Project Overview
 
-The **Highway SDK** is a Python library for interfacing with highway electrical and mechanical devices and intelligent devices, with a strong focus on Variable Message Signs (VMS) systems. It's designed as a modular, extensible platform supporting multiple vendor protocols and communication standards.
+The **Highway SDK** is a Python library for interfacing with highway electrical and mechanical devices and intelligent devices, with a strong focus on Variable Message Signs (CMS) systems. It's designed as a modular, extensible platform supporting multiple vendor protocols and communication standards.
 
 - **Repository Type**: Python Package (Poetry-managed)
 - **Version**: 2.0.0.post48.dev0+103e4b9 (dynamic versioning via git)
@@ -61,10 +61,10 @@ highway_sdk/
 │   │   ├── reader.py      # Data reader utilities
 │   │   ├── settings.py    # Configuration management
 │   │   └── constants.py   # Global constants
-│   ├── vendors/           # Vendor-specific VMS implementations
+│   ├── vendors/           # Vendor-specific CMS implementations
 │   │   ├── registry.py    # Vendor registry and factory
-│   │   └── vms/           # VMS devices
-│   │       ├── _base.py   # VMS base classes (VMSFrame)
+│   │   └── cms/           # CMS devices
+│   │       ├── _base.py   # CMS base classes (CMSFrame)
 │   │       ├── dianming/  # DianMing (电明)
 │   │       ├── fenghai/   # FengHai (丰海)
 │   │       ├── nova/      # Nova (诺瓦)
@@ -121,7 +121,7 @@ highway_sdk/
 - `create_device(vendor, host, port)`: Create device instance (unconnected)
 - `connect_device(vendor, host, port)`: Create and connect device
 
-#### Vendor Implementations (vendors/vms/)
+#### Vendor Implementations (vendors/cms/)
 
 Each vendor module follows:
 
@@ -131,11 +131,11 @@ Each vendor module follows:
 
 Supported vendors:
 
-- **dianming/** (电明 VMS)
-- **fenghai/** (丰海 VMS)
-- **nova/** (诺瓦 VMS)
-- **sansi/** (三思 VMS)
-- **xianke/** (显科 VMS)
+- **dianming/** (电明 CMS)
+- **fenghai/** (丰海 CMS)
+- **nova/** (诺瓦 CMS)
+- **sansi/** (三思 CMS)
+- **xianke/** (显科 CMS)
 
 ### Key Dependencies
 
@@ -153,8 +153,8 @@ Async: pytest-asyncio
 
 ### Common Development Tasks
 
-1. **Adding a new VMS vendor protocol**:
-   - Create vendor directory under `vendors/vms/`
+1. **Adding a new CMS vendor protocol**:
+   - Create vendor directory under `vendors/cms/`
    - Implement `spec.py`, `codec.py`, and `device.py`
    - Add tests in `tests/`
 
@@ -169,7 +169,7 @@ Async: pytest-asyncio
 - `highway_sdk/core/transport.py`: Core TCP transport implementation
 - `highway_sdk/core/codec.py`: Codec base class with registration mechanism
 - `highway_sdk/core/device.py`: Device base class
-- `highway_sdk/vendors/vms/*/device.py`: Vendor-specific VMS clients
+- `highway_sdk/vendors/cms/*/device.py`: Vendor-specific CMS clients
 - `tests/test_*.py`: Test suite
 
 ### Critical Rules
@@ -177,6 +177,6 @@ Async: pytest-asyncio
 - **Async-first**: Always use async versions of libraries where available
 - **Codec registration**: Use `@BaseCodec.register(what)` decorator on classmethod
 - **Frame serialization**: Each vendor's Frame class must implement `__bytes__()`
-- **Device inheritance**: Vendor devices inherit from `BaseDevice`, not `VMSDevice`
-- **No VMSCodec/VMSDevice**: These intermediate classes were removed; inherit directly from BaseCodec/BaseDevice
+- **Device inheritance**: Vendor devices inherit from `BaseDevice`, not `CMSDevice`
+- **No CMSCodec/CMSDevice**: These intermediate classes were removed; inherit directly from BaseCodec/BaseDevice
 - **Vendor metadata**: Each vendor module must export `metadata` (VendorMetadata instance) and auto-register in `vendors/__init__.py`

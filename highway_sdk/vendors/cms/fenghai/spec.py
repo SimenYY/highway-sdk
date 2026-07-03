@@ -1,6 +1,6 @@
-"""丰海厂商VMS协议规范模块。
+"""丰海厂商CMS协议规范模块。
 
-该模块定义了丰海厂商VMS设备的通信协议规范，包括：
+该模块定义了丰海厂商CMS设备的通信协议规范，包括：
 - 帧类型枚举（What）
 - 返回状态码枚举（ResultCode）
 - 帧数据结构（Frame）
@@ -14,7 +14,7 @@ from pydantic import Field, ValidationError as PydanticValidationError, computed
 
 from highway_sdk.core.constants import ETX, STX
 from highway_sdk.core.exceptions import CrcValidationError, ValidationError
-from highway_sdk.vendors.vms._base import VMSFrame, escape_bytes
+from highway_sdk.vendors.cms._base import CMSFrame, escape_bytes
 
 ENCODING = "gbk"
 
@@ -22,7 +22,7 @@ ENCODING = "gbk"
 class What(Enum):
     """帧类型枚举。
 
-    定义了丰海VMS设备支持的所有帧类型。
+    定义了丰海CMS设备支持的所有帧类型。
     """
 
     GET_PLAY_ITEM = b"97"
@@ -45,8 +45,8 @@ class ResultCode(Enum):
     FAILED = b"1"
 
 
-class Frame(VMSFrame):
-    """丰海VMS帧数据结构。
+class Frame(CMSFrame):
+    """丰海CMS帧数据结构。
 
     Attributes:
         address: 帧地址，默认为"00"。

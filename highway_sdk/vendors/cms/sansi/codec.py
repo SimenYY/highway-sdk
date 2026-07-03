@@ -6,12 +6,11 @@ import re
 from highway_sdk.core.codec import BaseCodec
 from highway_sdk.core.exceptions import DeviceOperationError
 
-from ..tags import BrightnessTags, ItemTags, OperationTags, PlayTags, WindowTags
 from .spec import ENCODING, ResultCode, What
 
 
 class SanSiCodec(BaseCodec):
-    """三思VMS编解码器。"""
+    """三思CMS编解码器。"""
 
     XY_PATTERN = re.compile(r"\\C(\d{3})(\d{3})")
     COLOR_PATTERN = re.compile(r"\\c(\d{12})")
@@ -29,11 +28,11 @@ class SanSiCodec(BaseCodec):
         return data.startswith(ResultCode.SUCCESS.value)
 
     @classmethod
-    def _parse_media(cls, data_str: str) -> ItemTags:
+    def _parse_media(cls, data_str: str) -> dict:
         """解析媒体字符串。"""
-        tags = ItemTags()
-        tags.media = data_str
-        remaining = tags.media
+        result = {}
+        result["media"] = data_str
+        remaining = result["media"]
 
         ret = cls.XY_PATTERN.search(remaining)
         if ret:
@@ -42,80 +41,80 @@ class SanSiCodec(BaseCodec):
 
         ret = cls.COLOR_PATTERN.search(remaining)
         if ret:
-            tags.font_color = ret.group(1)
+            result["font_color"] = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.FONT_PATTERN.search(remaining)
         if ret:
-            tags.font = ret.group(1)
-            tags.font_size = int(ret.group(2))
+            result["font"] = ret.group(1)
+            result["font_size"] = int(ret.group(2))
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.BG_COLOR_PATTERN.search(remaining)
         if ret:
-            tags.background_color = ret.group(1)
+            result["background_color"] = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.WORD_SPACE_PATTERN.search(remaining)
         if ret:
-            tags.word_space = int(ret.group(1))
+            result["word_space"] = int(ret.group(1))
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.BMP_PATTERN.search(remaining)
         if ret:
-            tags.bmp = ret.group(1)
+            result["bmp"] = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.JPG_PATTERN.search(remaining)
         if ret:
-            tags.jpg = ret.group(1)
+            result["jpg"] = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.GIF_PATTERN.search(remaining)
         if ret:
-            tags.gif = ret.group(1)
+            result["gif"] = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
         ret = cls.PNG_PATTERN.search(remaining)
         if ret:
-            tags.png = ret.group(1)
+            result["png"] = ret.group(1)
             start, end = ret.span()
             remaining = remaining[:start] + remaining[end:]
 
-        tags.text = remaining
-        return tags
+        result["text"] = remaining
+        return result
 
     @classmethod
-    def _parse_play_item(cls, play_item: str) -> ItemTags:
+    def _parse_play_item(cls, play_item: str) -> dict:
         """解析播放项字符串。"""
         fields = play_item.split(",")
-        tags = cls._parse_media(fields[3])
-        tags.duration = int(int(fields[0]) * 0.01)
-        tags.screen_in_mode = int(fields[1])
-        tags.play_speed = int(fields[2])
-        tags.media = play_item
-        return tags
+        result = cls._parse_media(fields[3])
+        result["duration"] = int(int(fields[0]) * 0.01)
+        result["screen_in_mode"] = int(fields[1])
+        result["play_speed"] = int(fields[2])
+        result["media"] = play_item
+        return result
 
     @classmethod
-    def _parse_brightness_and_mode(cls, data: bytes) -> BrightnessTags:
+    def _parse_brightness_and_mode(cls, data: bytes) -> dict:
         """解析亮度和模式。"""
         max_brightness = 31
-        tags = BrightnessTags()
-        tags.mode = int(chr(data[1]))
-        tags.brightness = round(int(data[2:4].decode("ascii", errors="ignore")) / max_brightness * 100)
-        return tags
+        result = {}
+        result["mode"] = int(chr(data[1]))
+        result["brightness"] = round(int(data[2:4].decode("ascii", errors="ignore")) / max_brightness * 100)
+        return result
 
     @classmethod
-    def _parse_play_list(cls, play_list: str) -> PlayTags:
+    def _parse_play_list(cls, play_list: str) -> dict:
         """解析播放列表。"""
-        tags = PlayTags()
+        result = {"windows": []}
 
         lines = play_list.split("\r\n")
         fixed_play = "\r\n".join([line.replace("\n", "\\n") for line in lines])
@@ -127,65 +126,67 @@ class SanSiCodec(BaseCodec):
         if play_parser.has_option(section, "nwindows"):
             n_windows = int(play_parser.get(section, "nwindows"))
             for i in range(n_windows):
-                window_tags = WindowTags()
-                window_tags.x = int(play_parser.get(section, f"windows{i}_x"))
-                window_tags.y = int(play_parser.get(section, f"windows{i}_y"))
-                window_tags.w = int(play_parser.get(section, f"windows{i}_w"))
-                window_tags.h = int(play_parser.get(section, f"windows{i}_h"))
+                window = {}
+                window["x"] = int(play_parser.get(section, f"windows{i}_x"))
+                window["y"] = int(play_parser.get(section, f"windows{i}_y"))
+                window["w"] = int(play_parser.get(section, f"windows{i}_w"))
+                window["h"] = int(play_parser.get(section, f"windows{i}_h"))
                 if i == 0:
                     item_no = int(play_parser.get(section, "item_no"))
                     item_name_prefix = "item"
                 else:
                     item_no = int(play_parser.get(section, f"windows{i}_item_no"))
                     item_name_prefix = f"windows{i}_item"
+                window["items"] = []
                 for j in range(item_no):
                     item_name = f"{item_name_prefix}{j}"
-                    window_tags.items.append(cls._parse_play_item(play_parser.get(section, item_name)))
-                tags.windows.append(window_tags)
+                    window["items"].append(cls._parse_play_item(play_parser.get(section, item_name)))
+                result["windows"].append(window)
         else:
-            window_tags = WindowTags()
+            window = {}
             item_no = int(play_parser.get(section, "item_no"))
+            window["items"] = []
             for i in range(item_no):
                 item_name = f"item{i}"
-                window_tags.items.append(cls._parse_play_item(play_parser.get(section, item_name)))
-            tags.windows.append(window_tags)
-        return tags
+                window["items"].append(cls._parse_play_item(play_parser.get(section, item_name)))
+            result["windows"].append(window)
+        return result
 
     @classmethod
     @BaseCodec.register(What.GET_PLAY_ITEM)
-    def decode_get_play_item(cls, data: bytes) -> ItemTags:
+    def decode_get_play_item(cls, data: bytes) -> dict:
         """解码获取播放项响应。"""
         data_str = data.decode(ENCODING)
-        tags = cls._parse_media(data_str[15:])
-        tags.duration = int(int(data_str[3:8]) * 0.01)
-        tags.screen_in_mode = int(data_str[8:10])
-        tags.index = data_str[0:3]
-        return tags
+        result = cls._parse_media(data_str[15:])
+        result["duration"] = int(int(data_str[3:8]) * 0.01)
+        result["screen_in_mode"] = int(data_str[8:10])
+        result["index"] = data_str[0:3]
+        return result
 
     @classmethod
     @BaseCodec.register(What.GET_BRIGHTNESS_AND_MODE)
-    def decode_get_brightness(cls, data: bytes) -> BrightnessTags:
+    def decode_get_brightness(cls, data: bytes) -> dict:
         """解码获取亮度和模式响应。"""
         return cls._parse_brightness_and_mode(data)
 
     @classmethod
     @BaseCodec.register(What.UPLOAD_FILE)
-    def decode_upload_file(cls, data: bytes) -> OperationTags:
+    def decode_upload_file(cls, data: bytes) -> dict:
         """解码上传文件响应。"""
         if not cls._is_ok(data):
             raise DeviceOperationError("Failed to upload file")
-        return OperationTags(is_ok=True)
+        return {"is_ok": True}
 
     @classmethod
     @BaseCodec.register(What.DOWNLOAD_FILE)
-    def decode_download_file(cls, data: bytes) -> PlayTags:
+    def decode_download_file(cls, data: bytes) -> dict:
         """解码下载播放表响应。"""
         return cls._parse_play_list(data.decode(ENCODING))
 
     @classmethod
     @BaseCodec.register(What.SET_BRIGHTNESS)
-    def decode_set_brightness(cls, data: bytes) -> OperationTags:
+    def decode_set_brightness(cls, data: bytes) -> dict:
         """解码设置亮度响应。"""
         if not cls._is_ok(data):
             raise DeviceOperationError("Failed to set brightness")
-        return OperationTags(is_ok=True)
+        return {"is_ok": True}

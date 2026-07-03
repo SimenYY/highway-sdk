@@ -131,12 +131,12 @@
 .. code-block:: python
 
     import asyncio
-    from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
+    from highway_sdk.vendors.cms.fenghai.protocol import VmsFenghaiProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
 
     # 1. 使用厂商特定协议
     class MyFenghaiProtocol(VmsFenghaiProtocol):
-        """丰海VMS协议处理类"""
+        """丰海CMS协议处理类"""
         def on_message_parsed(self, tags):
             """处理丰海设备响应"""
             print(f"丰海设备响应: {tags}")

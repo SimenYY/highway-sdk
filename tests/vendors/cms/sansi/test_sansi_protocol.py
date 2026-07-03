@@ -6,8 +6,8 @@
 import pytest
 
 from highway_sdk.core.exceptions import DeviceOperationError
-from highway_sdk.vendors.vms.sansi.codec import SanSiCodec
-from highway_sdk.vendors.vms.sansi.spec import ENCODING, Frame, What
+from highway_sdk.vendors.cms.sansi.codec import SanSiCodec
+from highway_sdk.vendors.cms.sansi.spec import ENCODING, Frame, What
 
 
 class TestSanSiFrameSerialization:
@@ -125,8 +125,8 @@ class TestSanSiCodec:
 
     def test_decode_set_brightness_success(self):
         """验证设置亮度成功响应解码。"""
-        tags = SanSiCodec.decode_set_brightness(b"0")
-        assert tags.is_ok is True
+        result = SanSiCodec.decode_set_brightness(b"0")
+        assert result["is_ok"] is True
 
     def test_decode_set_brightness_failure(self):
         """验证设置亮度失败响应解码。"""

@@ -1,4 +1,4 @@
-"""电明厂商VMS协议模块。"""
+"""电明厂商CMS协议模块。"""
 
 from highway_sdk.vendors.registry import VendorMetadata
 
@@ -25,8 +25,8 @@ from .spec import (
 metadata = VendorMetadata(
     name="dianming",
     display_name="电明",
-    device_type="vms",
-    description="电明VMS设备协议实现",
+    device_type="cms",
+    description="电明CMS设备协议实现",
     device_class=DianMingDevice,
     codec_class=DianMingCodec,
 )

@@ -252,9 +252,9 @@ async def example_vendor_registry():
     # 5. 物联网平台配置驱动示例
     print("\n物联网平台配置驱动示例:")
     platform_config = [
-        {"vendor": "dianming", "host": "127.0.0.1", "port": 9000, "name": "VMS-001"},
-        {"vendor": "fenghai", "host": "127.0.0.1", "port": 9001, "name": "VMS-002"},
-        {"vendor": "nova", "host": "127.0.0.1", "port": 9002, "name": "VMS-003"},
+        {"vendor": "dianming", "host": "127.0.0.1", "port": 9000, "name": "CMS-001"},
+        {"vendor": "fenghai", "host": "127.0.0.1", "port": 9001, "name": "CMS-002"},
+        {"vendor": "nova", "host": "127.0.0.1", "port": 9002, "name": "CMS-003"},
     ]
 
     devices = []

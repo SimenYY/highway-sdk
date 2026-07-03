@@ -1,7 +1,7 @@
 """Highway SDK - Python SDK for Highway devices.
 
 This SDK provides a unified interface for communicating with various highway devices,
-including VMS (Variable Message Signs) and VD (Vehicle Detectors) from different vendors.
+including CMS (Variable Message Signs) and VD (Vehicle Detectors) from different vendors.
 """
 
 from ._version import __version__

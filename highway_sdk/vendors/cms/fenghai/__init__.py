@@ -1,4 +1,4 @@
-"""丰海厂商VMS协议模块。"""
+"""丰海厂商CMS协议模块。"""
 
 from highway_sdk.vendors.registry import VendorMetadata
 
@@ -9,8 +9,8 @@ from .spec import Frame, ResultCode, What
 metadata = VendorMetadata(
     name="fenghai",
     display_name="丰海",
-    device_type="vms",
-    description="丰海VMS设备协议实现",
+    device_type="cms",
+    description="丰海CMS设备协议实现",
     device_class=FengHaiDevice,
     codec_class=FengHaiCodec,
 )

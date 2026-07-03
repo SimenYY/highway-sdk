@@ -19,14 +19,14 @@ class TestVendorMetadata:
         metadata = VendorMetadata(
             name="test_vendor",
             display_name="测试厂商",
-            device_type="vms",
+            device_type="cms",
             description="测试描述",
             device_class="test_module.TestDevice",
             codec_class="test_module.TestCodec",
         )
         assert metadata.name == "test_vendor"
         assert metadata.display_name == "测试厂商"
-        assert metadata.device_type == "vms"
+        assert metadata.device_type == "cms"
         assert metadata.version == "1.0.0"
 
     def test_metadata_frozen(self):
@@ -34,7 +34,7 @@ class TestVendorMetadata:
         metadata = VendorMetadata(
             name="test",
             display_name="测试",
-            device_type="vms",
+            device_type="cms",
             description="测试",
             device_class="test.TestDevice",
             codec_class="test.TestCodec",
@@ -52,7 +52,7 @@ class TestVendorRegistry:
         metadata = VendorMetadata(
             name="test",
             display_name="测试",
-            device_type="vms",
+            device_type="cms",
             description="测试",
             device_class="test.TestDevice",
             codec_class="test.TestCodec",
@@ -67,7 +67,7 @@ class TestVendorRegistry:
         metadata = VendorMetadata(
             name="test",
             display_name="测试",
-            device_type="vms",
+            device_type="cms",
             description="测试",
             device_class="test.TestDevice",
             codec_class="test.TestCodec",
@@ -88,7 +88,7 @@ class TestVendorRegistry:
         metadata1 = VendorMetadata(
             name="vendor1",
             display_name="厂商1",
-            device_type="vms",
+            device_type="cms",
             description="描述1",
             device_class="test.TestDevice1",
             codec_class="test.TestCodec1",
@@ -96,7 +96,7 @@ class TestVendorRegistry:
         metadata2 = VendorMetadata(
             name="vendor2",
             display_name="厂商2",
-            device_type="vms",
+            device_type="cms",
             description="描述2",
             device_class="test.TestDevice2",
             codec_class="test.TestCodec2",
@@ -128,7 +128,7 @@ class TestGlobalRegistry:
         vendor = get_vendor("dianming")
         assert vendor.name == "dianming"
         assert vendor.display_name == "电明"
-        assert vendor.device_type == "vms"
+        assert vendor.device_type == "cms"
 
     def test_create_device(self):
         """测试 create_device 创建设备实例（未连接）。"""

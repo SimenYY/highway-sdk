@@ -6,19 +6,13 @@ from highway_sdk.core.device import BaseDevice
 from highway_sdk.core.exceptions import HighwaySDKError
 from highway_sdk.core.response import Response
 
-from ..tags import (
-    BrightnessTags,
-    CmsPlayItem,
-    CmsTags,
-    ItemTags,
-    PlayTags,
-)
+from ..tags import CmsPlayItem, CmsTags
 from .codec import XianKeCodec
 from .spec import ENCODING, Frame, What
 
 
 class XianKeDevice(BaseDevice):
-    """显科VMS设备客户端。"""
+    """显科CMS设备客户端。"""
 
     codec = XianKeCodec
 
@@ -40,10 +34,10 @@ class XianKeDevice(BaseDevice):
         try:
             frame = Frame(what=What.GET_BRIGHTNESS_AND_MODE)
             response = await self._request(frame)
-            tags: BrightnessTags = self.codec.decode(response)
+            data = self.codec.decode(response)
             cms_tags = CmsTags(
-                brightness=tags.brightness,
-                brightness_mode="manual" if tags.mode == 1 else "auto",
+                brightness=data["brightness"],
+                brightness_mode="manual" if data["mode"] == 1 else "auto",
                 timestamp=datetime.now(),
             )
             return Response.success(data=cms_tags.model_dump())
@@ -59,12 +53,12 @@ class XianKeDevice(BaseDevice):
         try:
             frame = Frame(what=What.GET_PLAY_ITEM)
             response = await self._request(frame)
-            item_tags: ItemTags = self.codec.decode(response)
+            data = self.codec.decode(response)
 
-            orig_play_item = item_tags.text or ""
+            orig_play_item = data.get("text") or ""
             play_item = CmsPlayItem(
                 index=0,
-                text=item_tags.text,
+                text=data.get("text"),
                 font=None,
                 font_color=None,
                 font_size=None,
@@ -93,15 +87,17 @@ class XianKeDevice(BaseDevice):
         try:
             frame = Frame(what=What.DOWNLOAD_FILE)
             response = await self._request(frame)
-            play_tags: PlayTags = self.codec.decode(response)
+            play_data = self.codec.decode(response)
 
-            play_list = [
-                self._item_tags_to_cms_play_item(item) for window in play_tags.windows for item in window.items
-            ]
-            orig_play_list = "\r\n".join(item.media or "" for window in play_tags.windows for item in window.items)
+            play_list = []
+            orig_play_list_parts = []
+            for window in play_data.get("windows", []):
+                for item in window.get("items", []):
+                    play_list.append(self._dict_to_cms_play_item(item))
+                    orig_play_list_parts.append(item.get("media") or "")
 
             cms_tags = CmsTags(
-                orig_play_list=orig_play_list,
+                orig_play_list="\r\n".join(orig_play_list_parts),
                 play_list=play_list,
                 timestamp=datetime.now(),
             )
@@ -159,35 +155,22 @@ class XianKeDevice(BaseDevice):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _item_tags_to_cms_play_item(item: ItemTags) -> CmsPlayItem:
-        """将厂商原生 ItemTags 转换为统一 CmsPlayItem。"""
-        text = item.text
-        font = item.font
-        font_color = item.font_color
-        font_size = item.font_size
-        image_name = None
+    def _dict_to_cms_play_item(item: dict) -> CmsPlayItem:
+        """将厂商解析结果转换为统一 CmsPlayItem。"""
+        text = item.get("text")
+        font = item.get("font")
+        font_color = item.get("font_color")
+        font_size = item.get("font_size")
 
-        for media in item.media_list:
-            if media.text and text is None:
-                text = media.text
-            if media.font and font is None:
-                font = media.font
-            if media.font_color and font_color is None:
-                font_color = media.font_color
-            if media.font_size and font_size is None:
-                font_size = media.font_size
-            if media.bmp and image_name is None:
-                image_name = media.bmp
-            elif media.jpg and image_name is None:
-                image_name = media.jpg
-            elif media.png and image_name is None:
-                image_name = media.png
-            elif media.gif and image_name is None:
-                image_name = media.gif
+        image_name = None
+        for key in ("bmp", "gif", "mpg"):
+            if item.get(key):
+                image_name = item[key]
+                break
 
         duration = None
-        if item.duration is not None:
-            duration = item.duration  # 显科 duration 单位已经是秒
+        if item.get("duration") is not None:
+            duration = item["duration"]  # 显科 duration 单位已经是秒
 
         return CmsPlayItem(
             index=None,

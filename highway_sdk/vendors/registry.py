@@ -17,7 +17,7 @@ class VendorMetadata:
     Attributes:
         name: 厂商标识符（唯一键），如 "dianming"。
         display_name: 厂商显示名称，如 "电明"。
-        device_type: 设备类型，如 "vms", "vd"。
+        device_type: 设备类型，如 "cms", "vd"。
         description: 厂商描述。
         device_class: 设备类（延迟导入时使用字符串）。
         codec_class: 编解码器类（延迟导入时使用字符串）。

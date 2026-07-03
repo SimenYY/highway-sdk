@@ -1,4 +1,4 @@
-"""诺瓦厂商VMS协议模块。"""
+"""诺瓦厂商CMS协议模块。"""
 
 from highway_sdk.vendors.registry import VendorMetadata
 
@@ -9,8 +9,8 @@ from .spec import Frame, ResultCode, What
 metadata = VendorMetadata(
     name="nova",
     display_name="诺瓦",
-    device_type="vms",
-    description="诺瓦VMS设备协议实现",
+    device_type="cms",
+    description="诺瓦CMS设备协议实现",
     device_class=NovaDevice,
     codec_class=NovaCodec,
 )

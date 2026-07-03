@@ -1,7 +1,7 @@
-"""VMS 厂商基础模块。
+"""CMS 厂商基础模块。
 
-提供 VMS（可变情报板）设备协议的公共抽象，包括：
-- VMSFrame: VMS 帧基类（带起始符/结束符）
+提供 CMS（可变情报板）设备协议的公共抽象，包括：
+- CMSFrame: CMS 帧基类（带起始符/结束符）
 - crc16_ccitt: CRC-16-CCITT 校验算法
 - escape_bytes: 字节转义/反转义函数
 """
@@ -315,8 +315,8 @@ def crc16_ccitt(data: bytes) -> bytes:
     return crc.to_bytes(2, "big")
 
 
-class VMSFrame(BaseFrame):
-    """VMS 帧基类。
+class CMSFrame(BaseFrame):
+    """CMS 帧基类。
 
     在 BaseFrame 基础上增加了起始符和结束符。
 

@@ -6,20 +6,13 @@ from highway_sdk.core.device import BaseDevice
 from highway_sdk.core.exceptions import HighwaySDKError
 from highway_sdk.core.response import Response
 
-from ..tags import (
-    BrightnessMode,
-    BrightnessTags,
-    CmsPlayItem,
-    CmsTags,
-    ItemTags,
-    PlayTags,
-)
+from ..tags import CmsPlayItem, CmsTags
 from .codec import DianMingCodec
 from .spec import ENCODING, Frame, What
 
 
 class DianMingDevice(BaseDevice):
-    """电明VMS设备客户端。"""
+    """电明CMS设备客户端。"""
 
     codec = DianMingCodec
 
@@ -41,10 +34,10 @@ class DianMingDevice(BaseDevice):
         try:
             frame = Frame(what=What.GET_BRIGHTNESS_AND_MODE_REQ)
             response = await self._request(frame)
-            tags: BrightnessTags = self.codec.decode(response)
+            data = self.codec.decode(response)
             cms_tags = CmsTags(
-                brightness=tags.brightness,
-                brightness_mode="auto" if tags.mode == BrightnessMode.AUTO else "manual",
+                brightness=data["brightness"],
+                brightness_mode=data["mode"],
                 timestamp=datetime.now(),
             )
             return Response.success(data=cms_tags.model_dump())
@@ -60,10 +53,10 @@ class DianMingDevice(BaseDevice):
         try:
             frame = Frame(what=What.GET_PLAY_ITEM_REQ)
             response = await self._request(frame)
-            item_tags: ItemTags = self.codec.decode(response)
+            data = self.codec.decode(response)
 
-            orig_play_item = item_tags.media or ""
-            play_item = self._item_tags_to_cms_play_item(item_tags)
+            orig_play_item = data.get("media") or ""
+            play_item = self._dict_to_cms_play_item(data)
 
             cms_tags = CmsTags(
                 orig_play_item=orig_play_item,
@@ -89,15 +82,17 @@ class DianMingDevice(BaseDevice):
             data = offset + filename.encode("ascii")
             frame = Frame(what=What.GET_PLAY_LIST_REQ, data=data)
             response = await self._request(frame)
-            play_tags: PlayTags = self.codec.decode(response)
+            play_data = self.codec.decode(response)
 
-            play_list = [
-                self._item_tags_to_cms_play_item(item) for window in play_tags.windows for item in window.items
-            ]
-            orig_play_list = "\r\n".join(item.media or "" for window in play_tags.windows for item in window.items)
+            play_list = []
+            orig_play_list_parts = []
+            for window in play_data.get("windows", []):
+                for item in window.get("items", []):
+                    play_list.append(self._dict_to_cms_play_item(item))
+                    orig_play_list_parts.append(item.get("media") or "")
 
             cms_tags = CmsTags(
-                orig_play_list=orig_play_list,
+                orig_play_list="\r\n".join(orig_play_list_parts),
                 play_list=play_list,
                 timestamp=datetime.now(),
             )
@@ -156,11 +151,11 @@ class DianMingDevice(BaseDevice):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _item_tags_to_cms_play_item(item: ItemTags) -> CmsPlayItem:
-        """将厂商原生 ItemTags 转换为统一 CmsPlayItem。"""
+    def _dict_to_cms_play_item(item: dict) -> CmsPlayItem:
+        """将厂商解析结果转换为统一 CmsPlayItem。"""
         index = None
-        if item.index and item.index.isdigit():
-            index = int(item.index)
+        if item.get("index") and item["index"].isdigit():
+            index = int(item["index"])
 
         text = None
         font = None
@@ -168,27 +163,27 @@ class DianMingDevice(BaseDevice):
         font_size = None
         image_name = None
 
-        for media in item.media_list:
-            if media.text and text is None:
-                text = media.text
-            if media.font and font is None:
-                font = media.font
-            if media.font_color and font_color is None:
-                font_color = media.font_color
-            if media.font_size and font_size is None:
-                font_size = media.font_size
-            if media.bmp and image_name is None:
-                image_name = media.bmp
-            elif media.jpg and image_name is None:
-                image_name = media.jpg
-            elif media.png and image_name is None:
-                image_name = media.png
-            elif media.gif and image_name is None:
-                image_name = media.gif
+        for media in item.get("media_list", []):
+            if media.get("text") and text is None:
+                text = media["text"]
+            if media.get("font") and font is None:
+                font = media["font"]
+            if media.get("font_color") and font_color is None:
+                font_color = media["font_color"]
+            if media.get("font_size") and font_size is None:
+                font_size = media["font_size"]
+            if media.get("bmp") and image_name is None:
+                image_name = media["bmp"]
+            elif media.get("jpg") and image_name is None:
+                image_name = media["jpg"]
+            elif media.get("png") and image_name is None:
+                image_name = media["png"]
+            elif media.get("gif") and image_name is None:
+                image_name = media["gif"]
 
         duration = None
-        if item.duration is not None:
-            duration = item.duration // 10  # 十分之一秒 → 秒
+        if item.get("duration") is not None:
+            duration = item["duration"] // 10  # 十分之一秒 → 秒
 
         return CmsPlayItem(
             index=index,

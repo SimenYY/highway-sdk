@@ -6,8 +6,8 @@
 import pytest
 
 from highway_sdk.core.exceptions import DeviceOperationError
-from highway_sdk.vendors.vms.xianke.codec import XianKeCodec
-from highway_sdk.vendors.vms.xianke.spec import ENCODING, Frame, What
+from highway_sdk.vendors.cms.xianke.codec import XianKeCodec
+from highway_sdk.vendors.cms.xianke.spec import ENCODING, Frame, What
 
 
 class TestXianKeFrameSerialization:
@@ -168,8 +168,8 @@ class TestXianKeCodec:
 
     def test_decode_upload_file_success(self):
         """验证上传文件成功响应解码。"""
-        tags = XianKeCodec.decode_upload_file(b"\x01")
-        assert tags.is_ok is True
+        result = XianKeCodec.decode_upload_file(b"\x01")
+        assert result["is_ok"] is True
 
     def test_decode_upload_file_failure(self):
         """验证上传文件失败响应解码。"""
@@ -178,8 +178,8 @@ class TestXianKeCodec:
 
     def test_decode_select_play_list_success(self):
         """验证选择播放列表成功响应解码。"""
-        tags = XianKeCodec.decode_play_list(b"\x01")
-        assert tags.is_ok is True
+        result = XianKeCodec.decode_play_list(b"\x01")
+        assert result["is_ok"] is True
 
     def test_decode_select_play_list_failure(self):
         """验证选择播放列表失败响应解码。"""

@@ -1,12 +1,12 @@
-丰海VMS厂商实现
+丰海CMS厂商实现
 ================
 
-丰海是国内知名的VMS设备厂商，Highway SDK提供了丰海VMS设备的完整协议实现。
+丰海是国内知名的CMS设备厂商，Highway SDK提供了丰海CMS设备的完整协议实现。
 
-丰海VMS设备概述
+丰海CMS设备概述
 ----------------
 
-丰海VMS设备采用先进的LED显示技术，具有高亮度、高可靠性、易于维护等特点，广泛应用于高速公路、城市道路等场景。
+丰海CMS设备采用先进的LED显示技术，具有高亮度、高可靠性、易于维护等特点，广泛应用于高速公路、城市道路等场景。
 
 **设备特点**：
 
@@ -16,10 +16,10 @@
 - 支持远程管理和控制
 - 支持媒体文件管理
 
-丰海VMS设备协议
+丰海CMS设备协议
 ----------------
 
-丰海VMS设备使用自定义的TCP协议进行通信，Highway SDK封装了该协议，提供统一的API接口。
+丰海CMS设备使用自定义的TCP协议进行通信，Highway SDK封装了该协议，提供统一的API接口。
 
 **协议功能**：
 
@@ -30,26 +30,26 @@
 - 亮度控制
 - 模式切换
 
-丰海VMS API使用
+丰海CMS API使用
 ----------------
 
 **核心类**：
 
-- **VmsFenghaiProtocol** - 丰海VMS设备协议类
-- **FrameFactory** - 丰海VMS帧工厂，用于创建设备通信的请求帧
-- **Parser** - 丰海VMS解析器，用于解析设备返回的数据
+- **VmsFenghaiProtocol** - 丰海CMS设备协议类
+- **FrameFactory** - 丰海CMS帧工厂，用于创建设备通信的请求帧
+- **Parser** - 丰海CMS解析器，用于解析设备返回的数据
 
 **使用示例**：
 
 .. code-block:: python
 
     import asyncio
-    from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
+    from highway_sdk.vendors.cms.fenghai.protocol import VmsFenghaiProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
 
     # 自定义丰海协议类
     class MyFenghaiProtocol(VmsFenghaiProtocol):
-        """丰海VMS协议处理类"""
+        """丰海CMS协议处理类"""
         def on_message_parsed(self, tags):
             """处理丰海设备响应"""
             print(f"丰海设备响应: {tags}")
@@ -79,10 +79,10 @@
     if __name__ == "__main__":
         asyncio.run(main())
 
-丰海VMS媒体管理
+丰海CMS媒体管理
 ----------------
 
-丰海VMS设备支持媒体文件管理，包括文件上传、下载、删除等功能。
+丰海CMS设备支持媒体文件管理，包括文件上传、下载、删除等功能。
 
 **媒体管理功能**：
 
@@ -97,12 +97,12 @@
 .. code-block:: python
 
     import asyncio
-    from highway_sdk.vendors.vms.fenghai.protocol import VmsFenghaiProtocol
+    from highway_sdk.vendors.cms.fenghai.protocol import VmsFenghaiProtocol
     from highway_sdk.core.connectors import TCPReconnectingConnector
 
     # 自定义丰海协议类
     class MyFenghaiProtocol(VmsFenghaiProtocol):
-        """丰海VMS协议处理类"""
+        """丰海CMS协议处理类"""
         def on_message_parsed(self, tags):
             """处理丰海设备响应"""
             print(f"丰海设备响应: {tags}")
@@ -134,10 +134,10 @@
     if __name__ == "__main__":
         asyncio.run(main())
 
-丰海VMS测试用例
+丰海CMS测试用例
 ----------------
 
-Highway SDK为丰海VMS实现提供了完整的测试用例，包括：
+Highway SDK为丰海CMS实现提供了完整的测试用例，包括：
 
 - **test_factory.py** - 帧工厂测试
 - **test_parser.py** - 解析器测试
@@ -147,4 +147,4 @@ Highway SDK为丰海VMS实现提供了完整的测试用例，包括：
 
 .. code-block:: bash
 
-    pytest tests/vendors/vms/fenghai/ -v
+    pytest tests/vendors/cms/fenghai/ -v

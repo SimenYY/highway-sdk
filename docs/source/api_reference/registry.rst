@@ -95,7 +95,7 @@ register_vendor
    metadata = VendorMetadata(
        name="my_vendor",
        display_name="我的厂商",
-       device_type="vms",
+       device_type="cms",
        description="自定义厂商协议实现",
        device_class=MyDevice,
        codec_class=MyCodec,

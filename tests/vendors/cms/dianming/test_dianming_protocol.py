@@ -6,9 +6,8 @@
 import pytest
 
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.vendors.vms.dianming.codec import DianMingCodec
-from highway_sdk.vendors.vms.dianming.spec import Frame, What
-from highway_sdk.vendors.vms.tags import BrightnessMode
+from highway_sdk.vendors.cms.dianming.codec import DianMingCodec
+from highway_sdk.vendors.cms.dianming.spec import Frame, What
 
 
 class TestDianMingFrameSerialization:
@@ -230,10 +229,10 @@ class TestDianMingCodec:
         - data[7]为当前亮度值(0x35 = 53)
         """
         data = b"FFFFFFI5"
-        tags = DianMingCodec.decode_get_brightness(data)
+        result = DianMingCodec.decode_get_brightness(data)
 
-        assert tags.mode == BrightnessMode.AUTO
-        assert tags.brightness == 53
+        assert result["mode"] == "auto"
+        assert result["brightness"] == 53
 
     def test_decode_get_play_item(self):
         """验证播放项解码。
@@ -244,15 +243,15 @@ class TestDianMingCodec:
         data = bytes.fromhex(
             "303031303030353030303030303030305c433030303030305c4673333233325c543235353235353030303030305c4b3030303030303030303030305c57b0b2c8abb5dad2bb5c41d4a4b7c0ceaad6f7"
         )
-        tags = DianMingCodec.decode_get_play_item(data)
+        result = DianMingCodec.decode_get_play_item(data)
 
-        assert tags.index == "001"
-        assert tags.duration == 50
-        assert tags.screen_in_mode == 0
-        assert tags.play_effect == 0
-        assert tags.screen_out_mode == 0
-        assert tags.play_speed == 0
-        assert len(tags.media_list) > 0
+        assert result["index"] == "001"
+        assert result["duration"] == 50
+        assert result["screen_in_mode"] == 0
+        assert result["play_effect"] == 0
+        assert result["screen_out_mode"] == 0
+        assert result["play_speed"] == 0
+        assert len(result["media_list"]) > 0
 
     def test_decode_get_play_list(self):
         """验证播放列表解码。
@@ -269,35 +268,35 @@ class TestDianMingCodec:
             b"ITEM002=50,0,0,0,0,\\C000000\\Fs3232\\T255000000000\\K000000000000\\W"
             b"\xd7\xf1\xd5\xc2\xca\xd8\xb7\xa8\\A\xb0\xb2\xbc\xd1\xca\xbb\r\n"
         )
-        tags = DianMingCodec.decode_get_play_list(data)
+        result = DianMingCodec.decode_get_play_list(data)
 
-        assert len(tags.windows) == 1
-        assert len(tags.windows[0].items) == 3
+        assert len(result["windows"]) == 1
+        assert len(result["windows"][0]["items"]) == 3
 
         # 验证第一个播放项
-        item0 = tags.windows[0].items[0]
-        assert item0.duration == 50
-        assert item0.screen_in_mode == 0
-        assert item0.play_effect == 0
-        assert item0.screen_out_mode == 0
-        assert item0.play_speed == 0
-        assert len(item0.media_list) > 0
+        item0 = result["windows"][0]["items"][0]
+        assert item0["duration"] == 50
+        assert item0["screen_in_mode"] == 0
+        assert item0["play_effect"] == 0
+        assert item0["screen_out_mode"] == 0
+        assert item0["play_speed"] == 0
+        assert len(item0["media_list"]) > 0
 
     def test_decode_set_brightness(self):
         """验证设置亮度响应解码。
 
         数据域: 1 (成功)
         """
-        tags = DianMingCodec.decode_set_brightness(b"1")
-        assert tags.is_ok is True
+        result = DianMingCodec.decode_set_brightness(b"1")
+        assert result["is_ok"] is True
 
     def test_decode_set_play_list(self):
         """验证下发播放列表响应解码。
 
         数据域: 1 (成功)
         """
-        tags = DianMingCodec.decode_set_play_list(b"1")
-        assert tags.is_ok is True
+        result = DianMingCodec.decode_set_play_list(b"1")
+        assert result["is_ok"] is True
 
 
 class TestDianMingRoundTrip:

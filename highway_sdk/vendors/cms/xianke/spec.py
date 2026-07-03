@@ -4,7 +4,7 @@ from typing import Self
 from pydantic import Field, computed_field
 
 from highway_sdk.core.exceptions import CrcValidationError
-from highway_sdk.vendors.vms._base import VMSFrame, crc16_ccitt, escape_bytes
+from highway_sdk.vendors.cms._base import CMSFrame, crc16_ccitt, escape_bytes
 
 ENCODING = "gbk"
 
@@ -28,7 +28,7 @@ class What(Enum):
     GET_BRIGHTNESS_AND_MODE = b"05"  # 获取当前亮度
 
 
-class Frame(VMSFrame):
+class Frame(CMSFrame):
     """
     显科数据帧格式：【帧头 1B】-【类型 2B】-【地址 2B】-【数据 nB】-【校验 2B】-【帧尾 1B】
 
