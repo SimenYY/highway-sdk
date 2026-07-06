@@ -28,6 +28,8 @@ poetry install              # Install dependencies
 ```bash
 poetry run pytest tests/    # Run all tests
 poetry run pytest tests/test_transport.py -v    # Run specific test file
+# 覆盖率（CI 阈值 45%，目标 70%；配置见 pyproject.toml [tool.coverage.report]）
+poetry run pytest --cov=highway_sdk --cov-branch --cov-report=term
 ```
 
 #### Build
@@ -40,7 +42,11 @@ poetry version             # Show version
 #### Development Tools
 
 ```bash
-pre-commit run --all-files # Run pre-commit hooks (linting, type checking)
+pre-commit run --all-files # Run pre-commit hooks (ruff lint + format)
+poetry run ruff check .    # Lint
+poetry run ruff format --check .   # Format check
+poetry run pyright         # Type check (standard mode, 0 errors expected)
+poetry run pip-audit --strict  # Dependency vulnerability scan (non-blocking)
 ```
 
 ### Codebase Architecture
@@ -180,3 +186,6 @@ Async: pytest-asyncio
 - **Device inheritance**: Vendor devices inherit from `BaseDevice`, not `CMSDevice`
 - **No CMSCodec/CMSDevice**: These intermediate classes were removed; inherit directly from BaseCodec/BaseDevice
 - **Vendor metadata**: Each vendor module must export `metadata` (VendorMetadata instance) and auto-register in `vendors/__init__.py`
+- **CI 门禁**: 改动 `.gitlab-ci.yml` 时务必保持 6 个 stage 顺序：code_quality → test → type_check → security → build_docs → publish；publish 必须 `needs` 测试 job，禁止 `except: tags` 让发布跳过测试
+- **覆盖率阈值**: 在 `pyproject.toml [tool.coverage.report] fail_under` 修改时同步更新 `.gitlab-ci.yml` 的 `COVERAGE_FAIL_UNDER` 变量；当前 45%，目标 70%
+- **真实报文测试**: 厂商接口测试必须基于真实设备通信日志或协议标准报文，禁止凭空构造；测试文件 docstring 注明报文来源（"实际日志" / "协议标准 Vx.x.x" / "sdk-v2.x.x protocol.py"）

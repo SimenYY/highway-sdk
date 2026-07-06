@@ -1,8 +1,20 @@
 # .gitlab-ci.yml
+#
+# 流水线阶段：
+#   code_quality → test → type_check → security → build_docs → publish
+#
+# 关键设计：
+#   1. code_quality/test/type_check/security 在所有分支运行（不再 except: tags），
+#      确保 tag 发布前一定走过质量门禁。
+#   2. publish 显式 needs 测试 job，避免未测代码进入发布产物。
+#   3. 测试覆盖率 70% 阈值（pyproject.toml [tool.coverage.report] fail_under）。
+#   4. pyright 类型检查独立 stage，与 ruff 互补。
 
 stages:
   - code_quality
   - test
+  - type_check
+  - security
   - build_docs
   - publish
 
@@ -12,41 +24,60 @@ variables:
   SPHINXOPTS: "-W"
   LOCAL_PYPI_URL: "http://172.20.61.88:8080/simple/"
   LOCAL_PYPI_REPOSITORY: "local"
+  # 覆盖率最低阈值（与 pyproject.toml [tool.coverage.report] fail_under 保持一致）
+  # 当前 48.84%，门槛设 45%；目标随 device 层集成测试补齐后提升到 70%
+  COVERAGE_FAIL_UNDER: "45"
 
+# ============================================================================
+# 模板：减少重复
+# ============================================================================
+.poetry_setup: &poetry_setup
+  - pip install poetry==$POETRY_VERSION
+  - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
+  - poetry install --with dev
+
+# ============================================================================
+# 1. 代码质量：ruff lint + format check
+# ============================================================================
 code_quality:
   stage: code_quality
   image: python:3.11-slim
   tags:
     - linux
   script:
-    - pip install poetry==$POETRY_VERSION
-    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
-    - poetry install
+    - *poetry_setup
     - poetry run ruff check .
     - poetry run ruff format --check .
   artifacts:
     when: always
     paths:
       - .ruff_cache/
-  except:
-    - tags
 
+# ============================================================================
+# 2. 测试：Linux + Windows 双平台，含覆盖率报告
+# ============================================================================
 test_linux:
   stage: test
   image: python:3.11-slim
   tags:
     - linux
   script:
-    - pip install poetry==$POETRY_VERSION
-    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
-    - poetry install
-    - poetry run pytest --verbose
+    - *poetry_setup
+    # 跑测试并生成覆盖率（XML + Term + HTML）
+    - poetry run pytest --cov=highway_sdk --cov-branch --cov-report=term --cov-report=xml:coverage.xml --cov-report=html
+    # 阈值在 pyproject.toml [tool.coverage.report] fail_under=70 控制；再保险一道 CLI 阈值
+    - poetry run coverage report --fail-under=$COVERAGE_FAIL_UNDER
+  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+\.\d+%)/'
   artifacts:
     when: always
     paths:
       - .pytest_cache/
-  except:
-    - tags
+      - coverage.xml
+      - htmlcov/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 
 test_windows:
   stage: test
@@ -55,40 +86,72 @@ test_windows:
   script:
     - python -m pip install poetry==$POETRY_VERSION
     - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
-    - poetry install
-    - poetry run pytest --verbose
+    - poetry install --with dev
+    - poetry run pytest --cov=highway_sdk --cov-branch --cov-report=term
   artifacts:
     when: always
     paths:
       - .pytest_cache/
-  except:
-    - tags
 
+# ============================================================================
+# 3. 类型检查：pyright（standard 模式，与 pyrightconfig.json 一致）
+# ============================================================================
+type_check:
+  stage: type_check
+  image: python:3.11-slim
+  tags:
+    - linux
+  needs: []
+  script:
+    - *poetry_setup
+    - poetry run pyright
+  artifacts:
+    when: always
+    paths:
+      - .pyright/
+
+# ============================================================================
+# 4. 安全扫描：pip-audit 检查依赖漏洞
+# ============================================================================
+security_scan:
+  stage: security
+  image: python:3.11-slim
+  tags:
+    - linux
+  needs: []
+  script:
+    - *poetry_setup
+    # 扫描已安装依赖的已知漏洞（CVE/GHSA）
+    - poetry run pip-audit --strict
+  allow_failure: true # 漏洞告警不阻塞流水线，但会高亮提醒
+
+# ============================================================================
+# 5. 文档构建：Sphinx 严格模式（-W warning as error）
+# ============================================================================
 build_docs:
   stage: build_docs
   image: python:3.11-slim
   tags:
     - linux
+  needs: ["test_linux"]
   script:
-    - pip install poetry==$POETRY_VERSION
-    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
-    - poetry install
+    - *poetry_setup
     - sphinx-build $SPHINXOPTS -b html docs/source docs/build/html
   artifacts:
     paths:
       - docs/build/html/
-  except:
-    - tags
 
+# ============================================================================
+# 6. 发布：仅在 tag 时触发，且必须通过 test + type_check + code_quality
+# ============================================================================
 build_package:
   stage: publish
   image: python:3.11-slim
   tags:
     - linux
+  needs: ["test_linux", "type_check", "code_quality"]
   script:
-    - pip install poetry==$POETRY_VERSION
-    - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
-    - poetry install
+    - *poetry_setup
     - poetry build
   artifacts:
     paths:
@@ -101,6 +164,7 @@ publish_to_local_pypi:
   image: python:3.11-slim
   tags:
     - linux
+  needs: ["build_package"]
   script:
     - pip install poetry==$POETRY_VERSION
     - poetry config repositories.$LOCAL_PYPI_REPOSITORY $LOCAL_PYPI_URL
