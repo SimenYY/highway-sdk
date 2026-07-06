@@ -17,7 +17,7 @@ class NovaDevice(BaseDevice[NovaCodec]):
 
     codec = NovaCodec
 
-    async def _request(self, frame: Frame, timeout: float = 3.0) -> Frame:
+    async def _request(self, frame: Frame, timeout: float | None = None) -> Frame:
         """发送请求帧并返回解析后的响应帧。"""
         response = await self.request(frame, timeout)
         return Frame.from_bytes(response)
@@ -172,3 +172,23 @@ class NovaDevice(BaseDevice[NovaCodec]):
             return Response.success()
         except HighwaySDKError as e:
             return Response.error(str(e))
+
+    async def set_play_list(self, content: str, file_name: str = "play001.lst") -> Response:
+        """下发播放列表并立即播放。
+
+        Nova 需要三步：发送文件名 → 发送文件内容 → 选择播放列表。
+
+        Args:
+            content: 播放列表内容字符串。
+            file_name: 文件名，默认为 "play001.lst"。
+
+        Returns:
+            Response: 操作结果。
+        """
+        resp = await self.send_file_name(file_name)
+        if resp.status != "success":
+            return resp
+        resp = await self.send_file_content(content)
+        if resp.status != "success":
+            return resp
+        return await self.select_play_list(1)

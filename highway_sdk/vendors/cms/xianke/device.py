@@ -16,7 +16,7 @@ class XianKeDevice(BaseDevice[XianKeCodec]):
 
     codec = XianKeCodec
 
-    async def _request(self, frame: Frame, timeout: float = 3.0) -> Frame:
+    async def _request(self, frame: Frame, timeout: float | None = None) -> Frame:
         """发送请求帧并返回解析后的响应帧。"""
         response = await self.request(frame, timeout)
         return Frame.from_bytes(response)
@@ -149,6 +149,25 @@ class XianKeDevice(BaseDevice[XianKeCodec]):
             return Response.success()
         except HighwaySDKError as e:
             return Response.error(str(e))
+
+    async def set_play_list(self, content: str, file_name: str = "list\\000.xkl") -> Response:
+        """下发播放列表并立即播放。
+
+        XianKe 需要两步：upload_file 上传文件 → select_play_list 触发播放。
+
+        Args:
+            content: 播放列表内容字符串（由 Play 模型生成）。
+            file_name: 文件名，默认为 ``list\\000.xkl``（XianKe 协议规定的特殊命名，
+                含 ``\\`` 路径分隔符；select 时取 basename ``000.xkl``）。
+
+        Returns:
+            Response: 操作结果。
+        """
+        resp = await self.upload_file(content, file_name)
+        if resp.status != "success":
+            return resp
+        play_name = file_name.split("\\")[-1] if "\\" in file_name else file_name
+        return await self.select_play_list(play_name)
 
     # ------------------------------------------------------------------
     # 内部工具方法

@@ -4,7 +4,10 @@
 - CMSFrame: CMS 帧基类（带起始符/结束符）
 - crc16_ccitt: CRC-16-CCITT 校验算法
 - escape_bytes: 字节转义/反转义函数
+- parse_media: 媒体字符串转义码解析（SanSi/FengHai 共用格式）
 """
+
+import re
 
 from pydantic import Field
 
@@ -313,6 +316,73 @@ def crc16_ccitt(data: bytes) -> bytes:
         crc = _CRC16_TABLE[(crc >> 8) ^ byte] ^ (crc << 8)
         crc &= 0xFFFF
     return crc.to_bytes(2, "big")
+
+
+# ponytail: SanSi/FengHai 共用转义码格式（小写 \f/\c/\b），XianKe 不同（大写 \F/\T/\B）
+# 第 3 个厂商若需相同格式，再提取为 codec 基类
+_MEDIA_PATTERNS = {
+    "xy": re.compile(r"\\C(\d{3})(\d{3})"),
+    "font_color": re.compile(r"\\c(\d{12})"),
+    "background_color": re.compile(r"\\b(\d{12})"),
+    "word_space": re.compile(r"\\S(\d{2})"),
+    "font": re.compile(r"\\f([a-zA-Z])(\d{4})"),
+    "bmp": re.compile(r"\\B(\d{3})"),
+    "jpg": re.compile(r"\\J(\d{3})"),
+    "png": re.compile(r"\\P(\d{3})"),
+    "gif": re.compile(r"\\G(\d{3})"),
+}
+
+
+def parse_media(data_str: str) -> dict:
+    """解析媒体字符串转义码。
+
+    SanSi/FengHai 共用的转义码格式：
+        \\CxxxXXX  XY 坐标 (3+3 位数字)
+        \\cDDDDDDDDDDDD  字体颜色 (12 位数字)
+        \\bDDDDDDDDDDDD  背景色 (12 位数字)
+        \\SNN  字间距 (2 位数字)
+        \\fLNNNN  字体 + 字号 (字母 + 4 位数字)
+        \\BNNN  BMP 图 (3 位数字)
+        \\JNNN  JPG 图 (3 位数字)
+        \\PNNN  PNG 图 (3 位数字)
+        \\GNNN  GIF 图 (3 位数字)
+        剩余  文本内容
+
+    Args:
+        data_str: 媒体字符串。
+
+    Returns:
+        解析结果 dict，包含 media/text/font/font_size/font_color 等字段。
+    """
+    result: dict = {"media": data_str}
+    remaining = data_str
+
+    # XY 坐标（解析后不保留，仅从 remaining 中移除）
+    ret = _MEDIA_PATTERNS["xy"].search(remaining)
+    if ret:
+        start, end = ret.span()
+        remaining = remaining[:start] + remaining[end:]
+
+    for key, pattern in _MEDIA_PATTERNS.items():
+        if key == "xy":
+            continue
+        ret = pattern.search(remaining)
+        if not ret:
+            continue
+        if key == "font":
+            result["font"] = ret.group(1)
+            result["font_size"] = int(ret.group(2))
+        elif key == "word_space":
+            result["word_space"] = int(ret.group(1))
+        elif key in ("bmp", "jpg", "png", "gif"):
+            result[key] = ret.group(1)
+        else:  # font_color, background_color
+            result[key] = ret.group(1)
+        start, end = ret.span()
+        remaining = remaining[:start] + remaining[end:]
+
+    result["text"] = remaining
+    return result
 
 
 class CMSFrame(BaseFrame):

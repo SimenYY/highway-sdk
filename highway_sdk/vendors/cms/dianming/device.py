@@ -16,7 +16,7 @@ class DianMingDevice(BaseDevice[DianMingCodec]):
 
     codec = DianMingCodec
 
-    async def _request(self, frame: Frame, timeout: float = 3.0) -> Frame:
+    async def _request(self, frame: Frame, timeout: float | None = None) -> Frame:
         """发送请求帧并返回解析后的响应帧。"""
         response = await self.request(frame, timeout)
         return Frame.from_bytes(response)
@@ -127,11 +127,13 @@ class DianMingDevice(BaseDevice[DianMingCodec]):
             return Response.error(str(e))
 
     async def set_play_list(self, content: str, play_id: int = 0) -> Response:
-        """下发播放列表并立即显示。
+        """下发播放列表并立即播放。
+
+        DianMing 使用 SET_PLAY_LIST_AND_PLAY_REQ 单指令完成下发并播放。
 
         Args:
             content: 播放列表内容（可由 Play 模型生成）。
-            play_id: 播放列表 ID，默认为 0。
+            play_id: 播放列表 ID，默认为 0（内部映射为 ``play{play_id:02d}.lst``）。
 
         Returns:
             Response: 操作结果。

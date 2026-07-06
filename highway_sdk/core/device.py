@@ -3,7 +3,6 @@
 定义了设备客户端的统一接口，提供标准化的设备操作方式。
 """
 
-from abc import ABC
 from collections.abc import Callable
 from typing import Any, Generic, Self, TypeVar
 
@@ -14,7 +13,7 @@ from .transport import Transport
 CodecT = TypeVar("CodecT", bound=BaseCodec)
 
 
-class BaseDevice(ABC, Generic[CodecT]):
+class BaseDevice(Generic[CodecT]):
     """设备基类。
 
     所有设备客户端都应该继承此类，实现统一的设备操作接口。
@@ -40,6 +39,9 @@ class BaseDevice(ABC, Generic[CodecT]):
         """
         self.transport = transport
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.transport!r})"
+
     @classmethod
     async def connect(
         cls,
@@ -55,7 +57,7 @@ class BaseDevice(ABC, Generic[CodecT]):
             host: 设备地址。
             port: 设备端口。
             transport_factory: 传输层工厂函数，默认使用 Transport。
-            **kwargs: 传递给 Transport 的参数。
+            ``**kwargs``: 传递给 Transport 的参数。
 
         Returns:
             BaseDevice: 设备实例。
@@ -77,12 +79,12 @@ class BaseDevice(ABC, Generic[CodecT]):
         """
         await self.transport.send(bytes(frame))
 
-    async def request(self, frame: BaseFrame, timeout: float = 3.0) -> bytes:
+    async def request(self, frame: BaseFrame, timeout: float | None = None) -> bytes:
         """发送帧并等待响应。
 
         Args:
             frame: 要发送的帧。
-            timeout: 响应超时时间（秒）。
+            timeout: 响应超时时间（秒）。``None`` 表示使用 Transport 初始化时的超时。
 
         Returns:
             bytes: 响应数据。

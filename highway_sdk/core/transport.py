@@ -8,9 +8,9 @@ import logging
 import random
 
 from .exceptions import (
-    ConnectionError,
     ConnectionLostError,
     ConnectionTimeoutError,
+    DeviceConnectionError,
     ResponseTimeoutError,
 )
 
@@ -57,6 +57,9 @@ class Transport:
         self._connected = False
         self._reconnect_count = 0
         self._reconnect_task: asyncio.Task | None = None
+        # 主动断开标志：区分「主动 disconnect」（不再重连）与「被动断连」（可重连），
+        # 避免直接覆写 auto_reconnect 导致用户初始配置丢失。
+        self._closing = False
 
         # 使用标准 logging，通过 extra 传递设备信息
         self.logger = logger
@@ -67,12 +70,16 @@ class Transport:
         """是否已连接。"""
         return self._connected and self._writer is not None and not self._writer.is_closing()
 
+    def __repr__(self) -> str:
+        state = "connected" if self.is_connected else "disconnected"
+        return f"Transport(host={self.host!r}, port={self.port}, state={state})"
+
     async def connect(self) -> None:
         """建立连接。
 
         Raises:
             ConnectionTimeoutError: 连接超时。
-            ConnectionError: 连接失败。
+            DeviceConnectionError: 连接失败。
         """
         try:
             self._reader, self._writer = await asyncio.wait_for(
@@ -85,11 +92,15 @@ class Transport:
         except TimeoutError:
             raise ConnectionTimeoutError(f"Connection timeout after {self.timeout}s") from None
         except OSError as e:
-            raise ConnectionError(f"Connection failed: {e}") from e
+            raise DeviceConnectionError(f"Connection failed: {e}") from e
 
     async def disconnect(self) -> None:
-        """断开连接。"""
-        self.auto_reconnect = False
+        """断开连接。
+
+        主动断开后不再触发自动重连，但 ``auto_reconnect`` 初始配置保持不变——
+        下次 ``connect()`` 后仍可恢复自动重连行为。
+        """
+        self._closing = True
         if self._reconnect_task and not self._reconnect_task.done():
             self._reconnect_task.cancel()
             try:
@@ -103,6 +114,7 @@ class Transport:
         self._reader = None
         self._writer = None
         self._connected = False
+        self._closing = False
         self.logger.info(f"{self._log_prefix} Disconnected")
 
     async def send(self, data: bytes) -> None:
@@ -115,7 +127,7 @@ class Transport:
             ConnectionLostError: 连接已断开。
         """
         if not self.is_connected:
-            if self.auto_reconnect:
+            if self._should_reconnect():
                 await self._wait_for_reconnect()
             if not self.is_connected:
                 raise ConnectionLostError("Not connected")
@@ -138,7 +150,7 @@ class Transport:
             ConnectionLostError: 连接已断开。
         """
         if not self.is_connected:
-            if self.auto_reconnect:
+            if self._should_reconnect():
                 await self._wait_for_reconnect()
             if not self.is_connected:
                 raise ConnectionLostError("Not connected")
@@ -151,14 +163,14 @@ class Transport:
         self.logger.debug(f"{self._log_prefix} RXD << {data.hex(' ')}")
         return data
 
-    async def request(self, data: bytes, timeout: float = 3.0) -> bytes:
+    async def request(self, data: bytes, timeout: float | None = None) -> bytes:
         """请求-响应模式。
 
         发送数据并等待响应。
 
         Args:
             data: 要发送的数据。
-            timeout: 响应超时时间（秒）。
+            timeout: 响应超时时间（秒）。``None`` 表示使用初始化时的 ``self.timeout``。
 
         Returns:
             bytes: 接收到的响应数据。
@@ -168,29 +180,35 @@ class Transport:
             ResponseTimeoutError: 响应超时。
         """
         if not self.is_connected:
-            if self.auto_reconnect:
+            if self._should_reconnect():
                 await self._wait_for_reconnect()
             if not self.is_connected:
                 raise ConnectionLostError("Not connected")
 
         assert self._reader is not None and self._writer is not None
 
+        effective_timeout = self.timeout if timeout is None else timeout
+
         self._writer.write(data)
         await self._writer.drain()
         self.logger.debug(f"{self._log_prefix} TXD >> {data.hex(' ')}")
 
         try:
-            response = await asyncio.wait_for(self._reader.read(1024), timeout)
+            response = await asyncio.wait_for(self._reader.read(1024), effective_timeout)
             self.logger.debug(f"{self._log_prefix} RXD << {response.hex(' ')}")
             return response
         except TimeoutError:
-            raise ResponseTimeoutError(f"Response timeout after {timeout}s") from None
+            raise ResponseTimeoutError(f"Response timeout after {effective_timeout}s") from None
+
+    def _should_reconnect(self) -> bool:
+        """是否应该触发自动重连（仅当启用自动重连且非主动断开）。"""
+        return self.auto_reconnect and not self._closing
 
     async def _reconnect_loop(self) -> None:
         """重连循环。"""
         interval = self.reconnect_interval
 
-        while self.auto_reconnect:
+        while self._should_reconnect():
             try:
                 await self.connect()
                 self.logger.info(f"{self._log_prefix} Reconnected successfully")
@@ -203,7 +221,8 @@ class Transport:
                     self.logger.error(
                         f"{self._log_prefix} Max reconnect attempts ({self.max_reconnect_attempts}) reached"
                     )
-                    self.auto_reconnect = False
+                    # 达到上限：用 _closing 阻止后续重连，保留 auto_reconnect 原值
+                    self._closing = True
                     return
 
                 interval = min(interval * 1.618, 60.0)

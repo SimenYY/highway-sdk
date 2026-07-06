@@ -94,7 +94,7 @@ class VendorRegistry:
             vendor: 厂商标识符。
             host: 设备地址。
             port: 设备端口。
-            **kwargs: 传递给设备连接的参数。
+            ``**kwargs``: 传递给设备连接的参数。
 
         Returns:
             BaseDevice: 设备实例（未连接状态）。
@@ -126,7 +126,7 @@ class VendorRegistry:
             vendor: 厂商标识符。
             host: 设备地址。
             port: 设备端口。
-            **kwargs: 传递给设备连接的参数。
+            ``**kwargs``: 传递给设备连接的参数。
 
         Returns:
             BaseDevice: 已连接的设备实例。
@@ -186,7 +186,7 @@ def create_device(vendor: str, host: str, port: int, **kwargs: Any) -> "BaseDevi
         vendor: 厂商标识符。
         host: 设备地址。
         port: 设备端口。
-        **kwargs: 传递给 Transport 的参数。
+        ``**kwargs``: 传递给 Transport 的参数。
 
     Returns:
         BaseDevice: 设备实例。调用方如需厂商特有方法类型安全，
@@ -203,7 +203,7 @@ async def connect_device(vendor: str, host: str, port: int, **kwargs: Any) -> "B
         vendor: 厂商标识符。
         host: 设备地址。
         port: 设备端口。
-        **kwargs: 传递给设备连接的参数。
+        ``**kwargs``: 传递给设备连接的参数。
 
     Returns:
         BaseDevice: 已连接的设备实例。调用方如需厂商特有方法类型安全，

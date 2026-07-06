@@ -1,26 +1,16 @@
 """三思厂商编解码器模块。"""
 
 import configparser
-import re
 
 from highway_sdk.core.codec import BaseCodec
 from highway_sdk.core.exceptions import DeviceOperationError
 
+from .._base import parse_media
 from .spec import ENCODING, ResultCode, What
 
 
 class SanSiCodec(BaseCodec):
     """三思CMS编解码器。"""
-
-    XY_PATTERN = re.compile(r"\\C(\d{3})(\d{3})")
-    COLOR_PATTERN = re.compile(r"\\c(\d{12})")
-    BG_COLOR_PATTERN = re.compile(r"\\b(\d{12})")
-    WORD_SPACE_PATTERN = re.compile(r"\\S(\d{2})")
-    FONT_PATTERN = re.compile(r"\\f([a-zA-Z])(\d{4})")
-    BMP_PATTERN = re.compile(r"\\B(\d{3})")
-    JPG_PATTERN = re.compile(r"\\J(\d{3})")
-    PNG_PATTERN = re.compile(r"\\P(\d{3})")
-    GIF_PATTERN = re.compile(r"\\G(\d{3})")
 
     @classmethod
     def _is_ok(cls, data: bytes) -> bool:
@@ -28,74 +18,10 @@ class SanSiCodec(BaseCodec):
         return data.startswith(ResultCode.SUCCESS.value)
 
     @classmethod
-    def _parse_media(cls, data_str: str) -> dict:
-        """解析媒体字符串。"""
-        result = {}
-        result["media"] = data_str
-        remaining = result["media"]
-
-        ret = cls.XY_PATTERN.search(remaining)
-        if ret:
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        ret = cls.COLOR_PATTERN.search(remaining)
-        if ret:
-            result["font_color"] = ret.group(1)
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        ret = cls.FONT_PATTERN.search(remaining)
-        if ret:
-            result["font"] = ret.group(1)
-            result["font_size"] = int(ret.group(2))
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        ret = cls.BG_COLOR_PATTERN.search(remaining)
-        if ret:
-            result["background_color"] = ret.group(1)
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        ret = cls.WORD_SPACE_PATTERN.search(remaining)
-        if ret:
-            result["word_space"] = int(ret.group(1))
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        ret = cls.BMP_PATTERN.search(remaining)
-        if ret:
-            result["bmp"] = ret.group(1)
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        ret = cls.JPG_PATTERN.search(remaining)
-        if ret:
-            result["jpg"] = ret.group(1)
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        ret = cls.GIF_PATTERN.search(remaining)
-        if ret:
-            result["gif"] = ret.group(1)
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        ret = cls.PNG_PATTERN.search(remaining)
-        if ret:
-            result["png"] = ret.group(1)
-            start, end = ret.span()
-            remaining = remaining[:start] + remaining[end:]
-
-        result["text"] = remaining
-        return result
-
-    @classmethod
     def _parse_play_item(cls, play_item: str) -> dict:
         """解析播放项字符串。"""
         fields = play_item.split(",")
-        result = cls._parse_media(fields[3])
+        result = parse_media(fields[3])
         result["duration"] = int(int(fields[0]) * 0.01)
         result["screen_in_mode"] = int(fields[1])
         result["play_speed"] = int(fields[2])
@@ -104,11 +30,19 @@ class SanSiCodec(BaseCodec):
 
     @classmethod
     def _parse_brightness_and_mode(cls, data: bytes) -> dict:
-        """解析亮度和模式。"""
+        """解析亮度和模式。
+
+        数据域布局（3B，无执行结果前缀）：
+            mode 1B（ASCII 数字）+ brightness 2B（ASCII 数字 0-31）
+
+        真实报文验证（sdk-v2.x.x protocol.py 实际日志）：
+            接收 02 30 31 31 31 35 F4 74 03
+            data = "115" → mode=1, brightness=15 → 48%
+        """
         max_brightness = 31
         result = {}
-        result["mode"] = int(chr(data[1]))
-        result["brightness"] = round(int(data[2:4].decode("ascii", errors="ignore")) / max_brightness * 100)
+        result["mode"] = int(chr(data[0]))
+        result["brightness"] = round(int(data[1:3].decode("ascii", errors="ignore")) / max_brightness * 100)
         return result
 
     @classmethod
@@ -157,7 +91,7 @@ class SanSiCodec(BaseCodec):
     def decode_get_play_item(cls, data: bytes) -> dict:
         """解码获取播放项响应。"""
         data_str = data.decode(ENCODING)
-        result = cls._parse_media(data_str[15:])
+        result = parse_media(data_str[15:])
         result["duration"] = int(int(data_str[3:8]) * 0.01)
         result["screen_in_mode"] = int(data_str[8:10])
         result["index"] = data_str[0:3]

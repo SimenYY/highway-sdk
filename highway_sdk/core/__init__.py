@@ -9,11 +9,17 @@
 from .codec import BaseCodec
 from .device import BaseDevice
 from .exceptions import (
-    ConnectionError,
     ConnectionLostError,
     ConnectionTimeoutError,
+    CrcValidationError,
+    DeviceConnectionError,
+    DeviceError,
+    DeviceOperationError,
+    FrameValidationError,
     HighwaySDKError,
     ProtocolError,
+    ProtocolNotSupportedError,
+    ProtocolParsingError,
     ResponseTimeoutError,
 )
 from .frame import BaseFrame
@@ -27,11 +33,17 @@ __all__ = [
     "BaseDevice",
     "BaseFrame",
     "BaseTags",
-    "ConnectionError",
     "ConnectionLostError",
     "ConnectionTimeoutError",
+    "CrcValidationError",
+    "DeviceConnectionError",
+    "DeviceError",
+    "DeviceOperationError",
+    "FrameValidationError",
     "HighwaySDKError",
     "ProtocolError",
+    "ProtocolNotSupportedError",
+    "ProtocolParsingError",
     "Response",
     "ResponseTimeoutError",
     "Transport",

@@ -7,6 +7,7 @@ from pathlib import Path
 from highway_sdk.core.codec import BaseCodec
 from highway_sdk.core.exceptions import DeviceOperationError
 
+from .._base import parse_media
 from .spec import ENCODING, ResultCode, What
 
 
@@ -24,11 +25,11 @@ class FengHaiCodec(BaseCodec):
     def _parse_play_item(cls, play_item: str) -> dict:
         """解析播放项字符串。"""
         fields = play_item.split(",")
-        result = {}
-        result["media"] = fields[3] if len(fields) > 3 else ""
-        result["duration"] = int(int(fields[0]) * 0.01) if len(fields) > 0 else 0
-        result["screen_in_mode"] = int(fields[1]) if len(fields) > 1 else 0
-        result["play_speed"] = int(fields[2]) if len(fields) > 2 else 0
+        result = parse_media(fields[3])
+        result["duration"] = int(int(fields[0]) * 0.01)
+        result["screen_in_mode"] = int(fields[1])
+        result["play_speed"] = int(fields[2])
+        result["media"] = play_item
         return result
 
     @classmethod

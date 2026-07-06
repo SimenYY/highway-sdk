@@ -16,7 +16,7 @@ class FengHaiDevice(BaseDevice[FengHaiCodec]):
 
     codec = FengHaiCodec
 
-    async def _request(self, frame: Frame, timeout: float = 3.0) -> Frame:
+    async def _request(self, frame: Frame, timeout: float | None = None) -> Frame:
         """发送请求帧并返回解析后的响应帧。"""
         response = await self.request(frame, timeout)
         return Frame.from_bytes(response)
@@ -139,6 +139,20 @@ class FengHaiDevice(BaseDevice[FengHaiCodec]):
         except HighwaySDKError as e:
             return Response.error(str(e))
 
+    async def set_play_list(self, content: str, file_name: str = "play.lst") -> Response:
+        """下发播放列表并立即播放。
+
+        FengHai 上传文件即自动更改当前播放表，无需额外播放指令。
+
+        Args:
+            content: 播放列表内容字符串（由 Play 模型生成）。
+            file_name: 文件名，默认为 "play.lst"。
+
+        Returns:
+            Response: 操作结果。
+        """
+        return await self.upload_file(content, file_name)
+
     # ------------------------------------------------------------------
     # 内部工具方法
     # ------------------------------------------------------------------
@@ -151,9 +165,9 @@ class FengHaiDevice(BaseDevice[FengHaiCodec]):
             index = int(item["index"])
 
         text = item.get("text")
-        font = None
+        font = item.get("font")
         font_color = item.get("font_color")
-        font_size = None
+        font_size = item.get("font_size")
         image_name = item.get("image_name")
 
         duration = None

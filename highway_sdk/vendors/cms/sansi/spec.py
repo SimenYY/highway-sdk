@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import Enum, IntEnum, StrEnum
 from typing import Self
 
-from pydantic import Field, computed_field
+from pydantic import BaseModel, Field, computed_field
 
 from highway_sdk.core.exceptions import CrcValidationError
 from highway_sdk.vendors.cms._base import CMSFrame, crc16_ccitt, escape_bytes
@@ -107,3 +107,184 @@ class Frame(CMSFrame):
             转义或反转义后的字节
         """
         return escape_bytes(payload, reverse=reverse)
+
+
+# ============================================================================
+# 播放列表内容构造（媒体模型）
+# ============================================================================
+
+
+class Color(StrEnum):
+    """颜色枚举（12位十进制，RRGGBB + 6位补零）。"""
+
+    RED = "255000000000"
+    GREEN = "000255000000"
+    YELLOW = "255255000000"
+    BLACK = "000000000000"
+
+
+class Font(StrEnum):
+    """字体枚举。"""
+
+    HEI_TI = "h"  # 黑体
+    KAI_TI = "k"  # 楷体
+    SONG_TI = "s"  # 宋体
+    FANG_SONG = "f"  # 仿宋
+
+
+class FontSize(IntEnum):
+    """字号枚举（协议要求重复输出，如 16→1616）。"""
+
+    _16 = 1616
+    _24 = 2424
+    _32 = 3232
+    _48 = 4848
+    _64 = 6464
+
+
+class Esc(StrEnum):
+    """协议转义字符枚举。"""
+
+    XY = "\\C"  # 坐标
+    BMP = "\\B"  # BMP图片
+    PNG = "\\P"  # PNG图片
+    JPG = "\\J"  # JPG图片
+    GIF = "\\G"  # GIF动画
+    MPG = "\\M"  # 视频文件
+    FONT = "\\f"  # 字体
+    FONT_COLOR = "\\c"  # 字符颜色
+    BACKGROUND_COLOR = "\\b"  # 字符背景颜色
+    WORD_SPACE = "\\S"  # 字间距
+
+
+class BaseMedia(BaseModel):
+    """媒体基类。
+
+    Attributes:
+        x: X坐标，范围0-999。
+        y: Y坐标，范围0-999。
+    """
+
+    x: int = Field(..., ge=0, le=999)
+    y: int = Field(..., ge=0, le=999)
+
+
+class Text(BaseMedia):
+    """文本媒体。
+
+    Attributes:
+        font: 字体类型。
+        font_size: 字号。
+        font_color: 字符颜色。
+        background_color: 背景颜色。
+        word_space: 字间距，范围0-99。
+        text: 文本内容。
+    """
+
+    font: Font
+    font_size: FontSize
+    font_color: Color
+    background_color: Color
+    word_space: int = Field(default=0, ge=0, le=99)
+    text: str
+
+    def __str__(self) -> str:
+        """将文本媒体转换为协议字符串。"""
+        protocol = (
+            f"{Esc.XY.value}{self.x:03d}{self.y:03d}"
+            f"{Esc.FONT.value}{self.font.value}{self.font_size.value}"
+            f"{Esc.FONT_COLOR.value}{self.font_color.value}"
+            f"{Esc.BACKGROUND_COLOR.value}{self.background_color.value}"
+        )
+        if self.word_space != 0:
+            protocol += f"{Esc.WORD_SPACE.value}{self.word_space:02d}"
+        protocol += self.text
+        return protocol
+
+
+class Bmp(BaseMedia):
+    """BMP图片媒体。"""
+
+    bmp_file_name: str
+
+    def __str__(self) -> str:
+        return f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.BMP.value}{self.bmp_file_name}"
+
+
+class Png(BaseMedia):
+    """PNG图片媒体。"""
+
+    png_file_name: str
+
+    def __str__(self) -> str:
+        return f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.PNG.value}{self.png_file_name}"
+
+
+class Jpg(BaseMedia):
+    """JPG图片媒体。"""
+
+    jpg_file_name: str
+
+    def __str__(self) -> str:
+        return f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.JPG.value}{self.jpg_file_name}"
+
+
+class Gif(BaseMedia):
+    """GIF动画媒体。"""
+
+    gif_file_name: str
+
+    def __str__(self) -> str:
+        return f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.GIF.value}{self.gif_file_name}"
+
+
+class Mpg(BaseMedia):
+    """视频媒体。"""
+
+    mpg_file_name: str
+
+    def __str__(self) -> str:
+        return f"{Esc.XY.value}{self.x:03d}{self.y:03d}{Esc.MPG.value}{self.mpg_file_name}"
+
+
+class Item(BaseModel):
+    """播放项。
+
+    Attributes:
+        media_list: 媒体列表。
+        duration: 停留时间，范围2-30000（单位：百分之一秒）。
+        screen_in: 入屏方式，范围0-30。
+        play_speed: 播放速度，范围0-49。
+    """
+
+    media_list: list[BaseMedia]
+    duration: int = Field(..., ge=2, le=30000)
+    screen_in: int = Field(default=1, ge=0, le=30)
+    play_speed: int = Field(default=0, ge=0, le=49)
+
+    def __str__(self) -> str:
+        """将播放项转换为协议字符串。"""
+        if not self.media_list:
+            raise ValueError("media_list is empty")
+        media_str = "".join(str(media) for media in self.media_list)
+        return f"{self.duration},{self.screen_in},{self.play_speed},{media_str}"
+
+
+class Play(BaseModel):
+    """播放列表。
+
+    Attributes:
+        item_list: 播放项列表。
+    """
+
+    item_list: list[Item]
+
+    def __str__(self) -> str:
+        """将播放列表转换为协议字符串。"""
+        if not self.item_list:
+            raise ValueError("item_list is empty")
+        protocol = "[playlist]\r\n"
+        protocol += f"item_no={len(self.item_list)}\r\n"
+        for i, item in enumerate(self.item_list):
+            protocol += f"item{i}={item}\r\n"
+        return protocol

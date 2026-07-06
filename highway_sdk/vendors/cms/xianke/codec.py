@@ -139,10 +139,24 @@ class XianKeCodec(BaseCodec):
     @classmethod
     @BaseCodec.register(What.DOWNLOAD_FILE)
     def decode_download_file(cls, data: bytes) -> dict:
-        """解码下载文件响应。"""
+        """解码下载文件响应。
+
+        响应格式：success_code(1B) + file_name_len(3B ASCII) + file_name + "0000"(4B) + INI 内容
+        修复：必须跳过文件头前缀，仅解析尾部 INI 内容。
+        """
         if not cls._is_ok(data):
             raise DeviceOperationError("Failed to download file")
-        return cls._parse_play_list(data[1:].decode("gbk", errors="ignore"))
+        if len(data) < 8:
+            raise DeviceOperationError("Invalid download response: too short")
+        try:
+            file_name_len = int(data[1:4].decode("ascii"))
+        except ValueError as e:
+            raise DeviceOperationError(f"Invalid file_name_len in download response: {e}") from e
+        # 跳过 success_code(1) + file_name_len(3) + file_name + "0000"(4)
+        sep = 4 + file_name_len + 4
+        if len(data) < sep:
+            raise DeviceOperationError("Invalid download response: truncated file header")
+        return cls._parse_play_list(data[sep:].decode("gbk", errors="ignore"))
 
     @classmethod
     @BaseCodec.register(What.SELECT_PLAY_LIST)
