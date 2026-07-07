@@ -62,9 +62,11 @@
             print(f"设置结果: {result}")
 
             # 下发播放列表并播放
-            content = "[playlist]\\r\\nitem_no=1\\r\\nitem0=300,1,0,..."
-            result = await device.set_play_list(content)
-            print(f"下发结果: {result}")
+            from highway_sdk.vendors.cms.tags import CmsPlayItem
+            items = [
+                CmsPlayItem(text="注意行车安全", font="黑体", font_size=32, font_color="#FF0000", duration=10),
+            ]
+            await device.set_play_list(items)
 
     if __name__ == "__main__":
         asyncio.run(main())
@@ -78,8 +80,8 @@ FengHaiDevice 提供以下设备操作方法：
 - ``get_play_list(play_id=0)`` - 获取当前播放列表
 - ``get_brightness()`` - 获取亮度和模式
 - ``set_brightness(brightness)`` - 设置亮度
-- ``upload_file(content, file_name="play.lst")`` - 上传播放列表文件
-- ``set_play_list(content, file_name="play.lst")`` - 下发播放列表并播放（委托 upload_file，上传即播放）
+- ``upload_file(content, file_name="play.lst")`` - 上传播放列表文件（底层接口，content 为协议字符串）
+- ``set_play_list(items, file_name="play.lst")`` - 下发播放列表并播放（接收 ``list[CmsPlayItem]``，内部转换为协议字符串，委托 upload_file）
 
 丰海CMS测试用例
 ----------------

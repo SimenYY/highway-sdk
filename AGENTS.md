@@ -189,6 +189,9 @@ Async: pytest-asyncio
 - **CI 门禁**: 改动 `.gitlab-ci.yml` 时务必保持 6 个 stage 顺序：code_quality → test → type_check → security → build_docs → publish；publish 必须 `needs` 测试 job，禁止 `except: tags` 让发布跳过测试
 - **覆盖率阈值**: 在 `pyproject.toml [tool.coverage.report] fail_under` 修改时同步更新 `.gitlab-ci.yml` 的 `COVERAGE_FAIL_UNDER` 变量；当前 45%，目标 70%
 - **真实报文测试**: 厂商接口测试必须基于真实设备通信日志或协议标准报文，禁止凭空构造；测试文件 docstring 注明报文来源（"实际日志" / "协议标准 Vx.x.x" / "sdk-v2.x.x protocol.py"）
+- **set_play_list 签名**: 所有 vendor 的 `set_play_list` 接收 `items: list[CmsPlayItem]`，不接收 `content: str`；内部 `_items_to_content()` 负责将 CmsPlayItem 转为协议字符串（Play/Item 模型降为内部编码器）
+- **异常/日志中文化**: 所有 `raise` 和 `logger` 消息必须用中文，格式为"操作失败 + 可能原因"，不包含技术黑话；调试日志中的 hex 数据保留但描述用中文
+- **颜色格式转换**: CmsPlayItem 的 `font_color` 用 `#RRGGBB` 格式，vendor 的 Color 枚举用 12 位 `RRRGGGBBB000` 格式；`_hex_color_to_vendor` 必须生成 12 字符而非 15 字符
 - **异常命名禁遮蔽**: 禁止用 `ConnectionError`（遮蔽内建 OSError 子类）和 `ValidationError`（遮蔽 pydantic.ValidationError）作为 SDK 异常类名；连接异常基类用 `DeviceConnectionError`，帧校验异常基类用 `FrameValidationError`
 - **disconnect 不篡改配置**: `Transport.disconnect()` 不准覆写 `auto_reconnect` 字段；用 `_closing` 标志区分「主动断开」与「被动断连可重连」，保留用户初始 auto_reconnect 配置
 - **超时默认 None**: `Transport.request` / `BaseDevice.request` / vendor `_request` 的 `timeout` 参数默认 `None`（回退 Transport 初始化超时），禁止 4 处各硬编码 `3.0` 导致漂移；FakeTransport 测试子类也必须用 `float | None = None` 否则 pyright reportIncompatibleMethodOverride

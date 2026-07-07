@@ -57,9 +57,11 @@ CMS设备API使用
             print(f"亮度: {result}")
 
             # 下发播放列表并播放
-            content = "[playlist]\\r\\nitem_no=1\\r\\nitem0=300,1,0,..."
-            result = await device.set_play_list(content)
-            print(f"下发结果: {result}")
+            from highway_sdk.vendors.cms.tags import CmsPlayItem
+            items = [
+                CmsPlayItem(text="注意行车安全", font="黑体", font_size=32, font_color="#FF0000", duration=10),
+            ]
+            await device.set_play_list(items)
 
     if __name__ == "__main__":
         asyncio.run(main())
