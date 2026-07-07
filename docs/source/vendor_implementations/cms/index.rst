@@ -8,9 +8,6 @@ CMS (Variable Message Sign) 设备厂商实现，提供了多种CMS设备厂商�
    :caption: CMS厂商实现
 
    fenghai
-   nova
-   xianke
-   sansi
 
 CMS厂商实现概述
 ----------------
@@ -33,33 +30,15 @@ Highway SDK支持多种CMS设备厂商，包括丰海、Nova、Xianke和Sansi等
 - 亮度控制
 - 模式切换
 
-丰海 (Fenghai) 厂商实现
-------------------------
+各厂商实现详情请参考 :doc:`/api_reference/devices/cms`。其中丰海有独立的厂商实现文档：:doc:`fenghai`。
 
-丰海是国内知名的CMS设备厂商，Highway SDK提供了丰海CMS设备的完整协议实现。
+厂商清单：
 
-请参考 `fenghai <fenghai>`_ 文档。
-
-Nova 厂商实现
---------------
-
-Nova是另一家知名的CMS设备厂商，Highway SDK提供了Nova CMS设备的完整协议实现。
-
-请参考 `nova <nova>`_ 文档。
-
-Xianke 厂商实现
----------------
-
-Xianke是国内领先的CMS设备厂商，Highway SDK提供了Xianke CMS设备的完整协议实现。
-
-请参考 `xianke <xianke>`_ 文档。
-
-Sansi 厂商实现
---------------
-
-Sansi是知名的照明和显示设备厂商，Highway SDK提供了Sansi CMS设备的完整协议实现。
-
-请参考 `sansi <sansi>`_ 文档。
+- **丰海 (FengHai)** — 国内知名 CMS 厂商，支持播放列表上传即播放（详见 :doc:`fenghai`）
+- **电明 (DianMing)** — 使用 SET_PLAY_LIST_AND_PLAY_REQ 单指令完成下发并播放
+- **Nova** — 三步式下发：send_file_name + send_file_content + select_play_list
+- **三思 (SanSi)** — 上传即播放（与丰海协议格式一致，差异在地址字段与响应 what 字段）
+- **显科 (XianKe)** — 两步式：upload_file + select_play_list
 
 扩展新CMS厂商实现
 ------------------

@@ -28,16 +28,11 @@ CMS设备通信协议
 
 不同的CMS设备厂商使用不同的通信协议，Highway SDK封装了这些协议，提供统一的API接口。
 
-**主要协议类型**：
-
-- **TCP协议** - 大多数CMS设备使用TCP协议通信
-- **UDP协议** - 部分CMS设备使用UDP协议通信
-
 **协议功能**：
 
 - 设备状态查询
 - 设备控制
-- 信息发布
+- 信息发布（播放列表下发）
 - 媒体文件管理
 - 亮度控制
 - 模式切换
@@ -45,51 +40,26 @@ CMS设备通信协议
 CMS设备API使用
 ---------------
 
-使用CMS设备API的基本步骤：
-
-1. 导入CMS设备协议类
-2. 创建自定义协议类，继承自厂商协议类
-3. 实现设备响应处理方法
-4. 创建连接器，连接到设备
-5. 发送命令，控制设备
-6. 处理设备响应
-7. 关闭连接
-
-**示例代码**：
-
 .. code-block:: python
 
     import asyncio
-    from highway_sdk.vendors.cms.fenghai.protocol import VmsFenghaiProtocol
-    from highway_sdk.core.connectors import TCPReconnectingConnector
-
-    # 使用厂商特定协议
-    class MyFenghaiProtocol(VmsFenghaiProtocol):
-        """丰海CMS协议处理类"""
-        def on_message_parsed(self, tags):
-            """处理丰海设备响应"""
-            print(f"丰海设备响应: {tags}")
+    from highway_sdk.vendors.cms.fenghai.device import FengHaiDevice
 
     async def main():
-        # 创建连接器
-        connector = TCPReconnectingConnector(
-            host="192.168.1.100",
-            port=8888,
-            protocol_cls=MyFenghaiProtocol
-        )
-        
-        # 建立连接
-        await connector.create()
-        
-        # 发送丰海特定命令
-        connector.protocol.get_play_item()
-        connector.protocol.get_brightness_and_mode()
-        
-        # 等待响应
-        await asyncio.sleep(10)
-        
-        # 关闭连接
-        connector.close()
+        # 连接设备
+        async with await FengHaiDevice.connect("192.168.1.100", 8888) as device:
+            # 获取当前播放项
+            result = await device.get_play_item()
+            print(f"播放项: {result}")
+
+            # 获取亮度和模式
+            result = await device.get_brightness()
+            print(f"亮度: {result}")
+
+            # 下发播放列表并播放
+            content = "[playlist]\\r\\nitem_no=1\\r\\nitem0=300,1,0,..."
+            result = await device.set_play_list(content)
+            print(f"下发结果: {result}")
 
     if __name__ == "__main__":
         asyncio.run(main())
@@ -97,16 +67,15 @@ CMS设备API使用
 CMS设备厂商实现
 ----------------
 
-Highway SDK支持多种CMS设备厂商，包括：
+Highway SDK支持多种CMS设备厂商，详见 :doc:`/api_reference/devices/cms` 和 :doc:`/vendor_implementations/cms/index`。
 
-.. toctree::
-   :maxdepth: 1
-   :caption: CMS厂商实现
+厂商清单：
 
-   /vendor_implementations/cms/fenghai
-   /vendor_implementations/cms/nova
-   /vendor_implementations/cms/xianke
-   /vendor_implementations/cms/sansi
+- **电明 (DianMing)** — 使用 SET_PLAY_LIST_AND_PLAY_REQ 单指令完成下发并播放
+- **丰海 (FengHai)** — 上传即播放（委托 upload_file）
+- **Nova** — 三步式：send_file_name + send_file_content + select_play_list
+- **三思 (SanSi)** — 上传即播放（委托 upload_file）
+- **显科 (XianKe)** — 两步式：upload_file + select_play_list
 
 扩展CMS设备支持
 ----------------

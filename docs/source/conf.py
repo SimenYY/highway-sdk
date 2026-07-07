@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath("../../"))
 project = "Highway SDK"
 copyright = "2026, AdzLovelace"
 author = "AdzLovelace"
-release = "2.0.0"
+release = "3.1.0"
 
 # -- General configuration ---------------------------------------------------# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
@@ -33,13 +33,11 @@ language = "zh_CN"
 # -- Options for HTML output -------------------------------------------------# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
-html_static_path = ["_static"]
+# 暂无静态资源；如后续添加 logo/图标，请创建 docs/source/_static/ 目录并恢复 html_static_path。
 
 # 主题配置
 html_theme_options = {
     "sidebar_hide_name": True,
-    "light_logo": "logo.png",
-    "dark_logo": "logo.png",
     "light_css_variables": {
         "color-brand-primary": "#336791",
         "color-brand-content": "#336791",
@@ -56,8 +54,17 @@ autodoc_default_options = {
     "undoc-members": True,
     "private-members": False,
     "show-inheritance": True,
-    "inherited-members": True,
+    # 不渲染继承成员：避免 Pydantic BaseModel 的 model_dump/model_dump_json 等
+    # 方法因 RST 不兼容的 docstring 产生数百条警告。
+    # 单个类如需展示继承成员，在 autoclass 指令上显式加 :inherited-members:。
+    "inherited-members": False,
 }
 
 autodoc_member_order = "bysource"
 autoclass_content = "both"
+
+# 抑制已知非阻塞警告类型（不阻塞构建，但减少噪音）
+suppress_warnings = [
+    # pydantic 部分魔法方法即使在 inherited-members=False 时也会触发微格式警告
+    "docutils",
+]

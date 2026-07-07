@@ -2,8 +2,8 @@
 
 基于诺瓦交通协议标准版 V3.11.5 验证帧序列化与解码器的正确性。
 
-注：Nova Frame.from_bytes 存在预存的解析问题（不影响实际设备操作，
-因为设备方法直接构造响应帧），因此帧测试主要验证序列化正确性。
+注：Frame.from_bytes 解析路径在 test_nova_frame_parsing.py 中单独覆盖，
+本文件聚焦序列化正确性与 codec 解码器单元测试。
 """
 
 import struct

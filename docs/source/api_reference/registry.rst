@@ -3,14 +3,6 @@
 
 Highway SDK 的厂商注册表提供了厂商元数据定义、注册和发现机制，支持物联网平台动态加载设备协议。
 
-模块概览
---------
-
-.. automodule:: highway_sdk.vendors.registry
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 核心类和函数
 ------------
 

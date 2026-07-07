@@ -35,113 +35,61 @@
 
 **核心类**：
 
-- **VmsFenghaiProtocol** - 丰海CMS设备协议类
-- **FrameFactory** - 丰海CMS帧工厂，用于创建设备通信的请求帧
-- **Parser** - 丰海CMS解析器，用于解析设备返回的数据
+- **FengHaiDevice** - 丰海CMS设备客户端，继承 BaseDevice[FengHaiCodec]
+- **FengHaiCodec** - 丰海CMS编解码器，继承 BaseCodec
+- **Frame** - 丰海CMS帧数据结构，继承 CMSFrame
 
 **使用示例**：
 
 .. code-block:: python
 
     import asyncio
-    from highway_sdk.vendors.cms.fenghai.protocol import VmsFenghaiProtocol
-    from highway_sdk.core.connectors import TCPReconnectingConnector
-
-    # 自定义丰海协议类
-    class MyFenghaiProtocol(VmsFenghaiProtocol):
-        """丰海CMS协议处理类"""
-        def on_message_parsed(self, tags):
-            """处理丰海设备响应"""
-            print(f"丰海设备响应: {tags}")
+    from highway_sdk.vendors.cms.fenghai.device import FengHaiDevice
 
     async def main():
-        # 创建连接器
-        connector = TCPReconnectingConnector(
-            host="192.168.1.100",
-            port=8888,
-            protocol_cls=MyFenghaiProtocol
-        )
-        
-        # 建立连接
-        await connector.create()
-        
-        # 发送命令
-        connector.protocol.get_play_item()
-        connector.protocol.get_brightness_and_mode()
-        connector.protocol.set_brightness(20)
-        
-        # 等待响应
-        await asyncio.sleep(10)
-        
-        # 关闭连接
-        connector.close()
+        # 连接设备
+        async with await FengHaiDevice.connect("192.168.1.100", 8888) as device:
+            # 获取当前播放项
+            result = await device.get_play_item()
+            print(f"播放项: {result}")
+
+            # 获取亮度和模式
+            result = await device.get_brightness()
+            print(f"亮度: {result}")
+
+            # 设置亮度
+            result = await device.set_brightness(20)
+            print(f"设置结果: {result}")
+
+            # 下发播放列表并播放
+            content = "[playlist]\\r\\nitem_no=1\\r\\nitem0=300,1,0,..."
+            result = await device.set_play_list(content)
+            print(f"下发结果: {result}")
 
     if __name__ == "__main__":
         asyncio.run(main())
 
-丰海CMS媒体管理
+丰海CMS设备方法
 ----------------
 
-丰海CMS设备支持媒体文件管理，包括文件上传、下载、删除等功能。
+FengHaiDevice 提供以下设备操作方法：
 
-**媒体管理功能**：
-
-- 上传媒体文件
-- 下载媒体文件
-- 删除媒体文件
-- 列出媒体文件
-- 设置媒体文件播放
-
-**使用示例**：
-
-.. code-block:: python
-
-    import asyncio
-    from highway_sdk.vendors.cms.fenghai.protocol import VmsFenghaiProtocol
-    from highway_sdk.core.connectors import TCPReconnectingConnector
-
-    # 自定义丰海协议类
-    class MyFenghaiProtocol(VmsFenghaiProtocol):
-        """丰海CMS协议处理类"""
-        def on_message_parsed(self, tags):
-            """处理丰海设备响应"""
-            print(f"丰海设备响应: {tags}")
-
-    async def main():
-        # 创建连接器
-        connector = TCPReconnectingConnector(
-            host="192.168.1.100",
-            port=8888,
-            protocol_cls=MyFenghaiProtocol
-        )
-        
-        # 建立连接
-        await connector.create()
-        
-        # 下载文件
-        connector.protocol.download_file(file_name="play.lst")
-        
-        # 上传文件
-        file_content = "[playlist]\nitem_no=1\nitem0=300,1,0,\\C000000\\c25500000000\\b00000000000\\fs2424测试内容"
-        connector.protocol.upload_file(content=file_content, file_name="play.lst")
-        
-        # 等待响应
-        await asyncio.sleep(10)
-        
-        # 关闭连接
-        connector.close()
-
-    if __name__ == "__main__":
-        asyncio.run(main())
+- ``get_play_item()`` - 获取当前播放项
+- ``get_play_list()`` - 获取当前播放列表
+- ``get_brightness()`` - 获取亮度和模式
+- ``set_brightness(brightness)`` - 设置亮度
+- ``upload_file(content, file_name)`` - 上传播放列表文件
+- ``set_play_list(content, file_name)`` - 下发播放列表并播放（委托 upload_file，上传即播放）
 
 丰海CMS测试用例
 ----------------
 
 Highway SDK为丰海CMS实现提供了完整的测试用例，包括：
 
-- **test_factory.py** - 帧工厂测试
-- **test_parser.py** - 解析器测试
-- **test_media.py** - 媒体管理测试
+- **test_fenghai_protocol.py** - 协议帧序列化与解析测试
+- **test_fenghai_real_packets.py** - 真实报文解析测试（基于实际设备通信日志）
+- **test_fenghai_get_play_list_real_packet.py** - 获取播放列表真实报文测试
+- **test_fenghai_set_play_list_real_packet.py** - 下发播放列表真实报文测试
 
 **运行测试**：
 

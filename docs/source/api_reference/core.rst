@@ -3,14 +3,6 @@
 
 Highway SDK的核心模块提供了SDK的基础功能，包括传输层、编解码、设备抽象、帧定义和日志配置等。
 
-模块概览
---------
-
-.. automodule:: highway_sdk.core
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 核心类和函数
 ------------
 
@@ -70,7 +62,7 @@ get_logger
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: highway_sdk.core.exceptions.ConnectionError
+.. autoclass:: highway_sdk.core.exceptions.DeviceConnectionError
    :members:
    :undoc-members:
    :show-inheritance:
@@ -91,6 +83,16 @@ get_logger
    :show-inheritance:
 
 .. autoclass:: highway_sdk.core.exceptions.ProtocolError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: highway_sdk.core.exceptions.FrameValidationError
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: highway_sdk.core.exceptions.CrcValidationError
    :members:
    :undoc-members:
    :show-inheritance:

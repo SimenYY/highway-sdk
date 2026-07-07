@@ -300,11 +300,12 @@ logger.info("应用启动")
 ```python
 from highway_sdk.core.exceptions import (
     HighwaySDKError,        # 基础异常
-    ConnectionError,        # 连接失败
+    DeviceConnectionError,  # 设备连接异常基类（连接失败）
     ConnectionTimeoutError, # 连接超时
     ConnectionLostError,    # 连接断开
     ResponseTimeoutError,   # 响应超时
     ProtocolError,          # 协议错误
+    FrameValidationError,   # 帧数据校验异常基类（CRC、解析、不支持）
 )
 
 async def safe_connect():
@@ -317,6 +318,10 @@ async def safe_connect():
         print("连接断开")
     except ResponseTimeoutError:
         print("响应超时")
+    except DeviceConnectionError as e:
+        # DeviceConnectionError 是连接异常基类，捕获它不会误吞 asyncio/socket
+        # 层抛出的内建 ConnectionError（OSError 子类）
+        print(f"连接失败: {e}")
 ```
 
 ## 测试
