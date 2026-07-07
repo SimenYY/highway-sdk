@@ -7,6 +7,7 @@ from .dianming.device import DianMingDevice
 # 丰海厂商实现
 from .fenghai.codec import FengHaiCodec
 from .fenghai.device import FengHaiDevice
+from .layout import TextLayout, TextLayoutResult
 
 # 诺瓦厂商实现
 from .nova.codec import NovaCodec
@@ -29,6 +30,8 @@ __all__ = [
     "NovaDevice",
     "SanSiCodec",
     "SanSiDevice",
+    "TextLayout",
+    "TextLayoutResult",
     "XianKeCodec",
     "XianKeDevice",
 ]

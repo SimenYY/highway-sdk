@@ -122,6 +122,25 @@ class NovaDevice(BaseDevice[NovaCodec]):
         )
         return cms_tags.model_dump()
 
+    async def get_screen_size(self) -> tuple[int, int]:
+        """获取屏幕分辨率（宽, 高）。
+
+        用于配合 ``TextLayout`` 工具计算文字居中布局：先查询屏幕尺寸，
+        再据此计算适配字号和居中坐标。
+
+        Returns:
+            tuple[int, int]: ``(width, height)`` 像素。
+
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
+        """
+        frame = Frame(what=What.GET_SCREEN_SIZE_REQ)
+        response = await self._request(frame)
+        data = self.codec.decode(response)
+        return data["width"], data["height"]
+
     # ------------------------------------------------------------------
     # 控制类 API（成功返回 None，失败抛异常）
     # ------------------------------------------------------------------
@@ -234,8 +253,15 @@ class NovaDevice(BaseDevice[NovaCodec]):
 
     @classmethod
     def _item_to_str(cls, item: CmsPlayItem) -> str:
-        """将单个 CmsPlayItem 转换为 INI 文本中的 item 行内容。"""
+        """将单个 CmsPlayItem 转换为 INI 文本中的 item 行内容。
+
+        优先使用 ``CmsPlayItem.x`` / ``CmsPlayItem.y`` 作为渲染坐标，缺失时默认 0。
+        配合 ``TextLayout`` 工具可实现文字居中显示。
+        """
         duration = item.duration if item.duration is not None else 10
+        x = item.x or 0
+        y = item.y or 0
+        coord = f"\\C{x:03d}{y:03d}"
         # item 行格式：duration,screen_in,play_effect,screen_out,play_speed,媒体串
         # Nova 无明确字段定义，沿用 demo 中的格式（与 DianMing 一致）
         media_str_parts: list[str] = []
@@ -243,13 +269,13 @@ class NovaDevice(BaseDevice[NovaCodec]):
             font_code = cls._FONT_NAME_MAP.get(item.font or "黑体", "h")
             color = cls._hex_color_to_vendor(item.font_color)
             font_size_code = cls._font_size_code(item.font_size)
-            media_str_parts.append(f"\\C000000\\F{font_code}{font_size_code}\\T{color}\\W{item.text}")
+            media_str_parts.append(f"{coord}\\F{font_code}{font_size_code}\\T{color}\\W{item.text}")
         if item.image_name:
             # Nova 无图片媒体协议定义，沿用通用 \I 转义码占位
-            media_str_parts.append(f"\\I{item.image_name.rjust(3, '0')}")
+            media_str_parts.append(f"{coord}\\I{item.image_name.rjust(3, '0')}")
         if not media_str_parts:
             # 兜底：空文本
-            media_str_parts.append("\\C000000\\Fh3232\\T000000000000\\W")
+            media_str_parts.append(f"{coord}\\Fh3232\\T000000000000\\W")
         media_str = "".join(media_str_parts)
         return f"{duration},0,0,0,0,{media_str}"
 

@@ -49,6 +49,18 @@ class CmsPlayItem(BaseModel):
         description="该条内容的停留时间，单位秒",
         examples=[10, 30, 60],
     )
+    x: int | None = Field(
+        default=None,
+        ge=0,
+        description="渲染坐标 X（像素），None 时厂商使用默认值 0。配合 TextLayout 工具实现居中显示",
+        examples=[0, 48],
+    )
+    y: int | None = Field(
+        default=None,
+        ge=0,
+        description="渲染坐标 Y（像素），None 时厂商使用默认值 0。配合 TextLayout 工具实现居中显示",
+        examples=[0, 32],
+    )
 
 
 class CmsTags(BaseModel):

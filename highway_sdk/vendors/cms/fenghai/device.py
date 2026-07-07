@@ -6,7 +6,24 @@ from highway_sdk.core.device import BaseDevice
 
 from ..tags import CmsPlayItem, CmsTags
 from .codec import FengHaiCodec
-from .spec import ENCODING, BaseMedia, Bmp, Color, Flc, Font, FontSize, Frame, Gif, Item, Jpg, Play, Png, Text, What
+from .spec import (
+    ENCODING,
+    BaseMedia,
+    Bmp,
+    Color,
+    Esc,
+    Flc,
+    Font,
+    FontSize,
+    Frame,
+    Gif,
+    Item,
+    Jpg,
+    Play,
+    Png,
+    Text,
+    What,
+)
 
 # 中文字体名 → Font 枚举映射
 _FONT_NAME_MAP = {
@@ -233,32 +250,39 @@ class FengHaiDevice(BaseDevice[FengHaiCodec]):
 
     @classmethod
     def _item_to_media_list(cls, item: CmsPlayItem) -> list[BaseMedia]:
-        """将单个 CmsPlayItem 转换为媒体对象列表。"""
+        """将单个 CmsPlayItem 转换为媒体对象列表。
+
+        优先使用 ``CmsPlayItem.x`` / ``CmsPlayItem.y`` 作为渲染坐标，缺失时默认 0。
+        文本中的 ``\\n`` 自动转为协议换行转义码 ``\\n``。
+        配合 ``TextLayout`` 工具可实现文字居中显示。
+        """
         media_list: list[BaseMedia] = []
+        x = item.x or 0
+        y = item.y or 0
         if item.text is not None:
             font_enum = _FONT_NAME_MAP.get(item.font or "黑体", Font.HEI_TI)
             text = Text(
-                x=0,
-                y=0,
+                x=x,
+                y=y,
                 font=font_enum,
                 font_size=cls._font_size_to_enum(item.font_size),
                 font_color=cls._hex_color_to_vendor(item.font_color),
                 background_color=Color.BLACK,
-                text=item.text,
+                text=item.text.replace("\n", Esc.LF.value),
             )
             media_list.append(text)
         if item.image_name:
             ext = item.image_name.lower().rsplit(".", 1)[-1] if "." in item.image_name else ""
             if ext == "png":
-                media_list.append(Png(x=0, y=0, png_file_name=item.image_name))
+                media_list.append(Png(x=x, y=y, png_file_name=item.image_name))
             elif ext in ("jpg", "jpeg"):
-                media_list.append(Jpg(x=0, y=0, jpg_file_name=item.image_name))
+                media_list.append(Jpg(x=x, y=y, jpg_file_name=item.image_name))
             elif ext == "gif":
-                media_list.append(Gif(x=0, y=0, gif_file_name=item.image_name))
+                media_list.append(Gif(x=x, y=y, gif_file_name=item.image_name))
             elif ext == "flc":
-                media_list.append(Flc(x=0, y=0, flc_file_name=item.image_name))
+                media_list.append(Flc(x=x, y=y, flc_file_name=item.image_name))
             else:
-                media_list.append(Bmp(x=0, y=0, bmp_file_name=item.image_name))
+                media_list.append(Bmp(x=x, y=y, bmp_file_name=item.image_name))
         if not media_list:
             media_list.append(
                 Text(
