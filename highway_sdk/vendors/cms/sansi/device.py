@@ -67,17 +67,26 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
         except HighwaySDKError as e:
             return Response.error(str(e))
 
-    async def get_play_list(self, play_id: int = 0) -> Response:
+    async def get_play_list(self, file_name: str = "play.lst") -> Response:
         """获取当前播放列表（结构化 + 原始格式）。
 
+        SanSi 无直接获取播放列表指令，通过 DOWNLOAD_FILE 下载文件实现，
+        默认下载 ``play.lst``。
+
+        请求 data 域格式：``file_name`` + 4 字节文件偏移（``\\x00\\x00\\x00\\x00``）
+        真实报文（用户提供）：
+            02 30 30 30 39 70 6C 61 79 2E 6C 73 74 00 00 00 00 57 2A 03
+            data = "play.lst" + b"\\x00\\x00\\x00\\x00"
+
         Args:
-            play_id: 播放列表 ID，默认为 0。
+            file_name: 文件名，默认为 "play.lst"。
 
         Returns:
             Response: data 为 CmsTags，填充 play_list、orig_play_list、timestamp。
         """
         try:
-            frame = Frame(what=What.DOWNLOAD_FILE)
+            data = file_name.encode(ENCODING) + b"\x00\x00\x00\x00"
+            frame = Frame(what=What.DOWNLOAD_FILE, data=data)
             response = await self._request(frame)
             play_data = self.codec.decode_download_file(response.data)
 
