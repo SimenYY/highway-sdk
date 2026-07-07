@@ -18,6 +18,7 @@ from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ResponseTimeoutError,
 )
+from highway_sdk.vendors.cms import TextLayout
 from highway_sdk.vendors.cms.tags import CmsPlayItem
 
 
@@ -80,6 +81,50 @@ async def main():
                 CmsPlayItem(text="注意安全", font="宋体", font_size=24, font_color="#FFFF00", duration=10),
             ]
             try:
+                await device.set_play_list(items=items, file_name="play001.lst")
+                print("  下发成功")
+            except DeviceOperationError as e:
+                print(f"  下发失败: {e}")
+
+            # ----------------------------------------------------------
+            # 5. 查询屏幕分辨率（配合 TextLayout 计算居中布局）
+            # ----------------------------------------------------------
+            print("\n--- 5. 查询屏幕分辨率 ---")
+            try:
+                width, height = await device.get_screen_size()
+                print(f"  屏幕分辨率: {width} x {height} (像素)")
+            except DeviceOperationError as e:
+                print(f"  查询失败: {e}")
+                width, height = 96, 32  # 回退默认值
+
+            # ----------------------------------------------------------
+            # 6. 下发居中播放列表（使用 TextLayout 自动计算字号和坐标）
+            # ----------------------------------------------------------
+            # Nova 任意正整数字号，无需 size_range
+            print("\n--- 6. 下发居中播放列表（TextLayout 自动布局） ---")
+            try:
+                layout = TextLayout(
+                    "前方施工 请减速慢行 注意行车安全",
+                    w=width,
+                    h=height,
+                )
+                result = layout.build()
+                print(f"  适配字号: {result.size}")
+                print(f"  居中坐标: ({result.x}, {result.y})")
+                print(f"  文本占用: {result.text_width}x{result.text_height}")
+                print(f"  换行后文本: {result.text!r}")
+
+                items = [
+                    CmsPlayItem(
+                        text=result.text,
+                        font="宋体",
+                        font_size=result.size,
+                        font_color="#FFFF00",
+                        duration=15,
+                        x=result.x,
+                        y=result.y,
+                    ),
+                ]
                 await device.set_play_list(items=items, file_name="play001.lst")
                 print("  下发成功")
             except DeviceOperationError as e:

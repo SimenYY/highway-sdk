@@ -18,6 +18,7 @@ from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ResponseTimeoutError,
 )
+from highway_sdk.vendors.cms import TextLayout
 from highway_sdk.vendors.cms.tags import CmsPlayItem
 
 
@@ -106,6 +107,41 @@ async def main():  # noqa: C901
                 CmsPlayItem(text="前方施工 减速慢行", font="宋体", font_size=32, font_color="#FF0000", duration=15),
             ]
             try:
+                await device.set_play_list(items=items, file_name="play.lst")
+                print("  下发成功")
+            except DeviceOperationError as e:
+                print(f"  下发失败: {e}")
+
+            # ----------------------------------------------------------
+            # 7. 下发居中播放列表（使用 TextLayout 自动计算字号和坐标）
+            # ----------------------------------------------------------
+            # 电明 FontSize 枚举固定为 16/24/32/48/64，必须传入 size_range
+            # 让 TextLayout 从适配字号中选取最接近且不超出的列表值
+            print("\n--- 7. 下发居中播放列表（TextLayout 自动布局） ---")
+            try:
+                layout = TextLayout(
+                    "前方施工 请减速慢行 注意安全",
+                    w=96,  # 显示区域宽（像素），请根据实际设备调整
+                    h=32,  # 显示区域高（像素）
+                    size_range=[16, 24, 32, 48, 64],
+                )
+                result = layout.build()
+                print(f"  适配字号: {result.size}")
+                print(f"  居中坐标: ({result.x}, {result.y})")
+                print(f"  文本占用: {result.text_width}x{result.text_height}")
+                print(f"  换行后文本: {result.text!r}")
+
+                items = [
+                    CmsPlayItem(
+                        text=result.text,
+                        font="宋体",
+                        font_size=result.size,
+                        font_color="#FF0000",
+                        duration=15,
+                        x=result.x,
+                        y=result.y,
+                    ),
+                ]
                 await device.set_play_list(items=items, file_name="play.lst")
                 print("  下发成功")
             except DeviceOperationError as e:

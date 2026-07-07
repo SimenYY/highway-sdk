@@ -18,10 +18,11 @@ from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ResponseTimeoutError,
 )
+from highway_sdk.vendors.cms import TextLayout
 from highway_sdk.vendors.cms.tags import CmsPlayItem
 
 
-async def main():
+async def main():  # noqa: C901
     """三思 CMS 设备完整使用示例。"""
     print("=" * 60)
     print("三思（SanSi）CMS 设备示例")
@@ -96,6 +97,40 @@ async def main():
                 CmsPlayItem(text="注意行车安全", font="宋体", font_size=32, font_color="#FF0000", duration=10),
             ]
             try:
+                await device.set_play_list(items=items, file_name="play.lst")
+                print("  下发成功")
+            except DeviceOperationError as e:
+                print(f"  下发失败: {e}")
+
+            # ----------------------------------------------------------
+            # 6. 下发居中播放列表（使用 TextLayout 自动计算字号和坐标）
+            # ----------------------------------------------------------
+            # 三思 FontSize 枚举固定为 16/24/32/48/64，必须传入 size_range
+            # 注意：三思协议不支持换行符（无 Esc.LF），TextLayout 自动适配字号避免换行
+            print("\n--- 6. 下发居中播放列表（TextLayout 自动布局） ---")
+            try:
+                layout = TextLayout(
+                    "前方施工减速慢行",
+                    w=96,
+                    h=32,
+                    size_range=[16, 24, 32, 48, 64],
+                )
+                result = layout.build()
+                print(f"  适配字号: {result.size}")
+                print(f"  居中坐标: ({result.x}, {result.y})")
+                print(f"  换行后文本: {result.text!r}")
+
+                items = [
+                    CmsPlayItem(
+                        text=result.text,
+                        font="宋体",
+                        font_size=result.size,
+                        font_color="#FF0000",
+                        duration=15,
+                        x=result.x,
+                        y=result.y,
+                    ),
+                ]
                 await device.set_play_list(items=items, file_name="play.lst")
                 print("  下发成功")
             except DeviceOperationError as e:

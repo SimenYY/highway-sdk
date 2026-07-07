@@ -192,3 +192,4 @@ Async: pytest-asyncio
 - **set_play_list 签名**: 所有 vendor 的 `set_play_list` 接收 `items: list[CmsPlayItem]`，不接收 `content: str`；内部 `_items_to_content()` 负责将 CmsPlayItem 转为协议字符串（Play/Item 模型降为内部编码器）
 - **异常/日志中文化**: 所有 `raise` 和 `logger` 消息必须用中文，格式为"操作失败 + 可能原因"，不包含技术黑话；调试日志中的 hex 数据保留但描述用中文
 - **颜色格式转换**: CmsPlayItem 的 `font_color` 用 `#RRGGBB` 格式，vendor 的 Color 枚举用 12 位 `RRRGGGBBB000` 格式；`_hex_color_to_vendor` 必须生成 12 字符而非 15 字符
+- **TextLayout 文字居中**: 文字居中是布局问题不是协议问题，统一用 `vendors/cms/layout.py` 的 `TextLayout` 厂商无关工具类实现（二分查找适配字号 + 逐字符换行 + 居中坐标）；`CmsPlayItem` 暴露 `x`/`y` 可选字段（None 时厂商用默认值 0）由调用方填入；5 家 vendor 的 `_item_to_media_list` / `_item_to_str` 优先使用 `item.x` / `item.y` 作为渲染坐标；文本中的 `\n` 由 vendor 自动转为协议换行转义码（DianMing `\A`、FengHai `\n`、XianKe `\N`、SanSi/Nova 不支持换行）；DianMing/FengHai/SanSi/XianKe 的 FontSize 为固定枚举（16/24/32/48/64），调用 TextLayout 时必须传 `size_range=[16, 24, 32, 48, 64]`；Nova 字号任意正整数，无需 size_range，可调用 `device.get_screen_size()` 查询实际分辨率作为 w/h

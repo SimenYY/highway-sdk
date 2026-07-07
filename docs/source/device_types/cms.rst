@@ -66,6 +66,84 @@ CMS设备API使用
     if __name__ == "__main__":
         asyncio.run(main())
 
+文字居中显示（TextLayout）
+----------------------------
+
+CMS 显示屏尺寸有限，文字内容需要根据显示区域自动选择合适的字号、换行和居中坐标，
+确保内容完整可见且上下左右居中。SDK 提供 ``TextLayout`` 厂商无关工具实现该布局计算。
+
+字符宽度规则：
+    - ASCII 字符（半角）：字号 / 2
+    - 非 ASCII 字符（如中文全角）：字号
+
+算法步骤：
+    1. 二分查找最大字号使文字完整显示在 w×h 区域
+    2. 逐字符遍历，超宽时自动换行（``\\n`` 分隔）
+    3. 计算居中坐标 ``x = (w - text_w) // 2, y = (h - text_h) // 2``
+
+.. code-block:: python
+
+    import asyncio
+    from highway_sdk import FengHaiDevice
+    from highway_sdk.vendors.cms import TextLayout
+    from highway_sdk.vendors.cms.tags import CmsPlayItem
+
+    async def main():
+        async with await FengHaiDevice.connect("192.168.1.100", 8888) as device:
+            # 假设显示屏分辨率 96x32 像素
+            # 丰海 FontSize 枚举固定为 16/24/32/48/64，必须传入 size_range
+            layout = TextLayout(
+                "前方施工 请减速慢行 注意安全",
+                w=96,
+                h=32,
+                size_range=[16, 24, 32, 48, 64],
+            )
+            result = layout.build()
+            print(f"适配字号: {result.size}")           # 16
+            print(f"居中坐标: ({result.x}, {result.y})")
+            print(f"文本占用: {result.text_width}x{result.text_height}")
+            print(f"换行后: {result.text!r}")
+
+            items = [
+                CmsPlayItem(
+                    text=result.text,
+                    font="宋体",
+                    font_size=result.size,
+                    font_color="#FF0000",
+                    duration=15,
+                    x=result.x,
+                    y=result.y,
+                ),
+            ]
+            await device.set_play_list(items)
+
+    if __name__ == "__main__":
+        asyncio.run(main())
+
+厂商字号差异
+~~~~~~~~~~~~~~~~
+
+- **电明 / 丰海 / 三思 / 显科**：FontSize 为固定枚举（16/24/32/48/64），调用 ``TextLayout``
+  时必须传入 ``size_range=[16, 24, 32, 48, 64]``，工具会从适配字号中选取最接近且不超出的列表值
+- **Nova**：任意正整数字号，无需 ``size_range``；可调用 ``device.get_screen_size()`` 查询
+  设备实际分辨率，作为 ``w`` / ``h`` 参数
+
+TextLayout 字段说明
+~~~~~~~~~~~~~~~~~~~
+
+``TextLayout(text, *, w, h, max_size=None, min_size=8, size_range=None, word_space=0, line_space=0)``
+
+- ``text``：要显示的文本内容，不能为空
+- ``w`` / ``h``：显示区域宽高（像素），必须为正
+- ``max_size``：最大字号，默认 ``min(w, h)``
+- ``min_size``：最小字号，默认 8，下限为 ``MIN_SIZE`` 类常量
+- ``size_range``：设备支持的字号列表；提供时工具会从中选取最接近适配字号的列表值
+- ``word_space`` / ``line_space``：字间距 / 行间距（像素），默认 0
+
+``TextLayoutResult`` 包含字段：``text``、``lines``、``size``、``x``、``y``、
+``text_width``、``text_height``，分别对应换行后文本、行列表、适配字号、居中坐标、文本占用尺寸。
+调用方负责将结果填入 ``CmsPlayItem`` 的 ``text`` / ``font_size`` / ``x`` / ``y`` 字段。
+
 CMS设备厂商实现
 ----------------
 
