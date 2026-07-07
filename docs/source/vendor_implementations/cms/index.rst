@@ -12,7 +12,7 @@ CMS (Variable Message Sign) 设备厂商实现，提供了多种CMS设备厂商�
 CMS厂商实现概述
 ----------------
 
-Highway SDK支持多种CMS设备厂商，包括丰海、Nova、Xianke和Sansi等，为每种厂商提供了统一的API接口。
+Highway SDK支持多种CMS设备厂商，包括丰海、电明、诺瓦、三思和显科，为每种厂商提供了统一的API接口。
 
 **厂商实现特点**：
 

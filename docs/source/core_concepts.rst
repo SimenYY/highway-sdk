@@ -3,159 +3,122 @@
 
 Highway SDK 引入了一些核心概念，理解这些概念将有助于您更好地使用和扩展 SDK。
 
-协议 (Protocol)
----------------
+架构层次
+--------
 
-**定义**：协议是设备通信的规则和格式的抽象，定义了设备如何发送和接收数据。
+SDK 自上而下分为四层：
 
-**类型**：
-- **DriverTCPClientProtocol** - 基本的TCP客户端协议，用于处理设备通信
-- **MonitoredDriverTCPClientProtocol** - 带监控功能的TCP客户端协议
-- **ReqRespTCPClientProtocol** - 请求响应模式的TCP客户端协议
-- **MonitoredReqRespTCPClientProtocol** - 带监控功能的请求响应模式TCP客户端协议
+1. **Device（设备层）** - 厂商设备客户端，提供数据采集与控制 API
+2. **Codec（编解码层）** - 帧 ↔ 数据标签转换，基于装饰器注册解码器
+3. **Frame（帧定义层）** - 厂商特定的帧结构与序列化
+4. **Transport（传输层）** - 异步 TCP 客户端，内置自动重连
 
-**作用**：
-- 处理设备连接的建立、维护和关闭
-- 处理设备数据的发送和接收
-- 解析设备返回的数据
-- 触发相应的回调函数处理设备事件
+传输层 (Transport)
+------------------
 
-连接器 (Connector)
--------------------
+**定义**：异步 TCP 客户端，负责字节流传输、连接管理、请求-响应匹配。
 
-**定义**：连接器负责管理设备连接的生命周期，包括连接的建立、重连和关闭。
+**关键能力**：
 
-**类型**：
-- **TCPReconnectingConnector** - TCP重连连接器，支持自动重连
-- **UDPConnector** - UDP连接器
+- 基于 ``asyncio`` 的连接建立、断开、收发
+- 内置自动重连（指数退避，可配置最大重试次数）
+- 请求-响应模式：``await transport.request(data, timeout=None)``
+- 上下文管理器：``async with transport:``
 
-**作用**：
-- 管理设备连接的建立和关闭
-- 处理连接失败的情况，实现自动重连
-- 提供设备连接状态的监控
-- 简化设备连接的使用方式
+**类**：``highway_sdk.core.transport.Transport``
 
-设备ID (Device ID)
--------------------
+帧 (Frame)
+----------
 
-**定义**：设备ID是设备的唯一标识符，用于区分不同的设备。
+**定义**：厂商特定的数据帧结构，由 ``start + address + what + data + crc + end`` 组成。
 
-**生成规则**：
-- 对于TCP连接，设备ID格式为：`tcp+host+port`
-- 对于UDP连接，设备ID格式为：`udp+host`
+**类层级**：
 
-**作用**：
-- 用于设备状态的监控和统计
-- 用于设备管理和识别
-- 用于日志记录和调试
+- ``BaseFrame``（``core/frame.py``）- Pydantic 模型基类，字段 ``what`` 为 ``Any`` 以允许厂商覆盖为枚举
+- ``CMSFrame``（``vendors/cms/_base.py``）- CMS 通用帧基类，提供 CRC、转义等共享逻辑
+- 厂商 ``Frame``（``vendors/cms/<vendor>/spec.py``）- 实现 ``__bytes__()`` 序列化与 ``from_bytes()`` 解析
 
-日志 (Logging)
-----------------------
+编解码器 (Codec)
+----------------
 
-**定义**：日志接口用于记录 SDK 运行时的状态和事件。
+**定义**：将响应帧解码为 ``dict``，将业务参数编码为请求帧的 data 域。
 
-**核心函数**：
-- **get_logger(name)** - 返回标准 `logging.Logger` 实例
+**关键约定**：
 
-**作用**：
-- 提供日志接口，记录 SDK 运行状态
-- 库只提供接口，不配置日志输出
-- 应用负责配置日志（输出位置、格式、级别等）
+- 子类通过 ``__init_subclass__`` 隔离 ``decoders`` 注册表，避免跨厂商污染
+- 使用 ``@BaseCodec.register(What.XXX)`` 类方法装饰器注册解码器（返回原函数，不包装）
+- ``BaseCodec.decode(frame)`` 统一分发到对应 ``decode_xxx(data)`` 方法
+- 自 v3.0.0 起 ``decode()`` 返回 ``dict``（不再是 ``BaseTags`` 子类）
 
-监控 (Metrics)
----------------
+设备 (Device)
+-------------
 
-**定义**：监控功能用于收集设备的连接状态和性能指标。
+**定义**：厂商设备客户端，对外提供数据采集与控制 API，对内封装帧构造与响应解析。
+
+**关键约定**：
+
+- ``BaseDevice[CodecT]`` 是泛型基类（``Generic[CodecT]``，**不继承 ABC**）
+- 厂商设备 ``class XVendorDevice(BaseDevice[XVendorCodec])``
+- 工厂入口：``await XVendorDevice.connect(host, port)`` 或通过注册表 ``connect_device("vendor", host, port)``
+- ``_request`` 方法 ``timeout: float | None = None`` 默认回退 ``Transport`` 初始化超时
+- 设备方法返回 ``Response`` 对象，``data`` 为 ``CmsTags.model_dump()``
+
+数据标签 (Tags)
+----------------
+
+**定义**：设备返回数据的标准化结构。
+
+**当前约定**：
+
+- ``BaseTags`` 自 v3.0.0 起 **已弃用于 codec 解码路径**（``decode()`` 返回 ``dict``）
+- ``BaseTags`` 仅为公开 API 兼容性保留
+- CMS 厂商统一使用 ``CmsTags`` / ``CmsPlayItem``（位于 ``vendors/cms/tags.py``），禁止厂商自定义 Tags 类
+
+厂商注册表 (Vendor Registry)
+-----------------------------
+
+**定义**：运行时厂商注册中心，支持配置驱动的动态设备创建。
 
 **核心组件**：
-- **MetricsMixin** - 监控混入类，用于为协议类添加监控功能
-- **start_prometheus_server** - 启动Prometheus监控服务器
 
-**作用**：
-- 收集设备的连接状态
-- 收集设备通信的性能指标
-- 提供Prometheus兼容的监控端点
-- 支持监控数据的可视化
+- ``VendorMetadata`` - 冻结 dataclass，含 ``name``、``display_name``、``device_type``、``device_class``、``codec_class``
+- ``VendorRegistry`` - 注册表类，管理注册与查询
+- ``list_vendors()`` / ``get_vendor(name)`` / ``create_device(vendor, host, port)`` / ``connect_device(vendor, host, port)`` - 工厂函数
+- ``register_vendor(metadata)`` - 注册自定义厂商
 
-帧工厂 (Frame Factory)
-----------------------
-
-**定义**：帧工厂用于创建设备通信的请求帧。
-
-**作用**：
-- 根据设备协议规范创建请求帧
-- 封装请求帧的创建逻辑
-- 提供一致的API接口，简化请求帧的创建
-
-解析器 (Parser)
----------------
-
-**定义**：解析器用于解析设备返回的数据，将原始数据转换为结构化的标签。
-
-**作用**：
-- 解析设备返回的原始数据
-- 将原始数据转换为结构化的标签对象
-- 处理数据解析错误
-- 提供一致的数据解析接口
-
-标签 (Tags)
------------
-
-**定义**：标签是设备数据的结构化表示，包含设备的状态和信息。
-
-**作用**：
-- 统一设备数据的表示方式
-- 提供易于访问和使用的数据结构
-- 支持数据的序列化和反序列化
-- 便于数据的处理和分析
+**自动注册**：``vendors/__init__.py`` 导入各厂商模块时，模块的 ``__init__.py`` 通过 ``register_vendor()`` 自动注册 ``metadata``。
 
 厂商实现 (Vendor Implementation)
---------------------------------
+---------------------------------
 
-**定义**：厂商实现是针对特定厂商设备的协议实现。
+**目录结构**：每个 CMS 厂商实现固定 3 个文件：
 
-**结构**：
-- **factory.py** - 帧工厂实现
-- **parser.py** - 解析器实现
-- **protocol.py** - 协议实现
-- **spec.py** - 协议规范定义
-- **media.py** - 媒体管理实现
+- ``spec.py`` - 帧定义（``What`` 枚举、``Frame`` 类、地址/编码常量）
+- ``codec.py`` - 编解码器（``XCodec(BaseCodec)``，注册 ``decode_xxx`` 方法）
+- ``device.py`` - 设备客户端（``XDevice(BaseDevice[XCodec])``）
 
-**作用**：
-- 实现特定厂商设备的通信协议
-- 提供厂商特定的功能和API
-- 封装厂商协议的细节，提供统一的接口
+**目录禁止**：禁止 ``factory.py`` / ``parser.py`` / ``protocol.py`` / ``media.py`` 等旧架构文件。
 
-平台集成 (Platform Integration)
---------------------------------
+异常处理 (Exception)
+---------------------
 
-**定义**：平台集成用于将SDK与外部平台集成，实现设备数据的上传和管理。
+**基类**：``HighwaySDKError``
 
-**作用**：
-- 将设备数据上传到外部平台
-- 接收外部平台的命令和配置
-- 实现设备的远程管理和监控
-- 支持多种平台的集成
+**关键约定**：
 
-消息 Broker (Message Broker)
-------------------------------
+- 连接异常基类用 ``DeviceConnectionError``（**禁止** ``ConnectionError``，避免遮蔽内建 ``OSError`` 子类）
+- 帧校验异常基类用 ``FrameValidationError``（**禁止** ``ValidationError``，避免遮蔽 ``pydantic.ValidationError``）
 
-**定义**：消息Broker用于实现设备数据的发布和订阅。
+日志 (Logging)
+--------------
 
-**类型**：
-- **MQTTBroker** - MQTT消息Broker
-- **KafkaBroker** - Kafka消息Broker
-- **RedisBroker** - Redis消息Broker
+**核心函数**：``get_logger(name)`` 返回标准 ``logging.Logger`` 实例。
 
-**作用**：
-- 实现设备数据的发布和订阅
-- 支持设备之间的消息传递
-- 实现设备数据的广播和分发
-- 支持多种消息协议
+**约定**：库只提供日志接口，不配置日志输出；应用负责配置（``logging.basicConfig`` 或对接 ``loguru``/``structlog``）。
 
 下一步
 ------
 
-- 了解 `架构设计 <architecture>`_ ，深入理解SDK的设计理念
-- 查看 `API 参考 <api_reference/index>`_ ，了解详细的API文档
-- 探索 `使用示例 <usage_examples/index>`_ ，学习更多使用场景
+- 阅读 `架构设计 <architecture>`_ 了解 SDK 的设计理念
+- 查看 `API 参考 <api_reference/index>`_ 了解详细的 API 文档
+- 阅读 `使用指南 <../guide>`_ 学习典型使用场景

@@ -64,43 +64,7 @@ VD设备API规划
 3. **VDStatus** - VD设备状态
 4. **VDConfig** - VD设备配置
 
-**使用示例（规划）**：
-
-.. code-block:: python
-
-    import asyncio
-    from highway_sdk.vendors.vd.vendor1.protocol import VmVendor1Protocol
-    from highway_sdk.core.connectors import TCPReconnectingConnector
-
-    # 自定义VD协议类
-    class MyVDProtocol(VmVendor1Protocol):
-        """厂商1 VD协议处理类"""
-        def on_data_received(self, data):
-            """处理VD数据"""
-            print(f"收到VD数据: {data}")
-
-    async def main():
-        # 创建连接器
-        connector = TCPReconnectingConnector(
-            host="192.168.1.200",
-            port=9999,
-            protocol_cls=MyVDProtocol
-        )
-        
-        # 建立连接
-        await connector.create()
-        
-        # 配置VD设备
-        connector.protocol.configure_sampling_rate(60)
-        
-        # 等待接收数据
-        await asyncio.sleep(60)
-        
-        # 关闭连接
-        connector.close()
-
-    if __name__ == "__main__":
-        asyncio.run(main())
+VD设备尚未实现，待厂商接入后再补充使用示例。
 
 扩展VD设备支持
 ----------------
@@ -108,11 +72,9 @@ VD设备API规划
 要扩展VD设备支持，需要：
 
 1. 在 `highway_sdk/vendors/vd/` 目录下创建厂商实现目录
-2. 实现以下文件：
-   - `protocol.py` - VD设备协议实现
-   - `parser.py` - 数据解析器
-   - `spec.py` - 协议规范
-3. 编写测试用例
-4. 更新文档
+2. 参考 CMS 厂商实现 ``spec.py / codec.py / device.py`` 三文件结构
+3. 在厂商 ``__init__.py`` 中导出 ``metadata``（``VendorMetadata`` 实例），SDK 会在 ``vendors/__init__.py`` 自动注册
+4. 编写测试用例
+5. 更新文档
 
 如果您有兴趣贡献VD设备的实现，欢迎提交PR或联系项目维护者。

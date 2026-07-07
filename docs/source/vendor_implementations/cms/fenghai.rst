@@ -75,11 +75,11 @@
 FengHaiDevice 提供以下设备操作方法：
 
 - ``get_play_item()`` - 获取当前播放项
-- ``get_play_list()`` - 获取当前播放列表
+- ``get_play_list(play_id=0)`` - 获取当前播放列表
 - ``get_brightness()`` - 获取亮度和模式
 - ``set_brightness(brightness)`` - 设置亮度
-- ``upload_file(content, file_name)`` - 上传播放列表文件
-- ``set_play_list(content, file_name)`` - 下发播放列表并播放（委托 upload_file，上传即播放）
+- ``upload_file(content, file_name="play.lst")`` - 上传播放列表文件
+- ``set_play_list(content, file_name="play.lst")`` - 下发播放列表并播放（委托 upload_file，上传即播放）
 
 丰海CMS测试用例
 ----------------

@@ -136,7 +136,7 @@ class MyDevice(BaseDevice):
 
     codec = MyCodec
 
-    async def _request(self, frame: Frame, timeout: float = 3.0) -> Frame:
+    async def _request(self, frame: Frame, timeout: float | None = None) -> Frame:
         response = await self.request(frame, timeout)
         return Frame.from_bytes(response)
 
@@ -174,7 +174,7 @@ class Transport:
     async def disconnect(self) -> None
     async def send(self, data: bytes) -> None
     async def receive(self, bufsize: int = 1024) -> bytes
-    async def request(self, data: bytes, timeout: float = 3.0) -> bytes
+    async def request(self, data: bytes, timeout: float | None = None) -> bytes
 
     @property
     def is_connected(self) -> bool
@@ -183,7 +183,7 @@ class Transport:
 ### BaseDevice
 
 ```python
-class BaseDevice(ABC):
+class BaseDevice(Generic[CodecT]):
     codec: type[BaseCodec]
     transport: Transport
 
@@ -196,12 +196,12 @@ class BaseDevice(ABC):
         port: int,
         *,
         transport_factory: Callable[[str, int], Transport] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "BaseDevice"
 
     async def disconnect(self) -> None
     async def send(self, frame: BaseFrame) -> None
-    async def request(self, frame: BaseFrame, timeout: float = 3.0) -> bytes
+    async def request(self, frame: BaseFrame, timeout: float | None = None) -> bytes
 ```
 
 ### BaseCodec

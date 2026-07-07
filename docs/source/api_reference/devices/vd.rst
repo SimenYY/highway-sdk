@@ -22,8 +22,8 @@ VD设备支持状态
 要扩展VD设备支持，需要：
 
 1. 在 `highway_sdk/vendors/vd/` 目录下创建厂商实现目录
-2. 实现VD设备的协议、帧工厂、解析器等
-3. 参考CMS设备的实现方式
+2. 参考CMS厂商实现的 ``spec.py / codec.py / device.py`` 三文件结构
+3. 在厂商 ``__init__.py`` 中导出 ``metadata``（``VendorMetadata`` 实例），SDK 会在 ``vendors/__init__.py`` 自动注册
 4. 编写测试用例
 5. 更新文档
 
