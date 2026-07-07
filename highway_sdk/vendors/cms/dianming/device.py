@@ -3,8 +3,6 @@
 from datetime import datetime
 
 from highway_sdk.core.device import BaseDevice
-from highway_sdk.core.exceptions import HighwaySDKError
-from highway_sdk.core.response import Response
 
 from ..tags import CmsPlayItem, CmsTags
 from .codec import DianMingCodec
@@ -12,7 +10,11 @@ from .spec import ENCODING, Frame, What
 
 
 class DianMingDevice(BaseDevice[DianMingCodec]):
-    """电明CMS设备客户端。"""
+    """电明CMS设备客户端。
+
+    所有方法成功返回业务数据（dict），失败抛 ``DeviceOperationError`` 等
+    ``HighwaySDKError`` 子类异常，由调用方捕获处理。
+    """
 
     codec = DianMingCodec
 
@@ -22,52 +24,56 @@ class DianMingDevice(BaseDevice[DianMingCodec]):
         return Frame.from_bytes(response)
 
     # ------------------------------------------------------------------
-    # 数据采集 API（统一返回 Response + CmsTags）
+    # 数据采集 API（返回 CmsTags.model_dump()，失败抛异常）
     # ------------------------------------------------------------------
 
-    async def get_brightness(self) -> Response:
+    async def get_brightness(self) -> dict:
         """获取亮度百分比和亮度控制模式。
 
         Returns:
-            Response: data 为 CmsTags，仅填充 brightness、brightness_mode、timestamp。
-        """
-        try:
-            frame = Frame(what=What.GET_BRIGHTNESS_AND_MODE_REQ)
-            response = await self._request(frame)
-            data = self.codec.decode(response)
-            cms_tags = CmsTags(
-                brightness=data["brightness"],
-                brightness_mode=data["mode"],
-                timestamp=datetime.now(),
-            )
-            return Response.success(data=cms_tags.model_dump())
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+            dict: ``CmsTags.model_dump()``，仅填充 brightness、brightness_mode、timestamp。
 
-    async def get_play_item(self) -> Response:
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
+        """
+        frame = Frame(what=What.GET_BRIGHTNESS_AND_MODE_REQ)
+        response = await self._request(frame)
+        data = self.codec.decode(response)
+        cms_tags = CmsTags(
+            brightness=data["brightness"],
+            brightness_mode=data["mode"],
+            timestamp=datetime.now(),
+        )
+        return cms_tags.model_dump()
+
+    async def get_play_item(self) -> dict:
         """获取当前播放项（结构化 + 原始格式）。
 
         Returns:
-            Response: data 为 CmsTags，填充 play_item（含 index）、orig_play_item、timestamp。
+            dict: ``CmsTags.model_dump()``，填充 play_item（含 index）、orig_play_item、timestamp。
+
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        try:
-            frame = Frame(what=What.GET_PLAY_ITEM_REQ)
-            response = await self._request(frame)
-            data = self.codec.decode(response)
+        frame = Frame(what=What.GET_PLAY_ITEM_REQ)
+        response = await self._request(frame)
+        data = self.codec.decode(response)
 
-            orig_play_item = data.get("media") or ""
-            play_item = self._dict_to_cms_play_item(data)
+        orig_play_item = data.get("media") or ""
+        play_item = self._dict_to_cms_play_item(data)
 
-            cms_tags = CmsTags(
-                orig_play_item=orig_play_item,
-                play_item=play_item,
-                timestamp=datetime.now(),
-            )
-            return Response.success(data=cms_tags.model_dump())
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+        cms_tags = CmsTags(
+            orig_play_item=orig_play_item,
+            play_item=play_item,
+            timestamp=datetime.now(),
+        )
+        return cms_tags.model_dump()
 
-    async def get_play_list(self, play_id: int = 0, filename: str = "play00.lst") -> Response:
+    async def get_play_list(self, play_id: int = 0, filename: str = "play00.lst") -> dict:
         """获取当前播放列表（结构化 + 原始格式）。
 
         Args:
@@ -75,58 +81,58 @@ class DianMingDevice(BaseDevice[DianMingCodec]):
             filename: 播放列表文件名，默认为 "play00.lst"。
 
         Returns:
-            Response: data 为 CmsTags，填充 play_list、orig_play_list、timestamp。
+            dict: ``CmsTags.model_dump()``，填充 play_list、orig_play_list、timestamp。
+
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        try:
-            offset = f"{play_id:08d}".encode("ascii")
-            data = offset + filename.encode("ascii")
-            frame = Frame(what=What.GET_PLAY_LIST_REQ, data=data)
-            response = await self._request(frame)
-            play_data = self.codec.decode(response)
+        offset = f"{play_id:08d}".encode("ascii")
+        data = offset + filename.encode("ascii")
+        frame = Frame(what=What.GET_PLAY_LIST_REQ, data=data)
+        response = await self._request(frame)
+        play_data = self.codec.decode(response)
 
-            play_list = []
-            orig_play_list_parts = []
-            for window in play_data.get("windows", []):
-                for item in window.get("items", []):
-                    play_list.append(self._dict_to_cms_play_item(item))
-                    orig_play_list_parts.append(item.get("media") or "")
+        play_list = []
+        orig_play_list_parts = []
+        for window in play_data.get("windows", []):
+            for item in window.get("items", []):
+                play_list.append(self._dict_to_cms_play_item(item))
+                orig_play_list_parts.append(item.get("media") or "")
 
-            cms_tags = CmsTags(
-                orig_play_list="\r\n".join(orig_play_list_parts),
-                play_list=play_list,
-                timestamp=datetime.now(),
-            )
-            return Response.success(data=cms_tags.model_dump())
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+        cms_tags = CmsTags(
+            orig_play_list="\r\n".join(orig_play_list_parts),
+            play_list=play_list,
+            timestamp=datetime.now(),
+        )
+        return cms_tags.model_dump()
 
     # ------------------------------------------------------------------
-    # 控制类 API（保留原有接口）
+    # 控制类 API（成功返回 None，失败抛异常）
     # ------------------------------------------------------------------
 
-    async def set_brightness(self, brightness: int | None = None) -> Response:
+    async def set_brightness(self, brightness: int | None = None) -> None:
         """设置亮度或控制亮度模式。
 
         Args:
             brightness: 亮度值(0-31)，None表示自动调节亮度模式。
 
-        Returns:
-            Response: 操作结果。
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        try:
-            if brightness is None:
-                data = b"FFFFFF"
-            else:
-                brightness = max(0, min(31, brightness))
-                data = (f"{brightness:02d}" * 3).encode("ascii")
-            frame = Frame(what=What.SET_BRIGHTNESS_OR_MODE_REQ, data=data)
-            response = await self._request(frame)
-            self.codec.decode(response)
-            return Response.success()
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+        if brightness is None:
+            data = b"FFFFFF"
+        else:
+            brightness = max(0, min(31, brightness))
+            data = (f"{brightness:02d}" * 3).encode("ascii")
+        frame = Frame(what=What.SET_BRIGHTNESS_OR_MODE_REQ, data=data)
+        response = await self._request(frame)
+        self.codec.decode(response)
 
-    async def set_play_list(self, content: str, play_id: int = 0) -> Response:
+    async def set_play_list(self, content: str, play_id: int = 0) -> None:
         """下发播放列表并立即播放。
 
         DianMing 使用 SET_PLAY_LIST_AND_PLAY_REQ 单指令完成下发并播放。
@@ -135,18 +141,16 @@ class DianMingDevice(BaseDevice[DianMingCodec]):
             content: 播放列表内容（可由 Play 模型生成）。
             play_id: 播放列表 ID，默认为 0（内部映射为 ``play{play_id:02d}.lst``）。
 
-        Returns:
-            Response: 操作结果。
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        try:
-            file_name = f"play{play_id:02d}.lst"
-            data = b"+00000000" + file_name.encode(ENCODING) + content.encode(ENCODING)
-            frame = Frame(what=What.SET_PLAY_LIST_AND_PLAY_REQ, data=data)
-            response = await self._request(frame)
-            self.codec.decode(response)
-            return Response.success()
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+        file_name = f"play{play_id:02d}.lst"
+        data = b"+00000000" + file_name.encode(ENCODING) + content.encode(ENCODING)
+        frame = Frame(what=What.SET_PLAY_LIST_AND_PLAY_REQ, data=data)
+        response = await self._request(frame)
+        self.codec.decode(response)
 
     # ------------------------------------------------------------------
     # 内部工具方法

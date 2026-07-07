@@ -61,7 +61,7 @@ SDK 自上而下分为四层：
 - 厂商设备 ``class XVendorDevice(BaseDevice[XVendorCodec])``
 - 工厂入口：``await XVendorDevice.connect(host, port)`` 或通过注册表 ``connect_device("vendor", host, port)``
 - ``_request`` 方法 ``timeout: float | None = None`` 默认回退 ``Transport`` 初始化超时
-- 设备方法返回 ``Response`` 对象，``data`` 为 ``CmsTags.model_dump()``
+- 设备方法采用 **Pythonic 异常模式**：成功返回业务数据（数据采集返回 ``dict`` = ``CmsTags.model_dump()``，控制方法返回 ``None``），失败抛 ``HighwaySDKError`` 子类异常（业务失败抛 ``DeviceOperationError``，超时抛 ``ResponseTimeoutError``，连接异常抛 ``DeviceConnectionError``）
 
 数据标签 (Tags)
 ----------------

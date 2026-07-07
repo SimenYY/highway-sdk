@@ -15,6 +15,7 @@ from highway_sdk import NovaDevice
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
     ConnectionTimeoutError,
+    DeviceOperationError,
     ResponseTimeoutError,
 )
 
@@ -36,73 +37,70 @@ async def main():
             # 1. 获取亮度信息
             # ----------------------------------------------------------
             print("\n--- 1. 获取亮度信息 ---")
-            response = await device.get_brightness()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_brightness()
                 print(f"  亮度值: {data['brightness']}%")
                 print(f"  控制模式: {data['brightness_mode']}")
                 print(f"  采集时间: {data['timestamp']}")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 2. 获取当前播放项
             # ----------------------------------------------------------
             print("\n--- 2. 获取当前播放项 ---")
-            response = await device.get_play_item()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_play_item()
                 item = data["play_item"]
                 print(f"  原始文本: {data['orig_play_item']}")
                 if item:
                     print(f"  文本: {item['text']}")
                     print(f"  图片: {item['image_name']}")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 3. 获取播放列表
             # ----------------------------------------------------------
             print("\n--- 3. 获取播放列表 ---")
-            response = await device.get_play_list()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_play_list()
                 # Nova 0x3B 响应为类 INI 文本，结构化解析未实现，仅展示原始文本
                 orig = data.get("orig_play_list") or "(空)"
                 print(f"  原始内容:\n{orig}")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 4. 发送文件名（开始文件传输）
             # ----------------------------------------------------------
             print("\n--- 4. 发送文件名 ---")
-            response = await device.send_file_name(file_name="play001.lst", block_size=65535)
-            if response.status == "success":
+            try:
+                await device.send_file_name(file_name="play001.lst", block_size=65535)
                 print("  发送成功")
-            else:
-                print(f"  发送失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  发送失败: {e}")
 
             # ----------------------------------------------------------
             # 5. 发送文件内容（分块传输）
             # ----------------------------------------------------------
             print("\n--- 5. 发送文件内容 ---")
             content = "[PLAYLIST]\r\nITEM_NO=001\r\nITEM000=10,0,0,0,0,\\C000000\\Fs2424\\T255000000000\\W注意安全"
-            response = await device.send_file_content(content=content, block_num=1)
-            if response.status == "success":
+            try:
+                await device.send_file_content(content=content, block_num=1)
                 print("  发送成功")
-            else:
-                print(f"  发送失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  发送失败: {e}")
 
             # ----------------------------------------------------------
             # 6. 选择播放列表播放
             # ----------------------------------------------------------
             print("\n--- 6. 选择播放列表 1 进行播放 ---")
-            response = await device.select_play_list(playlist_id=1)
-            if response.status == "success":
+            try:
+                await device.select_play_list(playlist_id=1)
                 print("  切换成功")
-            else:
-                print(f"  切换失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  切换失败: {e}")
 
     except ConnectionTimeoutError:
         print(f"[错误] 连接超时：设备 {host}:{port} 不可达")

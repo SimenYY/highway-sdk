@@ -7,7 +7,7 @@ SanSi 的 get_brightness 通过 GET_BRIGHTNESS_AND_MODE (b"06") 指令获取，
 
 本测试验证：
 1. set_brightness 发送的帧字节与真实设备日志完全一致
-2. 设备返回真实响应时，get_brightness 返回 status="success" 且数据正确
+2. 设备返回真实响应时，get_brightness 返回 dict 且数据正确
 3. 数据域解码结果与真实设备语义一致（mode=1, brightness=48%）
 """
 
@@ -78,25 +78,21 @@ class TestSanSiGetBrightnessRealPacket:
         )
 
     @pytest.mark.asyncio
-    async def test_get_brightness_returns_success_on_real_response(self):
-        """验证设备返回真实响应时，get_brightness 返回 success 且数据正确。"""
+    async def test_get_brightness_returns_dict_on_real_response(self):
+        """验证设备返回真实响应时，get_brightness 返回 dict 且数据正确。"""
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_HEX)])
         device = SanSiDevice(transport)
 
         result = await device.get_brightness()
 
-        # 验证：返回成功
-        assert result.status == "success"
-        assert result.error_msg is None
-
+        # 验证：返回 dict（CmsTags.model_dump()）
+        assert isinstance(result, dict)
         # 验证：解码数据正确
         # data="115" → mode=1, brightness=15 → round(15/31*100)=48
-        assert result.data is not None
-        data = result.data
-        assert data["brightness"] == 48
+        assert result["brightness"] == 48
         # SanSi device.py: mode==0 → "auto", else → "manual"
         # 真实报文 mode=1 → "manual"
-        assert data["brightness_mode"] == "manual"
+        assert result["brightness_mode"] == "manual"
 
     @pytest.mark.asyncio
     async def test_get_brightness_uses_correct_what(self):

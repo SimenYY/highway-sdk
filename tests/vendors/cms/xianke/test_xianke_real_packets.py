@@ -157,7 +157,7 @@ class TestXianKeDecodeDownloadFileErrorPaths:
         from highway_sdk.core.exceptions import DeviceOperationError
 
         # data 长度 < 8
-        with pytest.raises(DeviceOperationError, match="too short"):
+        with pytest.raises(DeviceOperationError, match="响应数据过短"):
             XianKeCodec.decode_download_file(b"\x01" + b"012")
 
     def test_decode_download_file_invalid_filename_len(self):
@@ -166,7 +166,7 @@ class TestXianKeDecodeDownloadFileErrorPaths:
 
         # data[1:4] = "abc" 非数字
         bad_data = b"\x01" + b"abc" + b"0000" + b"[LIST]\r\n"
-        with pytest.raises(DeviceOperationError, match="Invalid file_name_len"):
+        with pytest.raises(DeviceOperationError, match="文件名长度字段异常"):
             XianKeCodec.decode_download_file(bad_data)
 
     def test_decode_download_file_truncated_header(self):
@@ -175,7 +175,7 @@ class TestXianKeDecodeDownloadFileErrorPaths:
 
         # file_name_len=999 但实际只有少量数据
         bad_data = b"\x01" + b"999" + b"short" + b"0000"
-        with pytest.raises(DeviceOperationError, match="truncated file header"):
+        with pytest.raises(DeviceOperationError, match="文件头不完整"):
             XianKeCodec.decode_download_file(bad_data)
 
     def test_decode_download_file_failure_status(self):
@@ -183,5 +183,5 @@ class TestXianKeDecodeDownloadFileErrorPaths:
         from highway_sdk.core.exceptions import DeviceOperationError
 
         # data[0] = 0x00 (FAILED)
-        with pytest.raises(DeviceOperationError, match="Failed to download file"):
+        with pytest.raises(DeviceOperationError, match="下载文件失败"):
             XianKeCodec.decode_download_file(b"\x00" + b"012list\\000.xkl0000[LIST]\r\n")

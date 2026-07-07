@@ -15,6 +15,7 @@ from highway_sdk import DianMingDevice
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
     ConnectionTimeoutError,
+    DeviceOperationError,
     ResponseTimeoutError,
 )
 
@@ -37,22 +38,20 @@ async def main():  # noqa: C901
             # 1. 获取亮度信息
             # ----------------------------------------------------------
             print("\n--- 1. 获取亮度信息 ---")
-            response = await device.get_brightness()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_brightness()
                 print(f"  亮度值: {data['brightness']}%")
                 print(f"  控制模式: {data['brightness_mode']}")
                 print(f"  采集时间: {data['timestamp']}")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 2. 获取当前播放项
             # ----------------------------------------------------------
             print("\n--- 2. 获取当前播放项 ---")
-            response = await device.get_play_item()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_play_item()
                 item = data["play_item"]
                 print(f"  原始格式: {data['orig_play_item']}")
                 if item:
@@ -61,43 +60,42 @@ async def main():  # noqa: C901
                     print(f"  字体: {item['font']} (大小 {item['font_size']})")
                     print(f"  颜色: {item['font_color']}")
                     print(f"  停留时间: {item['duration']} 秒")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 3. 获取播放列表
             # ----------------------------------------------------------
             print("\n--- 3. 获取播放列表 ---")
-            response = await device.get_play_list(play_id=0, filename="play00.lst")
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_play_list(play_id=0, filename="play00.lst")
                 play_list = data["play_list"]
                 print(f"  共 {len(play_list)} 个播放项:")
                 for i, item in enumerate(play_list):
                     text = item.get("text") or "(图片)"
                     print(f"    [{i}] {text} (停留 {item['duration']}s)")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 4. 设置亮度（手动模式）
             # ----------------------------------------------------------
             print("\n--- 4. 设置亮度为 20 ---")
-            response = await device.set_brightness(brightness=20)
-            if response.status == "success":
+            try:
+                await device.set_brightness(brightness=20)
                 print("  设置成功")
-            else:
-                print(f"  设置失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  设置失败: {e}")
 
             # ----------------------------------------------------------
             # 5. 设置亮度（自动模式）
             # ----------------------------------------------------------
             print("\n--- 5. 切换为自动亮度模式 ---")
-            response = await device.set_brightness(brightness=None)
-            if response.status == "success":
+            try:
+                await device.set_brightness(brightness=None)
                 print("  设置成功")
-            else:
-                print(f"  设置失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  设置失败: {e}")
 
             # ----------------------------------------------------------
             # 6. 下发播放列表并立即播放
@@ -110,11 +108,11 @@ async def main():  # noqa: C901
                 "ITEM000=15,0,0,0,0,\\C000000\\Fs3232\\T255000000000\\K000000000000\\W"
                 "前方施工 减速慢行"
             )
-            response = await device.set_play_list(content, play_id=0)
-            if response.status == "success":
+            try:
+                await device.set_play_list(content, play_id=0)
                 print("  下发成功")
-            else:
-                print(f"  下发失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  下发失败: {e}")
 
     except ConnectionTimeoutError:
         print(f"[错误] 连接超时：设备 {host}:{port} 不可达")

@@ -37,10 +37,12 @@ class NovaCodec(BaseCodec):
         亮度级别：1-255（手动级别，非百分比）
         """
         if len(data) < 19:
-            raise DeviceOperationError(f"Device status response too short: {len(data)} < 19")
+            raise DeviceOperationError(
+                f"设备状态响应数据不完整（{len(data)} 字节，需 19 字节），可能是通信中断或设备协议版本不匹配"
+            )
         mode_val = int(data[17])
         if mode_val not in (1, 2, 3):
-            raise DeviceOperationError(f"Invalid brightness mode: {mode_val}")
+            raise DeviceOperationError(f"设备返回的亮度控制方式无效（{mode_val}），可能是设备协议版本不匹配或设备故障")
         return {
             "environment_brightness": int(data[16]),  # 采集亮度 0-255
             "mode": mode_val,  # 1-auto, 2-manual, 3-timed
@@ -60,7 +62,9 @@ class NovaCodec(BaseCodec):
             当前播放内容 nB（参见附录一）
         """
         if len(data) < 11:
-            raise DeviceOperationError(f"Play item response too short: {len(data)} < 11")
+            raise DeviceOperationError(
+                f"播放项响应数据不完整（{len(data)} 字节，需 11 字节），可能是通信中断或设备协议版本不匹配"
+            )
         screen_flag = int(data[0])
         if screen_flag == 2:
             # 关屏，无播放内容
@@ -78,7 +82,7 @@ class NovaCodec(BaseCodec):
             当前播放节目的所有内容 N B（UTF8 编码，格式同附录单个 item）
         """
         if len(data) < 1:
-            raise DeviceOperationError("Play list response empty")
+            raise DeviceOperationError("播放列表响应为空，可能是设备未配置播放列表或通信故障")
         list_no = int(data[0])
         content = data[1:].decode("utf-8", errors="ignore")
         return {"list_no": list_no, "text": content}
@@ -91,7 +95,7 @@ class NovaCodec(BaseCodec):
         数据域：执行结果 1B（1-成功 / 0-失败 / 2-文件已存在）。
         """
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to send file name")
+            raise DeviceOperationError("发送文件名失败：设备返回错误响应，可能是文件名无效或设备故障")
         return {}
 
     @classmethod
@@ -102,9 +106,9 @@ class NovaCodec(BaseCodec):
         数据域：块号 2B + 执行结果 1B（1-成功 / 0-失败）。
         """
         if len(data) < 3:
-            raise DeviceOperationError("File content response too short")
+            raise DeviceOperationError("文件内容响应数据过短，可能是设备返回不完整或通信中断")
         if data[-1:] != ResultCode.SUCCESS.value:
-            raise DeviceOperationError("Failed to send file content")
+            raise DeviceOperationError("发送文件内容失败：设备返回错误响应，可能是存储空间不足或设备故障")
         return {}
 
     @classmethod
@@ -115,7 +119,7 @@ class NovaCodec(BaseCodec):
         数据域：执行结果 1B（1-发送成功 / 0-发送失败）。
         """
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to send file end")
+            raise DeviceOperationError("文件发送结束失败：设备返回错误响应，可能是设备故障或通信中断")
         return {}
 
     @classmethod
@@ -126,7 +130,7 @@ class NovaCodec(BaseCodec):
         数据域：执行结果 1B（1-成功 / 0-失败）。
         """
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to select play list")
+            raise DeviceOperationError("选择播放列表失败：设备返回错误响应，可能是播放列表编号不存在或设备故障")
         return {}
 
     @classmethod
@@ -137,7 +141,7 @@ class NovaCodec(BaseCodec):
         数据域：显示屏宽 2B + 显示屏高 2B（均低字节在前）。
         """
         if len(data) < 4:
-            raise DeviceOperationError("Screen size response too short")
+            raise DeviceOperationError("屏幕尺寸响应数据过短，可能是设备返回不完整或通信中断")
         width, height = struct.unpack("<HH", data[:4])
         return {"width": width, "height": height}
 
@@ -149,8 +153,8 @@ class NovaCodec(BaseCodec):
         数据域：执行结果 1B（1-开屏 / 2-关屏）。
         """
         if len(data) < 1:
-            raise DeviceOperationError("Screen status response empty")
+            raise DeviceOperationError("屏幕状态响应为空，可能是设备故障或通信中断")
         status = int(data[0])
         if status not in (1, 2):
-            raise DeviceOperationError(f"Invalid screen status: {status}")
+            raise DeviceOperationError(f"设备返回的屏幕状态值无效（{status}），可能是设备协议版本不匹配或设备故障")
         return {"screen_on": status == 1}

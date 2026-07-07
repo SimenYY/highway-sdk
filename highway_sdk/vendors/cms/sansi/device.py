@@ -3,8 +3,6 @@
 from datetime import datetime
 
 from highway_sdk.core.device import BaseDevice
-from highway_sdk.core.exceptions import HighwaySDKError
-from highway_sdk.core.response import Response
 
 from ..tags import CmsPlayItem, CmsTags
 from .codec import SanSiCodec
@@ -12,7 +10,11 @@ from .spec import ENCODING, Frame, What
 
 
 class SanSiDevice(BaseDevice[SanSiCodec]):
-    """三思CMS设备客户端。"""
+    """三思CMS设备客户端。
+
+    所有方法成功返回业务数据（dict）或 None，失败抛 ``DeviceOperationError`` 等
+    ``HighwaySDKError`` 子类异常，由调用方捕获处理。
+    """
 
     codec = SanSiCodec
 
@@ -22,52 +24,56 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
         return Frame.from_bytes(response)
 
     # ------------------------------------------------------------------
-    # 数据采集 API（统一返回 Response + CmsTags）
+    # 数据采集 API（返回 CmsTags.model_dump()，失败抛异常）
     # ------------------------------------------------------------------
 
-    async def get_brightness(self) -> Response:
+    async def get_brightness(self) -> dict:
         """获取亮度百分比和亮度控制模式。
 
         Returns:
-            Response: data 为 CmsTags，仅填充 brightness、brightness_mode、timestamp。
-        """
-        try:
-            frame = Frame(what=What.GET_BRIGHTNESS_AND_MODE)
-            response = await self._request(frame)
-            data = self.codec.decode_get_brightness(response.data)
-            cms_tags = CmsTags(
-                brightness=data["brightness"],
-                brightness_mode="auto" if data["mode"] == 0 else "manual",
-                timestamp=datetime.now(),
-            )
-            return Response.success(data=cms_tags.model_dump())
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+            dict: ``CmsTags.model_dump()``，仅填充 brightness、brightness_mode、timestamp。
 
-    async def get_play_item(self) -> Response:
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
+        """
+        frame = Frame(what=What.GET_BRIGHTNESS_AND_MODE)
+        response = await self._request(frame)
+        data = self.codec.decode_get_brightness(response.data)
+        cms_tags = CmsTags(
+            brightness=data["brightness"],
+            brightness_mode="auto" if data["mode"] == 0 else "manual",
+            timestamp=datetime.now(),
+        )
+        return cms_tags.model_dump()
+
+    async def get_play_item(self) -> dict:
         """获取当前播放项（结构化 + 原始格式）。
 
         Returns:
-            Response: data 为 CmsTags，填充 play_item（含 index）、orig_play_item、timestamp。
+            dict: ``CmsTags.model_dump()``，填充 play_item（含 index）、orig_play_item、timestamp。
+
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        try:
-            frame = Frame(what=What.GET_PLAY_ITEM)
-            response = await self._request(frame)
-            data = self.codec.decode_get_play_item(response.data)
+        frame = Frame(what=What.GET_PLAY_ITEM)
+        response = await self._request(frame)
+        data = self.codec.decode_get_play_item(response.data)
 
-            orig_play_item = data.get("media") or ""
-            play_item = self._dict_to_cms_play_item(data)
+        orig_play_item = data.get("media") or ""
+        play_item = self._dict_to_cms_play_item(data)
 
-            cms_tags = CmsTags(
-                orig_play_item=orig_play_item,
-                play_item=play_item,
-                timestamp=datetime.now(),
-            )
-            return Response.success(data=cms_tags.model_dump())
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+        cms_tags = CmsTags(
+            orig_play_item=orig_play_item,
+            play_item=play_item,
+            timestamp=datetime.now(),
+        )
+        return cms_tags.model_dump()
 
-    async def get_play_list(self, file_name: str = "play.lst") -> Response:
+    async def get_play_list(self, file_name: str = "play.lst") -> dict:
         """获取当前播放列表（结构化 + 原始格式）。
 
         SanSi 无直接获取播放列表指令，通过 DOWNLOAD_FILE 下载文件实现，
@@ -82,73 +88,71 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
             file_name: 文件名，默认为 "play.lst"。
 
         Returns:
-            Response: data 为 CmsTags，填充 play_list、orig_play_list、timestamp。
+            dict: ``CmsTags.model_dump()``，填充 play_list、orig_play_list、timestamp。
+
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        try:
-            data = file_name.encode(ENCODING) + b"\x00\x00\x00\x00"
-            frame = Frame(what=What.DOWNLOAD_FILE, data=data)
-            response = await self._request(frame)
-            play_data = self.codec.decode_download_file(response.data)
+        data = file_name.encode(ENCODING) + b"\x00\x00\x00\x00"
+        frame = Frame(what=What.DOWNLOAD_FILE, data=data)
+        response = await self._request(frame)
+        play_data = self.codec.decode_download_file(response.data)
 
-            play_list = []
-            orig_play_list_parts = []
-            for window in play_data.get("windows", []):
-                for item in window.get("items", []):
-                    play_list.append(self._dict_to_cms_play_item(item))
-                    orig_play_list_parts.append(item.get("media") or "")
+        play_list = []
+        orig_play_list_parts = []
+        for window in play_data.get("windows", []):
+            for item in window.get("items", []):
+                play_list.append(self._dict_to_cms_play_item(item))
+                orig_play_list_parts.append(item.get("media") or "")
 
-            cms_tags = CmsTags(
-                orig_play_list="\r\n".join(orig_play_list_parts),
-                play_list=play_list,
-                timestamp=datetime.now(),
-            )
-            return Response.success(data=cms_tags.model_dump())
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+        cms_tags = CmsTags(
+            orig_play_list="\r\n".join(orig_play_list_parts),
+            play_list=play_list,
+            timestamp=datetime.now(),
+        )
+        return cms_tags.model_dump()
 
     # ------------------------------------------------------------------
-    # 控制类 API（保留原有接口）
+    # 控制类 API（成功返回 None，失败抛异常）
     # ------------------------------------------------------------------
 
-    async def set_brightness(self, brightness: int) -> Response:
+    async def set_brightness(self, brightness: int) -> None:
         """设置亮度。
 
         Args:
             brightness: 亮度值，范围0-31。
 
-        Returns:
-            Response: 操作结果。
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        try:
-            brightness = max(0, min(31, brightness))
-            data = (f"{brightness:02d}".encode("ascii")) * 3
-            frame = Frame(what=What.SET_BRIGHTNESS, data=data)
-            response = await self._request(frame)
-            self.codec.decode_set_brightness(response.data)
-            return Response.success()
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+        brightness = max(0, min(31, brightness))
+        data = (f"{brightness:02d}".encode("ascii")) * 3
+        frame = Frame(what=What.SET_BRIGHTNESS, data=data)
+        response = await self._request(frame)
+        self.codec.decode_set_brightness(response.data)
 
-    async def upload_file(self, content: str, file_name: str = "play.lst") -> Response:
+    async def upload_file(self, content: str, file_name: str = "play.lst") -> None:
         """上传播放列表文件。
 
         Args:
             content: 文件内容。
             file_name: 文件名，默认为 "play.lst"。
 
-        Returns:
-            Response: 操作结果。
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        try:
-            data = file_name.encode(ENCODING) + b"+" + b"\x00\x00\x00\x00" + content.encode(ENCODING)
-            frame = Frame(what=What.UPLOAD_FILE, data=data)
-            response = await self._request(frame)
-            self.codec.decode_upload_file(response.data)
-            return Response.success()
-        except HighwaySDKError as e:
-            return Response.error(str(e))
+        data = file_name.encode(ENCODING) + b"+" + b"\x00\x00\x00\x00" + content.encode(ENCODING)
+        frame = Frame(what=What.UPLOAD_FILE, data=data)
+        response = await self._request(frame)
+        self.codec.decode_upload_file(response.data)
 
-    async def set_play_list(self, content: str, file_name: str = "play.lst") -> Response:
+    async def set_play_list(self, content: str, file_name: str = "play.lst") -> None:
         """下发播放列表并立即播放。
 
         SanSi 上传文件即自动更改当前播放表，无需额外播放指令。
@@ -157,10 +161,12 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
             content: 播放列表内容字符串（由 Play 模型生成）。
             file_name: 文件名，默认为 "play.lst"。
 
-        Returns:
-            Response: 操作结果。
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
         """
-        return await self.upload_file(content, file_name)
+        await self.upload_file(content, file_name)
 
     # ------------------------------------------------------------------
     # 内部工具方法

@@ -10,15 +10,15 @@ FengHai 的 set_play_list 直接委托给 upload_file（上传文件即自动更
 
 本测试验证：
 1. set_play_list 构造的发送帧字节与基于 SanSi 真实报文格式推导的预期帧一致
-2. 设备返回成功响应时，set_play_list 返回 status="success"
-3. 设备返回失败响应时，set_play_list 返回 status="error"
+2. 设备返回成功响应时，set_play_list 正常返回（无异常）
+3. 设备返回失败响应时，set_play_list 抛 ``DeviceOperationError``
 """
 
 from collections.abc import Sequence
 
 import pytest
 
-from highway_sdk.core.response import Response
+from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.core.transport import Transport
 from highway_sdk.vendors.cms.fenghai.device import FengHaiDevice
 from highway_sdk.vendors.cms.fenghai.spec import ENCODING, Frame, What
@@ -112,42 +112,39 @@ class TestFengHaiSetPlayListRealPacket:
         transport = FakeTransport(responses=[_build_response_frame(success=True)])
         device = FengHaiDevice(transport)
 
-        # 执行
+        # 执行：成功时返回 None
         result = await device.set_play_list(REAL_CONTENT, file_name="play.lst")
 
+        # 验证：返回值为 None
+        assert result is None
         # 验证：发送字节与预期帧一致
         assert len(transport._sent_frames) == 1
         expected = _build_upload_file_frame("play.lst", REAL_CONTENT)
         assert transport._sent_frames[0] == expected, (
             f"Expected {expected.hex(' ')}, got {transport._sent_frames[0].hex(' ')}"
         )
-        # 验证：返回成功
-        assert result.status == "success"
 
     @pytest.mark.asyncio
-    async def test_set_play_list_returns_success_on_success_response(self):
-        """验证设备返回成功响应时，set_play_list 返回 success。"""
+    async def test_set_play_list_returns_none_on_success_response(self):
+        """验证设备返回成功响应时，set_play_list 正常返回 None。"""
         transport = FakeTransport(responses=[_build_response_frame(success=True)])
         device = FengHaiDevice(transport)
 
         result = await device.set_play_list(REAL_CONTENT, file_name="play.lst")
 
-        assert isinstance(result, Response)
-        assert result.status == "success"
-        assert result.error_msg is None
+        assert result is None
 
     @pytest.mark.asyncio
-    async def test_set_play_list_returns_error_on_failure_response(self):
-        """验证设备返回失败响应时，set_play_list 返回 error。
+    async def test_set_play_list_raises_on_failure_response(self):
+        """验证设备返回失败响应时，set_play_list 抛 DeviceOperationError。
 
         失败响应数据域 = b"1" (ResultCode.FAILED)。
         """
         transport = FakeTransport(responses=[_build_response_frame(success=False)])
         device = FengHaiDevice(transport)
 
-        result = await device.set_play_list(REAL_CONTENT, file_name="play.lst")
-
-        assert result.status == "error"
+        with pytest.raises(DeviceOperationError):
+            await device.set_play_list(REAL_CONTENT, file_name="play.lst")
 
     @pytest.mark.asyncio
     async def test_set_play_list_uses_upload_file_what(self):

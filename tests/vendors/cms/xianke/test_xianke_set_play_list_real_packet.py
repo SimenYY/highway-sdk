@@ -8,8 +8,8 @@ XianKe 的 set_play_list 是两步流程：
 
 本测试验证：
 1. set_play_list 按正确顺序发送两个帧，字节与真实设备日志完全一致
-2. 两步均成功时返回 status="success"
-3. upload_file 失败时短路返回 error（不调用 select_play_list）
+2. 两步均成功时正常返回（无异常）
+3. upload_file 失败时抛 ``DeviceOperationError``（不调用 select_play_list）
 
 注：expected 帧字节通过 Frame 类构造（与设备运行时同一路径），避免人工转录 hex 错误。
 真实报文 ground truth 来自 sdk-v2.x.x protocol.py 注释中的实际日志。
@@ -19,7 +19,7 @@ from collections.abc import Sequence
 
 import pytest
 
-from highway_sdk.core.response import Response
+from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.core.transport import Transport
 from highway_sdk.vendors.cms.xianke.device import XianKeDevice
 from highway_sdk.vendors.cms.xianke.spec import ENCODING, Frame, What
@@ -160,8 +160,8 @@ class TestXianKeSetPlayListRealPacket:
         )
 
     @pytest.mark.asyncio
-    async def test_set_play_list_returns_success_on_both_success(self):
-        """验证两步均成功时返回 success。"""
+    async def test_set_play_list_returns_none_on_both_success(self):
+        """验证两步均成功时正常返回 None。"""
         transport = FakeTransport(
             responses=[
                 bytes.fromhex(UPLOAD_RECV_SUCCESS_HEX),
@@ -172,13 +172,11 @@ class TestXianKeSetPlayListRealPacket:
 
         result = await device.set_play_list(REAL_CONTENT, file_name=UPLOAD_FILE_NAME)
 
-        assert isinstance(result, Response)
-        assert result.status == "success"
-        assert result.error_msg is None
+        assert result is None
 
     @pytest.mark.asyncio
-    async def test_set_play_list_short_circuits_on_upload_failure(self):
-        """验证 upload_file 失败时短路返回 error，不调用 select_play_list。
+    async def test_set_play_list_raises_on_upload_failure(self):
+        """验证 upload_file 失败时抛 DeviceOperationError，不调用 select_play_list。
 
         失败响应构造：数据域 = 0x00 (XianKe FAILED)。
         实际日志中无失败响应报文，此处基于 XianKe ResultCode 定义构造。
@@ -191,10 +189,10 @@ class TestXianKeSetPlayListRealPacket:
         transport = FakeTransport(responses=[upload_failure])
         device = XianKeDevice(transport)
 
-        result = await device.set_play_list(REAL_CONTENT, file_name=UPLOAD_FILE_NAME)
+        # 验证：抛 DeviceOperationError
+        with pytest.raises(DeviceOperationError):
+            await device.set_play_list(REAL_CONTENT, file_name=UPLOAD_FILE_NAME)
 
-        # 验证：返回 error
-        assert result.status == "error"
         # 验证：只发送了 upload_file 一个帧（select_play_list 未被调用）
         assert len(transport._sent_frames) == 1
 

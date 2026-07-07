@@ -126,13 +126,17 @@ class MyCodec(BaseCodec):
 from datetime import datetime
 
 from highway_sdk.core.device import BaseDevice
-from highway_sdk.core.response import Response
+from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.vendors.cms.tags import CmsTags
 from .codec import MyCodec
 from .spec import Frame, What
 
 class MyDevice(BaseDevice):
-    """厂商设备客户端。"""
+    """厂商设备客户端。
+
+    所有方法成功返回业务数据（dict）或 None，失败抛 ``DeviceOperationError`` 等
+    ``HighwaySDKError`` 子类异常，由调用方捕获处理。
+    """
 
     codec = MyCodec
 
@@ -140,8 +144,17 @@ class MyDevice(BaseDevice):
         response = await self.request(frame, timeout)
         return Frame.from_bytes(response)
 
-    async def get_brightness(self) -> Response:
-        """获取亮度信息。"""
+    async def get_brightness(self) -> dict:
+        """获取亮度信息。
+
+        Returns:
+            dict: ``CmsTags.model_dump()``。
+
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+            ResponseTimeoutError: 响应超时。
+            DeviceConnectionError: 连接异常。
+        """
         frame = Frame(what=What.GET_BRIGHTNESS)
         response = await self._request(frame)
         data = self.codec.decode(response)
@@ -150,7 +163,7 @@ class MyDevice(BaseDevice):
             brightness_mode="auto" if data["mode"] == 0 else "manual",
             timestamp=datetime.now(),
         )
-        return Response.success(data=cms_tags.model_dump())
+        return cms_tags.model_dump()
 ```
 
 ## API 参考
@@ -297,6 +310,8 @@ logger.info("应用启动")
 
 ## 异常处理
 
+Highway SDK 采用 Pythonic 异常模式：**成功返回业务数据（`dict` 或 `None`），失败抛 `HighwaySDKError` 子类异常**。调用方按业务场景捕获对应异常即可，无需逐次检查响应状态。
+
 ```python
 from highway_sdk.core.exceptions import (
     HighwaySDKError,        # 基础异常
@@ -306,18 +321,27 @@ from highway_sdk.core.exceptions import (
     ResponseTimeoutError,   # 响应超时
     ProtocolError,          # 协议错误
     FrameValidationError,   # 帧数据校验异常基类（CRC、解析、不支持）
+    DeviceOperationError,  # 设备操作异常（业务失败，如设备返回错误响应）
 )
 
-async def safe_connect():
+async def safe_call():
     try:
         async with await DianMingDevice.connect("192.168.1.100", 9000) as device:
-            await device.get_brightness()
+            # 数据采集方法成功返回 dict（CmsTags.model_dump()）
+            data = await device.get_brightness()
+            print(f"亮度: {data['brightness']}%")
+
+            # 控制方法成功返回 None，失败抛 DeviceOperationError
+            await device.set_brightness(brightness=20)
     except ConnectionTimeoutError:
         print("连接超时")
     except ConnectionLostError:
         print("连接断开")
     except ResponseTimeoutError:
         print("响应超时")
+    except DeviceOperationError as e:
+        # 业务失败：设备返回错误响应、协议版本不匹配、数据损坏等
+        print(f"操作失败: {e}")
     except DeviceConnectionError as e:
         # DeviceConnectionError 是连接异常基类，捕获它不会误吞 asyncio/socket
         # 层抛出的内建 ConnectionError（OSError 子类）

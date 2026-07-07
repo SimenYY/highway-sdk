@@ -108,7 +108,7 @@ class SanSiCodec(BaseCodec):
     def decode_upload_file(cls, data: bytes) -> dict:
         """解码上传文件响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to upload file")
+            raise DeviceOperationError("上传文件失败：设备返回错误响应，可能是存储空间不足或文件内容无效")
         return {"is_ok": True}
 
     @classmethod
@@ -122,5 +122,5 @@ class SanSiCodec(BaseCodec):
     def decode_set_brightness(cls, data: bytes) -> dict:
         """解码设置亮度响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to set brightness")
+            raise DeviceOperationError("设置亮度失败：设备返回错误响应，可能是亮度值超出范围或设备故障")
         return {"is_ok": True}

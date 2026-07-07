@@ -30,7 +30,9 @@ class DianMingCodec(BaseCodec):
         try:
             return int(value)
         except (ValueError, TypeError) as e:
-            raise ProtocolParsingError(f"Invalid {field}: {value!r}") from e
+            raise ProtocolParsingError(
+                f"设备返回的数据格式异常：{field} 字段值 {value!r} 无法识别，可能是设备协议版本不匹配或通信干扰"
+            ) from e
 
     @classmethod
     def _is_ok(cls, data: bytes) -> bool:
@@ -87,7 +89,7 @@ class DianMingCodec(BaseCodec):
         """解析播放项字符串。"""
         fields = play_item.split(",")
         if len(fields) < 6:
-            raise ProtocolParsingError(f"Invalid play item format: {play_item!r}")
+            raise ProtocolParsingError(f"播放项数据格式异常：{play_item!r}，可能是设备协议版本不匹配或数据损坏")
 
         result = {
             "media": fields[5],
@@ -169,7 +171,9 @@ class DianMingCodec(BaseCodec):
         marker = b"ITEM_NO="
         pos = data.find(marker)
         if pos < 0:
-            raise ProtocolParsingError("Invalid play list data format: missing ITEM_NO marker")
+            raise ProtocolParsingError(
+                "播放列表数据格式异常：缺少 ITEM_NO 标记，可能是设备未配置播放列表或返回数据不完整"
+            )
 
         # 从 ITEM_NO= 开始提取内容
         content = data[pos:].decode(ENCODING, errors="ignore")
@@ -180,7 +184,7 @@ class DianMingCodec(BaseCodec):
     def decode_set_play_list(cls, data: bytes) -> dict:
         """解码设置播放列表响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to set play list")
+            raise DeviceOperationError("下发播放列表失败：设备返回错误响应，可能是设备故障或权限不足")
         return {"is_ok": True}
 
     @classmethod
@@ -188,5 +192,5 @@ class DianMingCodec(BaseCodec):
     def decode_set_brightness(cls, data: bytes) -> dict:
         """解码设置亮度或模式响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to set brightness or mode")
+            raise DeviceOperationError("设置亮度或模式失败：设备返回错误响应，可能是亮度值超出范围或设备故障")
         return {"is_ok": True}

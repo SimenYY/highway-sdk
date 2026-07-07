@@ -9,9 +9,9 @@ Nova 的 set_play_list 是三步流程：
 
 本测试验证：
 1. set_play_list 按正确顺序发送三个帧，字节与协议标准报文完全一致
-2. 三步均成功时返回 status="success"
-3. send_file_name 失败时短路返回 error（不调用后续步骤）
-4. send_file_content 失败时短路返回 error（不调用 select_play_list）
+2. 三步均成功时正常返回（无异常）
+3. send_file_name 失败时抛 ``DeviceOperationError``（不调用后续步骤）
+4. send_file_content 失败时抛 ``DeviceOperationError``（不调用 select_play_list）
 
 注：响应帧无协议标准报文，使用 Frame 类构造成功/失败响应（数据域 0x01=成功，0x00=失败）。
 """
@@ -20,7 +20,7 @@ from collections.abc import Sequence
 
 import pytest
 
-from highway_sdk.core.response import Response
+from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.core.transport import Transport
 from highway_sdk.vendors.cms.nova.device import NovaDevice
 from highway_sdk.vendors.cms.nova.spec import Frame, What
@@ -123,8 +123,8 @@ class TestNovaSetPlayListProtocolStandard:
         )
 
     @pytest.mark.asyncio
-    async def test_set_play_list_returns_success_on_all_success(self):
-        """验证三步均成功时返回 success。"""
+    async def test_set_play_list_returns_none_on_all_success(self):
+        """验证三步均成功时正常返回 None。"""
         responses = [
             _build_response(What.SEND_FILE_NAME_RESP, success=True),
             _build_response(What.SEND_FILE_CONTENT_RESP, success=True),
@@ -135,13 +135,11 @@ class TestNovaSetPlayListProtocolStandard:
 
         result = await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
 
-        assert isinstance(result, Response)
-        assert result.status == "success"
-        assert result.error_msg is None
+        assert result is None
 
     @pytest.mark.asyncio
-    async def test_set_play_list_short_circuits_on_send_file_name_failure(self):
-        """验证 send_file_name 失败时短路返回 error，不调用后续步骤。"""
+    async def test_set_play_list_raises_on_send_file_name_failure(self):
+        """验证 send_file_name 失败时抛 DeviceOperationError，不调用后续步骤。"""
         responses = [
             _build_response(What.SEND_FILE_NAME_RESP, success=False),
             # 故意不提供后续响应，若被调用会抛 RuntimeError
@@ -149,16 +147,17 @@ class TestNovaSetPlayListProtocolStandard:
         transport = FakeTransport(responses=responses)
         device = NovaDevice(transport)
 
-        result = await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
+        # 验证：抛 DeviceOperationError
+        with pytest.raises(DeviceOperationError):
+            await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
 
-        assert result.status == "error"
         # 验证：只发送了 send_file_name 一个帧
         assert len(transport._sent_frames) == 1
         assert transport._sent_frames[0] == bytes.fromhex(SEND_FILE_NAME_HEX)
 
     @pytest.mark.asyncio
-    async def test_set_play_list_short_circuits_on_send_file_content_failure(self):
-        """验证 send_file_content 失败时短路返回 error，不调用 select_play_list。"""
+    async def test_set_play_list_raises_on_send_file_content_failure(self):
+        """验证 send_file_content 失败时抛 DeviceOperationError，不调用 select_play_list。"""
         responses = [
             _build_response(What.SEND_FILE_NAME_RESP, success=True),
             _build_response(What.SEND_FILE_CONTENT_RESP, success=False),
@@ -167,9 +166,10 @@ class TestNovaSetPlayListProtocolStandard:
         transport = FakeTransport(responses=responses)
         device = NovaDevice(transport)
 
-        result = await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
+        # 验证：抛 DeviceOperationError
+        with pytest.raises(DeviceOperationError):
+            await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
 
-        assert result.status == "error"
         # 验证：发送了 send_file_name 和 send_file_content 两个帧（select_play_list 未被调用）
         assert len(transport._sent_frames) == 2
 

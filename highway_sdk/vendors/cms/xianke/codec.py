@@ -109,14 +109,14 @@ class XianKeCodec(BaseCodec):
         if cls._is_ok(data):
             content = data[1:].decode("gbk", errors="ignore")
             return {"text": content}
-        raise DeviceOperationError("Failed to get item")
+        raise DeviceOperationError("获取播放项失败：设备返回错误响应，可能是设备未配置播放项或故障")
 
     @classmethod
     @BaseCodec.register(What.GET_PLAY_LIST_NAME)
     def decode_get_play_list_name(cls, data: bytes) -> dict:
         """解码获取播放列表响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to get play list")
+            raise DeviceOperationError("获取播放列表失败：设备返回错误响应，可能是设备未配置播放列表或存储故障")
         return {"is_ok": True}
 
     @classmethod
@@ -124,7 +124,7 @@ class XianKeCodec(BaseCodec):
     def decode_get_brightness(cls, data: bytes) -> dict:
         """解码获取亮度响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to get brightness")
+            raise DeviceOperationError("获取亮度失败：设备返回错误响应，可能是设备故障或通信干扰")
         brightness = int(data[1:].decode("gbk", errors="ignore")) if len(data) > 1 else 0
         return {"brightness": brightness, "mode": 1}
 
@@ -133,7 +133,7 @@ class XianKeCodec(BaseCodec):
     def decode_upload_file(cls, data: bytes) -> dict:
         """解码上传文件响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to upload file")
+            raise DeviceOperationError("上传文件失败：设备返回错误响应，可能是存储空间不足或文件内容无效")
         return {"is_ok": True}
 
     @classmethod
@@ -145,17 +145,19 @@ class XianKeCodec(BaseCodec):
         修复：必须跳过文件头前缀，仅解析尾部 INI 内容。
         """
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to download file")
+            raise DeviceOperationError("下载文件失败：设备返回错误响应，可能是设备无此文件或存储故障")
         if len(data) < 8:
-            raise DeviceOperationError("Invalid download response: too short")
+            raise DeviceOperationError("下载响应数据过短，可能是设备返回不完整或通信中断")
         try:
             file_name_len = int(data[1:4].decode("ascii"))
         except ValueError as e:
-            raise DeviceOperationError(f"Invalid file_name_len in download response: {e}") from e
+            raise DeviceOperationError(
+                f"下载响应中的文件名长度字段异常：{e}，可能是设备协议版本不匹配或数据损坏"
+            ) from e
         # 跳过 success_code(1) + file_name_len(3) + file_name + "0000"(4)
         sep = 4 + file_name_len + 4
         if len(data) < sep:
-            raise DeviceOperationError("Invalid download response: truncated file header")
+            raise DeviceOperationError("下载响应文件头不完整，可能是设备返回数据被截断或通信干扰")
         return cls._parse_play_list(data[sep:].decode("gbk", errors="ignore"))
 
     @classmethod
@@ -163,5 +165,5 @@ class XianKeCodec(BaseCodec):
     def decode_play_list(cls, data: bytes) -> dict:
         """解码播放列表响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to play list")
+            raise DeviceOperationError("选择播放列表失败：设备返回错误响应，可能是文件名不存在或设备故障")
         return {"is_ok": True}

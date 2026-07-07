@@ -196,19 +196,30 @@ class MyCodec(BaseCodec):
 from datetime import datetime
 
 from highway_sdk.core.device import BaseDevice
-from highway_sdk.core.response import Response
+from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.vendors.cms.tags import CmsTags
 from .codec import MyCodec
 from .spec import Frame, What
 
 class MyDevice(BaseDevice):
+    """厂商设备客户端。
+
+    所有方法成功返回业务数据（dict）或 None，失败抛 ``DeviceOperationError`` 等
+    ``HighwaySDKError`` 子类异常，由调用方捕获处理。
+    """
+
     codec = MyCodec
 
-    async def _request(self, frame: Frame, timeout: float = 3.0) -> Frame:
+    async def _request(self, frame: Frame, timeout: float | None = None) -> Frame:
         response = await self.request(frame, timeout)
         return Frame.from_bytes(response)
 
-    async def get_brightness(self) -> Response:
+    async def get_brightness(self) -> dict:
+        """获取亮度信息。
+
+        Raises:
+            DeviceOperationError: 设备返回错误响应。
+        """
         frame = Frame(what=What.GET_BRIGHTNESS)
         response = await self._request(frame)
         data = self.codec.decode(response)
@@ -217,7 +228,7 @@ class MyDevice(BaseDevice):
             brightness_mode="auto" if data["mode"] == 0 else "manual",
             timestamp=datetime.now(),
         )
-        return Response.success(data=cms_tags.model_dump())
+        return cms_tags.model_dump()
 ```
 
 ## 日志使用
@@ -242,22 +253,32 @@ logger = get_logger(
 
 ## 异常处理
 
+Highway SDK 采用 Pythonic 异常模式：**成功返回业务数据（`dict` 或 `None`），失败抛 ``HighwaySDKError`` 子类异常**。调用方按业务场景捕获对应异常即可，无需逐次检查响应状态。
+
 ```python
 from highway_sdk.core.exceptions import (
     ConnectionTimeoutError,
     ConnectionLostError,
     ResponseTimeoutError,
+    DeviceOperationError,
 )
 
 try:
     async with await DianMingDevice.connect("192.168.1.100", 9000) as device:
-        await device.get_brightness()
+        # 数据采集返回 dict，失败抛 DeviceOperationError
+        data = await device.get_brightness()
+        print(f"亮度: {data['brightness']}%")
+        # 控制方法成功返回 None，失败抛 DeviceOperationError
+        await device.set_brightness(brightness=20)
 except ConnectionTimeoutError:
     print("连接超时")
 except ConnectionLostError:
     print("连接断开")
 except ResponseTimeoutError:
     print("响应超时")
+except DeviceOperationError as e:
+    # 业务失败：设备返回错误响应、协议版本不匹配、数据损坏等
+    print(f"操作失败: {e}")
 ```
 
 ## 项目结构

@@ -78,7 +78,7 @@ class FengHaiCodec(BaseCodec):
     def decode_get_brightness(cls, data: bytes) -> dict:
         """解码亮度和模式响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to get brightness and mode")
+            raise DeviceOperationError("获取亮度失败：设备返回错误响应，可能是设备故障或通信干扰")
 
         max_brightness = 31
         mode = int(chr(data[1]))
@@ -110,11 +110,11 @@ class FengHaiCodec(BaseCodec):
     def decode_download_file(cls, data: bytes) -> dict:
         """解码下载文件响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to get play list")
+            raise DeviceOperationError("获取播放列表失败：设备返回错误响应，可能是设备未配置播放列表或存储故障")
 
         sep = data.find(b"+")
         if sep < 0:
-            raise DeviceOperationError("Invalid download response: missing '+' separator")
+            raise DeviceOperationError("播放列表响应格式异常：缺少分隔符 '+'，可能是设备协议版本不匹配或数据损坏")
         return cls._parse_play_list(data[sep + 5 :].decode(ENCODING))
 
     @classmethod
@@ -122,7 +122,7 @@ class FengHaiCodec(BaseCodec):
     def decode_set_brightness(cls, data: bytes) -> dict:
         """解码设置亮度响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to set brightness")
+            raise DeviceOperationError("设置亮度失败：设备返回错误响应，可能是亮度值超出范围或设备故障")
         return {"is_ok": True}
 
     @classmethod
@@ -130,5 +130,5 @@ class FengHaiCodec(BaseCodec):
     def decode_upload_file(cls, data: bytes) -> dict:
         """解码上传文件响应。"""
         if not cls._is_ok(data):
-            raise DeviceOperationError("Failed to upload file")
+            raise DeviceOperationError("上传文件失败：设备返回错误响应，可能是存储空间不足或文件内容无效")
         return {"is_ok": True}

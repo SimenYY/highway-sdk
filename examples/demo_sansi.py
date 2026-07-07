@@ -15,6 +15,7 @@ from highway_sdk import SanSiDevice
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
     ConnectionTimeoutError,
+    DeviceOperationError,
     ResponseTimeoutError,
 )
 
@@ -36,22 +37,20 @@ async def main():
             # 1. 获取亮度信息
             # ----------------------------------------------------------
             print("\n--- 1. 获取亮度信息 ---")
-            response = await device.get_brightness()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_brightness()
                 print(f"  亮度值: {data['brightness']}%")
                 print(f"  控制模式: {data['brightness_mode']}")
                 print(f"  采集时间: {data['timestamp']}")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 2. 获取当前播放项
             # ----------------------------------------------------------
             print("\n--- 2. 获取当前播放项 ---")
-            response = await device.get_play_item()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_play_item()
                 item = data["play_item"]
                 print(f"  原始格式: {data['orig_play_item']}")
                 if item:
@@ -61,33 +60,32 @@ async def main():
                     print(f"  颜色: {item['font_color']}")
                     print(f"  图片: {item['image_name']}")
                     print(f"  停留时间: {item['duration']} 秒")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 3. 获取播放列表
             # ----------------------------------------------------------
             print("\n--- 3. 获取播放列表 ---")
-            response = await device.get_play_list()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_play_list()
                 play_list = data["play_list"]
                 print(f"  共 {len(play_list)} 个播放项:")
                 for i, item in enumerate(play_list):
                     text = item.get("text") or "(图片)"
                     print(f"    [{i}] {text} (停留 {item['duration']}s)")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 4. 设置亮度
             # ----------------------------------------------------------
             print("\n--- 4. 设置亮度为 18 ---")
-            response = await device.set_brightness(brightness=18)
-            if response.status == "success":
+            try:
+                await device.set_brightness(brightness=18)
                 print("  设置成功")
-            else:
-                print(f"  设置失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  设置失败: {e}")
 
             # ----------------------------------------------------------
             # 5. 上传播放列表文件
@@ -103,11 +101,11 @@ async def main():
                 "windows0_item_no=1\r\n"
                 "windows0_item0=100,0,0,0,0,\\C000000\\Fs3232\\T255000000000\\W注意行车安全"
             )
-            response = await device.upload_file(content=content, file_name="play.lst")
-            if response.status == "success":
+            try:
+                await device.upload_file(content=content, file_name="play.lst")
                 print("  上传成功")
-            else:
-                print(f"  上传失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  上传失败: {e}")
 
     except ConnectionTimeoutError:
         print(f"[错误] 连接超时：设备 {host}:{port} 不可达")

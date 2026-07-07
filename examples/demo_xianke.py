@@ -15,6 +15,7 @@ from highway_sdk import XianKeDevice
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
     ConnectionTimeoutError,
+    DeviceOperationError,
     ResponseTimeoutError,
 )
 
@@ -36,64 +37,61 @@ async def main():
             # 1. 获取亮度信息
             # ----------------------------------------------------------
             print("\n--- 1. 获取亮度信息 ---")
-            response = await device.get_brightness()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_brightness()
                 print(f"  亮度值: {data['brightness']}%")
                 print(f"  控制模式: {data['brightness_mode']}")
                 print(f"  采集时间: {data['timestamp']}")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 2. 获取当前播放项
             # ----------------------------------------------------------
             print("\n--- 2. 获取当前播放项 ---")
-            response = await device.get_play_item()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_play_item()
                 item = data["play_item"]
                 print(f"  原始文本: {data['orig_play_item']}")
                 if item:
                     print(f"  文本: {item['text']}")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 3. 获取播放列表
             # ----------------------------------------------------------
             print("\n--- 3. 获取播放列表 ---")
-            response = await device.get_play_list()
-            if response.status == "success" and response.data is not None:
-                data = response.data
+            try:
+                data = await device.get_play_list()
                 play_list = data["play_list"]
                 print(f"  共 {len(play_list)} 个播放项:")
                 for i, item in enumerate(play_list):
                     text = item.get("text") or "(图片)"
                     print(f"    [{i}] {text} (停留 {item['duration']}s)")
-            else:
-                print(f"  获取失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
             # 4. 上传播放列表文件
             # ----------------------------------------------------------
             print("\n--- 4. 上传播放列表文件 ---")
             content = "[LIST]\r\nItemCount=1\r\nItem00=10,0,0,0,0,\\F S24\\T255000000000\\U前方限速 减速慢行"
-            response = await device.upload_file(content=content, file_name="list\\000.xkl")
-            if response.status == "success":
+            try:
+                await device.upload_file(content=content, file_name="list\\000.xkl")
                 print("  上传成功")
-            else:
-                print(f"  上传失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  上传失败: {e}")
 
             # ----------------------------------------------------------
             # 5. 选择播放列表进行播放
             # ----------------------------------------------------------
             print("\n--- 5. 选择播放列表 000.xkl 播放 ---")
-            response = await device.select_play_list(file_name="000.xkl")
-            if response.status == "success":
+            try:
+                await device.select_play_list(file_name="000.xkl")
                 print("  切换成功")
-            else:
-                print(f"  切换失败: {response.error_msg}")
+            except DeviceOperationError as e:
+                print(f"  切换失败: {e}")
 
     except ConnectionTimeoutError:
         print(f"[错误] 连接超时：设备 {host}:{port} 不可达")
