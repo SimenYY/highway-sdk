@@ -136,7 +136,9 @@ class Frame(CMSFrame):
             end=end,
         )
         if frame.crc != crc_received:
-            raise CrcValidationError(f"CRC check failed: expected {crc_received.hex()}, got {frame.crc.hex()}")
+            raise CrcValidationError(
+                f"数据校验失败：期望 {crc_received.hex()}，实际 {frame.crc.hex()}，数据可能在传输中被损坏"
+            )
         return frame
 
     @staticmethod
@@ -315,7 +317,7 @@ class Item(BaseModel):
     def __str__(self) -> str:
         """将播放项转换为协议字符串。"""
         if not self.media_list:
-            raise ValueError("media_list is empty")
+            raise ValueError("播放项的媒体列表不能为空")
         protocol = f"{self.duration},{self.screen_in_mode},{self.play_effect},{self.screen_out_mode},{self.play_speed},"
         for media in self.media_list:
             protocol += str(media)
@@ -334,7 +336,7 @@ class Play(BaseModel):
     def __str__(self) -> str:
         """将播放列表转换为协议字符串。"""
         if not self.item_list:
-            raise ValueError("item_list is empty")
+            raise ValueError("播放列表不能为空")
         protocol = "[PLAYLIST]\r\n"
         protocol += f"ITEM_NO={len(self.item_list):03d}\r\n"
         for i, item in enumerate(self.item_list):

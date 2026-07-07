@@ -18,6 +18,7 @@ from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ResponseTimeoutError,
 )
+from highway_sdk.vendors.cms.tags import CmsPlayItem
 
 
 async def main():
@@ -72,35 +73,17 @@ async def main():
                 print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
-            # 4. 发送文件名（开始文件传输）
+            # 4. 下发播放列表
             # ----------------------------------------------------------
-            print("\n--- 4. 发送文件名 ---")
+            print("\n--- 4. 下发播放列表 ---")
+            items = [
+                CmsPlayItem(text="注意安全", font="宋体", font_size=24, font_color="#FFFF00", duration=10),
+            ]
             try:
-                await device.send_file_name(file_name="play001.lst", block_size=65535)
-                print("  发送成功")
+                await device.set_play_list(items=items, file_name="play001.lst")
+                print("  下发成功")
             except DeviceOperationError as e:
-                print(f"  发送失败: {e}")
-
-            # ----------------------------------------------------------
-            # 5. 发送文件内容（分块传输）
-            # ----------------------------------------------------------
-            print("\n--- 5. 发送文件内容 ---")
-            content = "[PLAYLIST]\r\nITEM_NO=001\r\nITEM000=10,0,0,0,0,\\C000000\\Fs2424\\T255000000000\\W注意安全"
-            try:
-                await device.send_file_content(content=content, block_num=1)
-                print("  发送成功")
-            except DeviceOperationError as e:
-                print(f"  发送失败: {e}")
-
-            # ----------------------------------------------------------
-            # 6. 选择播放列表播放
-            # ----------------------------------------------------------
-            print("\n--- 6. 选择播放列表 1 进行播放 ---")
-            try:
-                await device.select_play_list(playlist_id=1)
-                print("  切换成功")
-            except DeviceOperationError as e:
-                print(f"  切换失败: {e}")
+                print(f"  下发失败: {e}")
 
     except ConnectionTimeoutError:
         print(f"[错误] 连接超时：设备 {host}:{port} 不可达")

@@ -18,6 +18,7 @@ from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ResponseTimeoutError,
 )
+from highway_sdk.vendors.cms.tags import CmsPlayItem
 
 
 async def main():
@@ -73,25 +74,17 @@ async def main():
                 print(f"  获取失败: {e}")
 
             # ----------------------------------------------------------
-            # 4. 上传播放列表文件
+            # 4. 下发播放列表
             # ----------------------------------------------------------
-            print("\n--- 4. 上传播放列表文件 ---")
-            content = "[LIST]\r\nItemCount=1\r\nItem00=10,0,0,0,0,\\F S24\\T255000000000\\U前方限速 减速慢行"
+            print("\n--- 4. 下发播放列表 ---")
+            items = [
+                CmsPlayItem(text="前方限速 减速慢行", font="宋体", font_size=24, font_color="#FF0000", duration=10),
+            ]
             try:
-                await device.upload_file(content=content, file_name="list\\000.xkl")
-                print("  上传成功")
+                await device.set_play_list(items=items, file_name="list\\000.xkl")
+                print("  下发成功")
             except DeviceOperationError as e:
-                print(f"  上传失败: {e}")
-
-            # ----------------------------------------------------------
-            # 5. 选择播放列表进行播放
-            # ----------------------------------------------------------
-            print("\n--- 5. 选择播放列表 000.xkl 播放 ---")
-            try:
-                await device.select_play_list(file_name="000.xkl")
-                print("  切换成功")
-            except DeviceOperationError as e:
-                print(f"  切换失败: {e}")
+                print(f"  下发失败: {e}")
 
     except ConnectionTimeoutError:
         print(f"[错误] 连接超时：设备 {host}:{port} 不可达")

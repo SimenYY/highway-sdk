@@ -108,7 +108,7 @@ class Frame(CMSFrame):
 
         frame = cls(start=start, address=address, what=What(what), data=data, end=end)
         if frame.crc != crc:
-            raise CrcValidationError("crc check failed")
+            raise CrcValidationError("数据校验失败：接收到的数据可能在传输中被损坏，请检查通信线路")
 
         return frame
 

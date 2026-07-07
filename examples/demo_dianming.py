@@ -18,6 +18,7 @@ from highway_sdk.core.exceptions import (
     DeviceOperationError,
     ResponseTimeoutError,
 )
+from highway_sdk.vendors.cms.tags import CmsPlayItem
 
 
 async def main():  # noqa: C901
@@ -101,15 +102,11 @@ async def main():  # noqa: C901
             # 6. 下发播放列表并立即播放
             # ----------------------------------------------------------
             print("\n--- 6. 下发播放列表 ---")
-            # 电明播放列表格式：[PLAYLIST]\r\nITEM_NO=001\r\nITEM000=停留时间,入屏,效果,出屏,速度,媒体内容
-            content = (
-                "[PLAYLIST]\r\n"
-                "ITEM_NO=001\r\n"
-                "ITEM000=15,0,0,0,0,\\C000000\\Fs3232\\T255000000000\\K000000000000\\W"
-                "前方施工 减速慢行"
-            )
+            items = [
+                CmsPlayItem(text="前方施工 减速慢行", font="宋体", font_size=32, font_color="#FF0000", duration=15),
+            ]
             try:
-                await device.set_play_list(content, play_id=0)
+                await device.set_play_list(items=items, file_name="play.lst")
                 print("  下发成功")
             except DeviceOperationError as e:
                 print(f"  下发失败: {e}")

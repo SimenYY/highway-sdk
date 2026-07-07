@@ -2,6 +2,7 @@
 
 import struct
 from datetime import datetime
+from typing import ClassVar
 
 from highway_sdk.core.device import BaseDevice
 
@@ -175,14 +176,14 @@ class NovaDevice(BaseDevice[NovaCodec]):
         response = await self._request(frame)
         self.codec.decode(response)
 
-    async def set_play_list(self, content: str, file_name: str = "play001.lst") -> None:
+    async def set_play_list(self, items: list[CmsPlayItem], file_name: str = "play001.lst") -> None:
         """下发播放列表并立即播放。
 
         Nova 需要三步：发送文件名 → 发送文件内容 → 选择播放列表。
         任一步失败即抛异常，后续步骤不再执行。
 
         Args:
-            content: 播放列表内容字符串。
+            items: 播放项列表。
             file_name: 文件名，默认为 "play001.lst"。
 
         Raises:
@@ -190,6 +191,83 @@ class NovaDevice(BaseDevice[NovaCodec]):
             ResponseTimeoutError: 响应超时。
             DeviceConnectionError: 连接异常。
         """
+        content = self._items_to_content(items)
         await self.send_file_name(file_name)
         await self.send_file_content(content)
         await self.select_play_list(1)
+
+    # ------------------------------------------------------------------
+    # 内部工具方法
+    # ------------------------------------------------------------------
+
+    # 中文字体名 → 单字符字体代码（与 DianMing 协议一致）
+    _FONT_NAME_MAP: ClassVar[dict[str, str]] = {
+        "黑体": "h",
+        "楷体": "k",
+        "宋体": "s",
+        "仿宋": "f",
+    }
+
+    @staticmethod
+    def _hex_color_to_vendor(hex_color: str | None) -> str:
+        """将 '#RRGGBB' 转换为厂商颜色字符串（'RRRGGGBBB000'）。"""
+        if hex_color is None:
+            return "000000000000"
+        hex_color = hex_color.lstrip("#")
+        if len(hex_color) != 6:
+            return "000000000000"
+        try:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+        except ValueError:
+            return "000000000000"
+        return f"{r:03d}{g:03d}{b:03d}000"
+
+    @staticmethod
+    def _font_size_code(font_size: int | None) -> str:
+        """将字号转换为协议要求的重复格式（如 24 → '2424'），默认 32。"""
+        size = font_size if font_size is not None else 32
+        if size < 0:
+            size = 32
+        return f"{size}{size}"
+
+    @classmethod
+    def _item_to_str(cls, item: CmsPlayItem) -> str:
+        """将单个 CmsPlayItem 转换为 INI 文本中的 item 行内容。"""
+        duration = item.duration if item.duration is not None else 10
+        # item 行格式：duration,screen_in,play_effect,screen_out,play_speed,媒体串
+        # Nova 无明确字段定义，沿用 demo 中的格式（与 DianMing 一致）
+        media_str_parts: list[str] = []
+        if item.text is not None:
+            font_code = cls._FONT_NAME_MAP.get(item.font or "黑体", "h")
+            color = cls._hex_color_to_vendor(item.font_color)
+            font_size_code = cls._font_size_code(item.font_size)
+            media_str_parts.append(f"\\C000000\\F{font_code}{font_size_code}\\T{color}\\W{item.text}")
+        if item.image_name:
+            # Nova 无图片媒体协议定义，沿用通用 \I 转义码占位
+            media_str_parts.append(f"\\I{item.image_name.rjust(3, '0')}")
+        if not media_str_parts:
+            # 兜底：空文本
+            media_str_parts.append("\\C000000\\Fh3232\\T000000000000\\W")
+        media_str = "".join(media_str_parts)
+        return f"{duration},0,0,0,0,{media_str}"
+
+    @classmethod
+    def _items_to_content(cls, items: list[CmsPlayItem]) -> str:
+        """将 CmsPlayItem 列表转换为 Nova INI 协议文本。
+
+        Nova 没有 Play/Item 模型，直接构造 INI 文本：
+            [PLAYLIST]\\r\\n
+            ITEM_NO={count:03d}\\r\\n
+            ITEM{index:03d}={duration},0,0,0,0,{media_str}\\r\\n
+
+        - CmsPlayItem.duration 单位为秒，Nova 沿用秒（无需转换）
+        - 缺失字段使用默认值：x=0, y=0, screen_in=0, play_effect=0, screen_out=0, play_speed=0
+        """
+        if not items:
+            raise ValueError("播放列表不能为空")
+        lines = ["[PLAYLIST]\r\n", f"ITEM_NO={len(items):03d}\r\n"]
+        for i, item in enumerate(items):
+            lines.append(f"ITEM{i:03d}={cls._item_to_str(item)}\r\n")
+        return "".join(lines)

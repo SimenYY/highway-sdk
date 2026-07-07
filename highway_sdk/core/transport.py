@@ -88,11 +88,13 @@ class Transport:
             )
             self._connected = True
             self._reconnect_count = 0
-            self.logger.info(f"{self._log_prefix} Connected")
+            self.logger.info(f"{self._log_prefix} 连接成功")
         except TimeoutError:
-            raise ConnectionTimeoutError(f"Connection timeout after {self.timeout}s") from None
+            raise ConnectionTimeoutError(
+                f"连接超时：设备 {self.host}:{self.port} 在 {self.timeout} 秒内未响应，可能是设备关机或网络不通"
+            ) from None
         except OSError as e:
-            raise DeviceConnectionError(f"Connection failed: {e}") from e
+            raise DeviceConnectionError(f"连接失败：无法连接到设备 {self.host}:{self.port}，{e}") from e
 
     async def disconnect(self) -> None:
         """断开连接。
@@ -115,7 +117,7 @@ class Transport:
         self._writer = None
         self._connected = False
         self._closing = False
-        self.logger.info(f"{self._log_prefix} Disconnected")
+        self.logger.info(f"{self._log_prefix} 已断开连接")
 
     async def send(self, data: bytes) -> None:
         """发送数据。
@@ -130,12 +132,12 @@ class Transport:
             if self._should_reconnect():
                 await self._wait_for_reconnect()
             if not self.is_connected:
-                raise ConnectionLostError("Not connected")
+                raise ConnectionLostError("未连接到设备，请先调用 connect() 建立连接")
 
         assert self._writer is not None
         self._writer.write(data)
         await self._writer.drain()
-        self.logger.debug(f"{self._log_prefix} TXD >> {data.hex(' ')}")
+        self.logger.debug(f"{self._log_prefix} 发送 >> {data.hex(' ')}")
 
     async def receive(self, bufsize: int = 1024) -> bytes:
         """接收数据。
@@ -153,14 +155,14 @@ class Transport:
             if self._should_reconnect():
                 await self._wait_for_reconnect()
             if not self.is_connected:
-                raise ConnectionLostError("Not connected")
+                raise ConnectionLostError("未连接到设备，请先调用 connect() 建立连接")
 
         assert self._reader is not None
         data = await self._reader.read(bufsize)
         if not data:
-            raise ConnectionLostError("Connection closed by peer")
+            raise ConnectionLostError("设备主动断开了连接，可能是设备重启或网络中断")
 
-        self.logger.debug(f"{self._log_prefix} RXD << {data.hex(' ')}")
+        self.logger.debug(f"{self._log_prefix} 接收 << {data.hex(' ')}")
         return data
 
     async def request(self, data: bytes, timeout: float | None = None) -> bytes:
@@ -183,7 +185,7 @@ class Transport:
             if self._should_reconnect():
                 await self._wait_for_reconnect()
             if not self.is_connected:
-                raise ConnectionLostError("Not connected")
+                raise ConnectionLostError("未连接到设备，请先调用 connect() 建立连接")
 
         assert self._reader is not None and self._writer is not None
 
@@ -191,14 +193,16 @@ class Transport:
 
         self._writer.write(data)
         await self._writer.drain()
-        self.logger.debug(f"{self._log_prefix} TXD >> {data.hex(' ')}")
+        self.logger.debug(f"{self._log_prefix} 发送 >> {data.hex(' ')}")
 
         try:
             response = await asyncio.wait_for(self._reader.read(1024), effective_timeout)
-            self.logger.debug(f"{self._log_prefix} RXD << {response.hex(' ')}")
+            self.logger.debug(f"{self._log_prefix} 接收 << {response.hex(' ')}")
             return response
         except TimeoutError:
-            raise ResponseTimeoutError(f"Response timeout after {effective_timeout}s") from None
+            raise ResponseTimeoutError(
+                f"响应超时：发送指令后 {effective_timeout} 秒内设备未回复，可能是设备繁忙或通信故障"
+            ) from None
 
     def _should_reconnect(self) -> bool:
         """是否应该触发自动重连（仅当启用自动重连且非主动断开）。"""
@@ -211,15 +215,15 @@ class Transport:
         while self._should_reconnect():
             try:
                 await self.connect()
-                self.logger.info(f"{self._log_prefix} Reconnected successfully")
+                self.logger.info(f"{self._log_prefix} 重连成功")
                 return
             except Exception as e:
                 self._reconnect_count += 1
-                self.logger.error(f"{self._log_prefix} Reconnect failed: {e}")
+                self.logger.error(f"{self._log_prefix} 重连失败：{e}")
 
                 if self.max_reconnect_attempts > 0 and self._reconnect_count >= self.max_reconnect_attempts:
                     self.logger.error(
-                        f"{self._log_prefix} Max reconnect attempts ({self.max_reconnect_attempts}) reached"
+                        f"{self._log_prefix} 已达到最大重连次数（{self.max_reconnect_attempts} 次），停止重连"
                     )
                     # 达到上限：用 _closing 阻止后续重连，保留 auto_reconnect 原值
                     self._closing = True
@@ -230,7 +234,7 @@ class Transport:
                     interval += random.uniform(-0.1 * interval, 0.1 * interval)
 
                 self.logger.info(
-                    f"{self._log_prefix} Reconnecting in {interval:.2f}s (attempt {self._reconnect_count})"
+                    f"{self._log_prefix} 将在 {interval:.2f} 秒后重连（第 {self._reconnect_count} 次尝试）"
                 )
                 await asyncio.sleep(interval)
 
@@ -242,7 +246,7 @@ class Transport:
         try:
             await asyncio.wait_for(self._reconnect_task, timeout=self.timeout * 3)
         except TimeoutError:
-            self.logger.error(f"{self._log_prefix} Reconnect timeout")
+            self.logger.error(f"{self._log_prefix} 重连超时")
 
     async def __aenter__(self):
         """异步上下文管理器入口。"""

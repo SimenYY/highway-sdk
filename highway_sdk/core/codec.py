@@ -60,7 +60,7 @@ class BaseCodec:
         try:
             return cls._decoders[frame.what](cls, frame.data)
         except KeyError as e:
-            raise ValueError(f"Unsupported command: {e}") from e
+            raise ValueError(f"不支持的指令类型：{e}，设备可能使用了未实现的协议命令") from e
 
     @staticmethod
     def register(what: Any):

@@ -4,7 +4,7 @@ from .constants import BUFSIZE, ETX, STX
 class Reader:
     def __init__(self, limit: int = BUFSIZE):
         if limit < 0:
-            raise ValueError("Limit cannot be <=0")
+            raise ValueError("缓冲区大小限制必须大于 0")
 
         self._limit = limit
         self._buffer = bytearray()
@@ -19,7 +19,7 @@ class Reader:
             # 小包(1KB)应用场景下，几乎不会出现流量拥塞的情况
             # 一般设备状态数据都是可丢失的，但开发者也要感知到
             # 这个异常
-            raise RuntimeError("Buffer is full")
+            raise RuntimeError("接收缓冲区已满：设备发送的数据量超出处理能力")
 
     def iter_read_until(self, separator: bytes):
         """迭代获取字节流，通过分隔符
@@ -36,7 +36,7 @@ class Reader:
         """
         seplen = len(separator)
         if seplen == 0:
-            raise ValueError("Separator should be at least one-byte string")
+            raise ValueError("分隔符不能为空，至少需要 1 个字节")
 
         while True:
             buflen = len(self._buffer)
@@ -48,7 +48,7 @@ class Reader:
                 break
 
             if isep > self._limit:
-                raise RuntimeError("Separator is found, but chunk is longer than limit")
+                raise RuntimeError("数据包过长：找到分隔符但数据段超出长度限制")
 
             message = self._buffer[: isep + seplen]
             del self._buffer[: isep + seplen]
@@ -72,7 +72,7 @@ class Reader:
         etx_len = len(etx)
 
         if stx_len == 0 or etx_len == 0:
-            raise ValueError("STX and ETX should be at least one-byte string")
+            raise ValueError("起始符和结束符不能为空，至少需要 1 个字节")
 
         while True:
             buflen = len(self._buffer)
@@ -92,14 +92,14 @@ class Reader:
                 # 没有找到结束符，等待更多数据
                 # 检查是否超出限制
                 if buflen - istart > self._limit:
-                    raise RuntimeError("End marker not found, but chunk is longer than limit")
+                    raise RuntimeError("数据包过长：未找到结束符且数据已超出长度限制")
                 break
 
             # 计算完整报文的结束位置
             packet_end = iend + etx_len
             # 检查报文长度是否超出限制
             if packet_end - istart > self._limit:
-                raise RuntimeError("Packet is longer than limit")
+                raise RuntimeError("数据包过长：完整报文超出长度限制")
 
             # 提取完整报文
             message = self._buffer[istart:packet_end]

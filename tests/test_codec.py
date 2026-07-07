@@ -46,7 +46,7 @@ class TestBaseCodec:
         """测试不支持的命令。"""
         frame = MockFrame(what=b"unknown_cmd", data=b"test")
 
-        with pytest.raises(ValueError, match="Unsupported command"):
+        with pytest.raises(ValueError, match="不支持的指令类型"):
             TestCodec.decode(frame)
 
     def test_register_multiple_commands(self):

@@ -68,7 +68,7 @@ class Frame(CMSFrame):
         frame = cls(start=start, what=What(what), address=address, data=data, end=end)
 
         if frame.crc != crc:
-            raise CrcValidationError("crc check failed")
+            raise CrcValidationError("数据校验失败：接收到的数据可能在传输中被损坏，请检查通信线路")
 
         return frame
 
@@ -230,7 +230,7 @@ class Item(BaseModel):
     def __str__(self) -> str:
         """将播放项转换为协议字符串。"""
         if not self.media_list:
-            raise ValueError("media_list is empty")
+            raise ValueError("播放项的媒体列表不能为空")
         media_str = "".join(str(media) for media in self.media_list)
         return (
             f"{self.duration},"
@@ -254,7 +254,7 @@ class Play(BaseModel):
     def __str__(self) -> str:
         """将播放列表转换为协议字符串。"""
         if not self.item_list:
-            raise ValueError("item_list is empty")
+            raise ValueError("播放列表不能为空")
         protocol = "[LIST]\r\n"
         protocol += f"ItemCount={len(self.item_list):03d}\r\n"
         for i, item in enumerate(self.item_list):

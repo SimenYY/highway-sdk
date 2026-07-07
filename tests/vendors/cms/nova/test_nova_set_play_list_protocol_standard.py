@@ -1,21 +1,25 @@
 """诺瓦 set_play_list 协议标准报文测试。
 
 报文来源：诺瓦交通协议标准版 V3.11.5（send_file_name + send_file_content + select_play_list 指令）
+        + Nova 设备 INI 协议格式
 
-Nova 的 set_play_list 是三步流程：
+Nova 的 set_play_list 接收 ``items: list[CmsPlayItem]``，内部将 items 转换为
+INI 协议文本后执行三步流程：
 1. send_file_name — 发送文件名（携带 block_size）
 2. send_file_content — 发送文件内容（携带 block_num）
 3. select_play_list — 选择播放列表触发播放
 
 本测试验证：
-1. set_play_list 按正确顺序发送三个帧，字节与协议标准报文完全一致
+1. set_play_list 按正确顺序发送三个帧，字节与协议标准报文一致
 2. 三步均成功时正常返回（无异常）
 3. send_file_name 失败时抛 ``DeviceOperationError``（不调用后续步骤）
 4. send_file_content 失败时抛 ``DeviceOperationError``（不调用 select_play_list）
+5. _items_to_content 输出与硬编码预期一致
 
 注：响应帧无协议标准报文，使用 Frame 类构造成功/失败响应（数据域 0x01=成功，0x00=失败）。
 """
 
+import struct
 from collections.abc import Sequence
 
 import pytest
@@ -23,7 +27,8 @@ import pytest
 from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.core.transport import Transport
 from highway_sdk.vendors.cms.nova.device import NovaDevice
-from highway_sdk.vendors.cms.nova.spec import Frame, What
+from highway_sdk.vendors.cms.nova.spec import ENCODING, Frame, What
+from highway_sdk.vendors.cms.tags import CmsPlayItem
 
 
 class FakeTransport(Transport):
@@ -68,6 +73,26 @@ def _build_response(what: What, success: bool = True) -> bytes:
     return bytes(Frame(what=what, data=data))
 
 
+# 测试输入：基于 Nova 协议标准 V3.11.5 中播放项的语义构造 CmsPlayItem 列表
+# 含 1 个文本项（前方事故 交通堵塞，宋体 32 红色，duration=15 秒）
+ITEMS = [
+    CmsPlayItem(
+        text="前方事故 交通堵塞",
+        font="宋体",
+        font_size=32,
+        font_color="#FF0000",
+        duration=15,
+    ),
+]
+
+# 预期协议内容（由 NovaDevice._items_to_content(ITEMS) 生成）
+# 格式：[PLAYLIST]\r\nITEM_NO={count:03d}\r\nITEM{index:03d}={duration},0,0,0,0,{media_str}\r\n
+# Nova duration 单位为秒（无需转换），font_size 格式为重复输出（如 32→"3232"）
+# 文本媒体串格式：\C000000\F{font_code}{font_size_code}\T{color}\W{text}
+EXPECTED_CONTENT = (
+    "[PLAYLIST]\r\nITEM_NO=001\r\nITEM000=15,0,0,0,0,\\C000000\\Fs3232\\T255000000000\\W前方事故 交通堵塞\r\n"
+)
+
 # 协议标准 V3.11.5 上位机发送报文：
 # send_file_name: AA FF FF 11 FF FF 70 6C 61 79 30 30 31 2E 6C 73 74 CC 5A 9B
 # 数据域: struct.pack("<H", 65535) + "play001.lst".encode("utf-8")
@@ -77,10 +102,15 @@ SEND_FILE_NAME_HEX = "aaffff11ffff706c61793030312e6c7374cc5a9b"
 # 数据域: struct.pack(">B", 1)
 SELECT_PLAY_LIST_HEX = "aaffff1b01ccbf28"
 
-# send_file_content 无完整协议标准 hex，仅验证结构：
-# AA FF FF 13 01 00 [content] CC [CRC]
-# 数据域: struct.pack("<H", block_num=1) + content.encode("utf-8")
-TEST_CONTENT = "[all]\r\nitems=1"
+
+def _build_send_file_content_frame(content: str, block_num: int = 1) -> bytes:
+    """通过 Frame 类构造 send_file_content 请求帧字节。
+
+    与 NovaDevice.send_file_content 数据构造逻辑一致：
+        data = struct.pack("<H", block_num) + content.encode("utf-8")
+    """
+    data = struct.pack("<H", block_num) + content.encode(ENCODING)
+    return bytes(Frame(what=What.SEND_FILE_CONTENT_REQ, data=data))
 
 
 class TestNovaSetPlayListProtocolStandard:
@@ -97,7 +127,7 @@ class TestNovaSetPlayListProtocolStandard:
         transport = FakeTransport(responses=responses)
         device = NovaDevice(transport)
 
-        await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
+        await device.set_play_list(ITEMS, file_name="play001.lst")
 
         # 验证：发送了三个帧
         assert len(transport._sent_frames) == 3
@@ -108,7 +138,14 @@ class TestNovaSetPlayListProtocolStandard:
             f"Expected send_file_name {expected_send_file_name.hex(' ')}, got {transport._sent_frames[0].hex(' ')}"
         )
 
-        # 验证：第二个帧是 send_file_content（结构验证，因协议标准未提供完整 hex）
+        # 验证：第二个帧是 send_file_content，与 Frame 构造的预期字节一致
+        expected_send_file_content = _build_send_file_content_frame(EXPECTED_CONTENT)
+        assert transport._sent_frames[1] == expected_send_file_content, (
+            f"Expected send_file_content {expected_send_file_content.hex(' ')}, "
+            f"got {transport._sent_frames[1].hex(' ')}"
+        )
+
+        # send_file_content 帧的结构验证
         send_file_content_bytes = transport._sent_frames[1]
         assert send_file_content_bytes[0:1] == b"\xaa"  # 起始符
         assert send_file_content_bytes[3:4] == b"\x13"  # SEND_FILE_CONTENT_REQ
@@ -122,6 +159,11 @@ class TestNovaSetPlayListProtocolStandard:
             f"Expected select_play_list {expected_select.hex(' ')}, got {transport._sent_frames[2].hex(' ')}"
         )
 
+    def test_items_to_content_matches_expected(self):
+        """验证 _items_to_content 输出与硬编码预期一致。"""
+        content = NovaDevice._items_to_content(ITEMS)
+        assert content == EXPECTED_CONTENT
+
     @pytest.mark.asyncio
     async def test_set_play_list_returns_none_on_all_success(self):
         """验证三步均成功时正常返回 None。"""
@@ -133,7 +175,7 @@ class TestNovaSetPlayListProtocolStandard:
         transport = FakeTransport(responses=responses)
         device = NovaDevice(transport)
 
-        result = await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
+        result = await device.set_play_list(ITEMS, file_name="play001.lst")
 
         assert result is None
 
@@ -149,7 +191,7 @@ class TestNovaSetPlayListProtocolStandard:
 
         # 验证：抛 DeviceOperationError
         with pytest.raises(DeviceOperationError):
-            await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
+            await device.set_play_list(ITEMS, file_name="play001.lst")
 
         # 验证：只发送了 send_file_name 一个帧
         assert len(transport._sent_frames) == 1
@@ -168,7 +210,7 @@ class TestNovaSetPlayListProtocolStandard:
 
         # 验证：抛 DeviceOperationError
         with pytest.raises(DeviceOperationError):
-            await device.set_play_list(TEST_CONTENT, file_name="play001.lst")
+            await device.set_play_list(ITEMS, file_name="play001.lst")
 
         # 验证：发送了 send_file_name 和 send_file_content 两个帧（select_play_list 未被调用）
         assert len(transport._sent_frames) == 2
@@ -185,7 +227,21 @@ class TestNovaSetPlayListProtocolStandard:
         device = NovaDevice(transport)
 
         # 不传 file_name，使用默认值
-        await device.set_play_list(TEST_CONTENT)
+        await device.set_play_list(ITEMS)
 
         # 验证：send_file_name 帧使用默认文件名
         assert transport._sent_frames[0] == bytes.fromhex(SEND_FILE_NAME_HEX)
+
+    @pytest.mark.asyncio
+    async def test_set_play_list_empty_items_raises(self):
+        """验证空 items 列表抛 ValueError。"""
+        responses = [
+            _build_response(What.SEND_FILE_NAME_RESP, success=True),
+            _build_response(What.SEND_FILE_CONTENT_RESP, success=True),
+            _build_response(What.SELECT_PLAY_LIST_RESP, success=True),
+        ]
+        transport = FakeTransport(responses=responses)
+        device = NovaDevice(transport)
+
+        with pytest.raises(ValueError, match="播放列表不能为空"):
+            await device.set_play_list([], file_name="play001.lst")

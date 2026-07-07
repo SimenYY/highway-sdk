@@ -94,7 +94,7 @@ class Frame(CMSFrame):
             CrcValidationError: CRC校验失败。
         """
         if not message.startswith(STX) or not message.endswith(ETX):
-            raise ValueError("invalid message")
+            raise ValueError("消息格式无效：数据长度不足或内容不符合协议要求")
 
         unescaped = cls.escape(message[1:-1], reverse=True)
         address = unescaped[:2]
@@ -107,7 +107,7 @@ class Frame(CMSFrame):
         except PydanticValidationError as e:
             raise FrameValidationError(e) from e
         if frame.crc != crc:
-            raise CrcValidationError("crc check failed")
+            raise CrcValidationError("数据校验失败：接收到的数据可能在传输中被损坏，请检查通信线路")
         return frame
 
     @classmethod
@@ -305,7 +305,7 @@ class Item(BaseModel):
     def __str__(self) -> str:
         """将播放项转换为协议字符串。"""
         if not self.media_list:
-            raise ValueError("media_list is empty")
+            raise ValueError("播放项的媒体列表不能为空")
         media_str = "".join(str(media) for media in self.media_list)
         return f"{self.duration},{self.screen_in_mode},{self.play_speed},{media_str}"
 
@@ -322,7 +322,7 @@ class Play(BaseModel):
     def __str__(self) -> str:
         """将播放列表转换为协议字符串。"""
         if not self.item_list:
-            raise ValueError("item_list is empty")
+            raise ValueError("播放列表不能为空")
         protocol = "[playlist]\r\n"
         protocol += f"item_no={len(self.item_list)}\r\n"
         for i, item in enumerate(self.item_list):

@@ -73,13 +73,13 @@ class TestVendorRegistry:
             codec_class="test.TestCodec",
         )
         registry.register(metadata)
-        with pytest.raises(ValueError, match="already registered"):
+        with pytest.raises(ValueError, match="已注册"):
             registry.register(metadata)
 
     def test_get_not_found(self):
         """测试获取不存在的厂商抛出异常。"""
         registry = VendorRegistry()
-        with pytest.raises(KeyError, match="not found"):
+        with pytest.raises(KeyError, match="未注册"):
             registry.get("nonexistent")
 
     def test_list_vendors(self):
@@ -139,5 +139,5 @@ class TestGlobalRegistry:
 
     def test_create_device_invalid_vendor(self):
         """测试 create_device 使用无效厂商名抛出异常。"""
-        with pytest.raises(KeyError, match="not found"):
+        with pytest.raises(KeyError, match="未注册"):
             create_device("nonexistent", "127.0.0.1", 9000)

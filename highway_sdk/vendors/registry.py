@@ -60,7 +60,7 @@ class VendorRegistry:
             ValueError: 厂商已存在。
         """
         if metadata.name in self._vendors:
-            raise ValueError(f"Vendor '{metadata.name}' already registered")
+            raise ValueError(f"厂商 '{metadata.name}' 已注册，不能重复注册")
         self._vendors[metadata.name] = metadata
 
     def get(self, name: str) -> VendorMetadata:
@@ -76,7 +76,7 @@ class VendorRegistry:
             KeyError: 厂商不存在。
         """
         if name not in self._vendors:
-            raise KeyError(f"Vendor '{name}' not found")
+            raise KeyError(f"厂商 '{name}' 未注册，请检查名称或先调用 register_vendor 注册")
         return self._vendors[name]
 
     def list(self) -> list[VendorMetadata]:

@@ -102,11 +102,11 @@ class AppLock:
             self.lock.release()
             self.lock = None
         else:
-            raise TypeError("self.lock is not an instance of FileLock")
-        logger.info("The app is exited successfully")
+            raise TypeError("文件锁类型错误：期望 FileLock 实例")
+        logger.info("应用已正常退出")
 
         if exc_type is not None:
-            logger.error(f"Exception in context: {exc_val}")
+            logger.error(f"上下文执行异常：{exc_val}")
 
     async def __aenter__(self):
         try:
@@ -122,8 +122,8 @@ class AppLock:
             await self.lock.release()
             self.lock = None
         else:
-            raise TypeError("self.lock is not an instance of AsyncFileLock")
-        logger.info("The app is exited successfully")
+            raise TypeError("文件锁类型错误：期望 AsyncFileLock 实例")
+        logger.info("应用已正常退出")
 
         if exc_type is not None:
-            logger.error(f"Exception in context: {exc_val}")
+            logger.error(f"上下文执行异常：{exc_val}")

@@ -6,7 +6,24 @@ from highway_sdk.core.device import BaseDevice
 
 from ..tags import CmsPlayItem, CmsTags
 from .codec import FengHaiCodec
-from .spec import ENCODING, Frame, What
+from .spec import ENCODING, BaseMedia, Bmp, Color, Flc, Font, FontSize, Frame, Gif, Item, Jpg, Play, Png, Text, What
+
+# 中文字体名 → Font 枚举映射
+_FONT_NAME_MAP = {
+    "黑体": Font.HEI_TI,
+    "楷体": Font.KAI_TI,
+    "宋体": Font.SONG_TI,
+    "仿宋": Font.FANG_SONG,
+}
+
+# 字号 → FontSize 枚举映射
+_FONT_SIZE_MAP = {
+    16: FontSize._16,
+    24: FontSize._24,
+    32: FontSize._32,
+    48: FontSize._48,
+    64: FontSize._64,
+}
 
 
 class FengHaiDevice(BaseDevice[FengHaiCodec]):
@@ -143,13 +160,13 @@ class FengHaiDevice(BaseDevice[FengHaiCodec]):
         response = await self._request(frame)
         self.codec.decode(response)
 
-    async def set_play_list(self, content: str, file_name: str = "play.lst") -> None:
+    async def set_play_list(self, items: list[CmsPlayItem], file_name: str = "play.lst") -> None:
         """下发播放列表并立即播放。
 
         FengHai 上传文件即自动更改当前播放表，无需额外播放指令。
 
         Args:
-            content: 播放列表内容字符串（由 Play 模型生成）。
+            items: 播放项列表。
             file_name: 文件名，默认为 "play.lst"。
 
         Raises:
@@ -157,6 +174,7 @@ class FengHaiDevice(BaseDevice[FengHaiCodec]):
             ResponseTimeoutError: 响应超时。
             DeviceConnectionError: 连接异常。
         """
+        content = self._items_to_content(items)
         await self.upload_file(content, file_name)
 
     # ------------------------------------------------------------------
@@ -189,3 +207,90 @@ class FengHaiDevice(BaseDevice[FengHaiCodec]):
             image_name=image_name,
             duration=duration,
         )
+
+    @staticmethod
+    def _hex_color_to_vendor(hex_color: str | None) -> Color:
+        """将 '#RRGGBB' 转换为厂商 Color 枚举（'RRRGGGBBB000'）。"""
+        if hex_color is None:
+            return Color.BLACK
+        hex_color = hex_color.lstrip("#")
+        if len(hex_color) != 6:
+            return Color.BLACK
+        try:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+        except ValueError:
+            return Color.BLACK
+        return Color(f"{r:03d}{g:03d}{b:03d}000")
+
+    @staticmethod
+    def _font_size_to_enum(font_size: int | None) -> FontSize:
+        """将字号映射到 FontSize 枚举，缺失或非法时默认 32。"""
+        if font_size is None:
+            return FontSize._32
+        return _FONT_SIZE_MAP.get(font_size, FontSize._32)
+
+    @classmethod
+    def _item_to_media_list(cls, item: CmsPlayItem) -> list[BaseMedia]:
+        """将单个 CmsPlayItem 转换为媒体对象列表。"""
+        media_list: list[BaseMedia] = []
+        if item.text is not None:
+            font_enum = _FONT_NAME_MAP.get(item.font or "黑体", Font.HEI_TI)
+            text = Text(
+                x=0,
+                y=0,
+                font=font_enum,
+                font_size=cls._font_size_to_enum(item.font_size),
+                font_color=cls._hex_color_to_vendor(item.font_color),
+                background_color=Color.BLACK,
+                text=item.text,
+            )
+            media_list.append(text)
+        if item.image_name:
+            ext = item.image_name.lower().rsplit(".", 1)[-1] if "." in item.image_name else ""
+            if ext == "png":
+                media_list.append(Png(x=0, y=0, png_file_name=item.image_name))
+            elif ext in ("jpg", "jpeg"):
+                media_list.append(Jpg(x=0, y=0, jpg_file_name=item.image_name))
+            elif ext == "gif":
+                media_list.append(Gif(x=0, y=0, gif_file_name=item.image_name))
+            elif ext == "flc":
+                media_list.append(Flc(x=0, y=0, flc_file_name=item.image_name))
+            else:
+                media_list.append(Bmp(x=0, y=0, bmp_file_name=item.image_name))
+        if not media_list:
+            media_list.append(
+                Text(
+                    x=0,
+                    y=0,
+                    font=Font.HEI_TI,
+                    font_size=FontSize._32,
+                    font_color=Color.BLACK,
+                    background_color=Color.BLACK,
+                    text="",
+                )
+            )
+        return media_list
+
+    @classmethod
+    def _items_to_content(cls, items: list[CmsPlayItem]) -> str:
+        """将 CmsPlayItem 列表转换为协议字符串。
+
+        - CmsPlayItem.duration 单位为秒，FengHai Item.duration 单位为百分之一秒（×100）
+        - 缺失字段使用默认值：x=0, y=0, screen_in_mode=1, play_speed=0
+        """
+        if not items:
+            raise ValueError("播放列表不能为空")
+        item_list = []
+        for cms_item in items:
+            duration_sec = cms_item.duration if cms_item.duration is not None else 10
+            duration_cent = max(2, min(30000, duration_sec * 100))
+            item = Item(
+                media_list=cls._item_to_media_list(cms_item),
+                duration=duration_cent,
+                screen_in_mode=1,
+                play_speed=0,
+            )
+            item_list.append(item)
+        return str(Play(item_list=item_list))
