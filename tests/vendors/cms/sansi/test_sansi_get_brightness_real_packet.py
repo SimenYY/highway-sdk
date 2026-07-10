@@ -7,7 +7,7 @@ SanSi 的 get_brightness 通过 GET_BRIGHTNESS_AND_MODE (b"06") 指令获取，
 
 本测试验证：
 1. set_brightness 发送的帧字节与真实设备日志完全一致
-2. 设备返回真实响应时，get_brightness 返回 dict 且数据正确
+2. 设备返回真实响应时，get_brightness 返回 CmsTags 且数据正确
 3. 数据域解码结果与真实设备语义一致（mode=1, brightness=48%）
 """
 
@@ -18,6 +18,7 @@ import pytest
 from highway_sdk.core.transport import Transport
 from highway_sdk.vendors.cms.sansi.device import SanSiCms
 from highway_sdk.vendors.cms.sansi.spec import What
+from highway_sdk.vendors.cms.tags import CmsTags
 
 
 class FakeTransport(Transport):
@@ -78,21 +79,21 @@ class TestSanSiGetBrightnessRealPacket:
         )
 
     @pytest.mark.asyncio
-    async def test_get_brightness_returns_dict_on_real_response(self):
-        """验证设备返回真实响应时，get_brightness 返回 dict 且数据正确。"""
+    async def test_get_brightness_returns_cms_tags_on_real_response(self):
+        """验证设备返回真实响应时，get_brightness 返回 CmsTags 且数据正确。"""
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_HEX)])
         device = SanSiCms(transport)
 
         result = await device.get_brightness()
 
-        # 验证：返回 dict（CmsTags.model_dump(exclude_none=True)）
-        assert isinstance(result, dict)
+        # 验证：返回 CmsTags
+        assert isinstance(result, CmsTags)
         # 验证：解码数据正确
         # data="115" → mode=1, brightness=15 → round(15/31*100)=48
-        assert result["brightness"] == 48
+        assert result.brightness == 48
         # SanSi device.py: mode==0 → "auto", else → "manual"
         # 真实报文 mode=1 → "manual"
-        assert result["brightness_mode"] == "manual"
+        assert result.brightness_mode == "manual"
 
     @pytest.mark.asyncio
     async def test_get_brightness_uses_correct_what(self):

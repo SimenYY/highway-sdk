@@ -42,9 +42,9 @@ async def main():  # noqa: C901
             print("\n--- 1. 获取亮度信息 ---")
             try:
                 data = await device.get_brightness()
-                print(f"  亮度值: {data['brightness']}%")
-                print(f"  控制模式: {data['brightness_mode']}")
-                print(f"  采集时间: {data['timestamp']}")
+                print(f"  亮度值: {data.brightness}%")
+                print(f"  控制模式: {data.brightness_mode}")
+                print(f"  采集时间: {data.timestamp}")
             except DeviceOperationError as e:
                 print(f"  获取失败: {e}")
 
@@ -54,14 +54,14 @@ async def main():  # noqa: C901
             print("\n--- 2. 获取当前播放项 ---")
             try:
                 data = await device.get_play_item()
-                item = data["play_item"]
-                print(f"  原始格式: {data['orig_play_item']}")
+                item = data.play_item
+                print(f"  原始格式: {data.orig_play_item}")
                 if item:
-                    print(f"  序号: {item['index']}")
-                    print(f"  文本: {item['text']}")
-                    print(f"  字体: {item['font']} (大小 {item['font_size']})")
-                    print(f"  颜色: {item['font_color']}")
-                    print(f"  停留时间: {item['duration']} 秒")
+                    print(f"  序号: {item.index}")
+                    print(f"  文本: {item.text}")
+                    print(f"  字体: {item.font} (大小 {item.font_size})")
+                    print(f"  颜色: {item.font_color}")
+                    print(f"  停留时间: {item.duration} 秒")
             except DeviceOperationError as e:
                 print(f"  获取失败: {e}")
 
@@ -71,11 +71,11 @@ async def main():  # noqa: C901
             print("\n--- 3. 获取播放列表 ---")
             try:
                 data = await device.get_play_list(play_id=0, filename="play00.lst")
-                play_list = data["play_list"]
+                play_list = data.play_list
                 print(f"  共 {len(play_list)} 个播放项:")
                 for i, item in enumerate(play_list):
-                    text = item.get("text") or "(图片)"
-                    print(f"    [{i}] {text} (停留 {item['duration']}s)")
+                    text = item.text or "(图片)"
+                    print(f"    [{i}] {text} (停留 {item.duration}s)")
             except DeviceOperationError as e:
                 print(f"  获取失败: {e}")
 

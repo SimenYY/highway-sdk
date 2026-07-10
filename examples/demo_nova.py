@@ -41,9 +41,9 @@ async def main():
             print("\n--- 1. 获取亮度信息 ---")
             try:
                 data = await device.get_brightness()
-                print(f"  亮度值: {data['brightness']}%")
-                print(f"  控制模式: {data['brightness_mode']}")
-                print(f"  采集时间: {data['timestamp']}")
+                print(f"  亮度值: {data.brightness}%")
+                print(f"  控制模式: {data.brightness_mode}")
+                print(f"  采集时间: {data.timestamp}")
             except DeviceOperationError as e:
                 print(f"  获取失败: {e}")
 
@@ -53,11 +53,11 @@ async def main():
             print("\n--- 2. 获取当前播放项 ---")
             try:
                 data = await device.get_play_item()
-                item = data["play_item"]
-                print(f"  原始文本: {data['orig_play_item']}")
+                item = data.play_item
+                print(f"  原始文本: {data.orig_play_item}")
                 if item:
-                    print(f"  文本: {item['text']}")
-                    print(f"  图片: {item['image_name']}")
+                    print(f"  文本: {item.text}")
+                    print(f"  图片: {item.image_name}")
             except DeviceOperationError as e:
                 print(f"  获取失败: {e}")
 
@@ -68,7 +68,7 @@ async def main():
             try:
                 data = await device.get_play_list()
                 # Nova 0x3B 响应为类 INI 文本，结构化解析未实现，仅展示原始文本
-                orig = data.get("orig_play_list") or "(空)"
+                orig = data.orig_play_list or "(空)"
                 print(f"  原始内容:\n{orig}")
             except DeviceOperationError as e:
                 print(f"  获取失败: {e}")
