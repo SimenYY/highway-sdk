@@ -101,3 +101,40 @@ class CmsTags(BaseModel):
         ...,
         description="数据采集时间",
     )
+
+    def flatten(self) -> dict[str, int | float | str]:
+        """扁平化输出为 k-v 字典，排除所有 None 值。
+
+        - 标量字段（orig_play_item / orig_play_list / brightness / brightness_mode）直接输出
+        - play_item（单个播放项）字段名直接作为 key
+        - play_list（播放列表）字段名加序号后缀，如 text_0、font_1
+        - timestamp 转为 ISO 8601 字符串
+
+        Returns:
+            dict[str, int | float | str]: 扁平化后的键值对，值仅为 int/float/str
+        """
+        result: dict[str, int | float | str] = {}
+
+        # 标量字段
+        for name in ("orig_play_item", "orig_play_list", "brightness", "brightness_mode"):
+            value = getattr(self, name)
+            if value is not None:
+                result[name] = value
+
+        # play_item（单个播放项）—— 字段名直接作为 key
+        if self.play_item is not None:
+            for k, v in self.play_item.model_dump(exclude_none=True).items():
+                result[k] = v if isinstance(v, (int, float, str)) else str(v)
+
+        # play_list（播放列表）—— 字段名加序号后缀，如 text_0、font_0
+        for i, item in enumerate(self.play_list):
+            result[f"index_{i}"] = i
+            for k, v in item.model_dump(exclude_none=True).items():
+                if k == "index":
+                    continue  # 列表序号已作为 index_N 填充
+                result[f"{k}_{i}"] = v if isinstance(v, (int, float, str)) else str(v)
+
+        # timestamp 转为 ISO 字符串
+        result["timestamp"] = self.timestamp.isoformat()
+
+        return result
