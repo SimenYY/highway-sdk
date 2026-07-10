@@ -11,7 +11,7 @@
 
 import asyncio
 
-from highway_sdk import DianMingDevice
+from highway_sdk import DianMingCms
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
     ConnectionTimeoutError,
@@ -33,7 +33,7 @@ async def main():  # noqa: C901
     port = 9000
 
     try:
-        async with await DianMingDevice.connect(host, port, timeout=3.0) as device:
+        async with await DianMingCms.connect(host, port, timeout=3.0) as device:
             print(f"\n[已连接] {device.__class__.__name__} @ {host}:{port}")
 
             # ----------------------------------------------------------

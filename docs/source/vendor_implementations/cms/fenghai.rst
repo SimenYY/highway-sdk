@@ -35,7 +35,7 @@
 
 **核心类**：
 
-- **FengHaiDevice** - 丰海CMS设备客户端，继承 BaseDevice[FengHaiCodec]
+- **FengHaiCms** - 丰海CMS设备客户端，继承 BaseDevice[FengHaiCodec]
 - **FengHaiCodec** - 丰海CMS编解码器，继承 BaseCodec
 - **Frame** - 丰海CMS帧数据结构，继承 CMSFrame
 
@@ -44,11 +44,11 @@
 .. code-block:: python
 
     import asyncio
-    from highway_sdk.vendors.cms.fenghai.device import FengHaiDevice
+    from highway_sdk.vendors.cms.fenghai.device import FengHaiCms
 
     async def main():
         # 连接设备
-        async with await FengHaiDevice.connect("192.168.1.100", 8888) as device:
+        async with await FengHaiCms.connect("192.168.1.100", 8888) as device:
             # 获取当前播放项
             result = await device.get_play_item()
             print(f"播放项: {result}")
@@ -74,7 +74,7 @@
 丰海CMS设备方法
 ----------------
 
-FengHaiDevice 提供以下设备操作方法：
+FengHaiCms 提供以下设备操作方法：
 
 - ``get_play_item()`` - 获取当前播放项
 - ``get_play_list(play_id=0)`` - 获取当前播放列表

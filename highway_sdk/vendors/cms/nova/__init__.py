@@ -3,7 +3,7 @@
 from highway_sdk.vendors.registry import VendorMetadata
 
 from .codec import NovaCodec
-from .device import NovaDevice
+from .device import NovaCms
 from .spec import Frame, ResultCode, What
 
 metadata = VendorMetadata(
@@ -11,14 +11,14 @@ metadata = VendorMetadata(
     display_name="诺瓦",
     device_type="cms",
     description="诺瓦CMS设备协议实现",
-    device_class=NovaDevice,
+    device_class=NovaCms,
     codec_class=NovaCodec,
 )
 
 __all__ = [
     "Frame",
+    "NovaCms",
     "NovaCodec",
-    "NovaDevice",
     "ResultCode",
     "What",
     "metadata",

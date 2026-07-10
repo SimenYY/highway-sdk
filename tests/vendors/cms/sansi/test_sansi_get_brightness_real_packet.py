@@ -16,7 +16,7 @@ from collections.abc import Sequence
 import pytest
 
 from highway_sdk.core.transport import Transport
-from highway_sdk.vendors.cms.sansi.device import SanSiDevice
+from highway_sdk.vendors.cms.sansi.device import SanSiCms
 from highway_sdk.vendors.cms.sansi.spec import What
 
 
@@ -60,13 +60,13 @@ REAL_RECV_HEX = "023031313135f47403"
 
 
 class TestSanSiGetBrightnessRealPacket:
-    """测试 SanSiDevice.get_brightness 与真实报文的一致性。"""
+    """测试 SanSiCms.get_brightness 与真实报文的一致性。"""
 
     @pytest.mark.asyncio
     async def test_get_brightness_send_frame_matches_real_packet(self):
         """验证 get_brightness 发送的帧字节与真实设备日志完全一致。"""
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_HEX)])
-        device = SanSiDevice(transport)
+        device = SanSiCms(transport)
 
         await device.get_brightness()
 
@@ -81,11 +81,11 @@ class TestSanSiGetBrightnessRealPacket:
     async def test_get_brightness_returns_dict_on_real_response(self):
         """验证设备返回真实响应时，get_brightness 返回 dict 且数据正确。"""
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_HEX)])
-        device = SanSiDevice(transport)
+        device = SanSiCms(transport)
 
         result = await device.get_brightness()
 
-        # 验证：返回 dict（CmsTags.model_dump()）
+        # 验证：返回 dict（CmsTags.model_dump(exclude_none=True)）
         assert isinstance(result, dict)
         # 验证：解码数据正确
         # data="115" → mode=1, brightness=15 → round(15/31*100)=48
@@ -98,7 +98,7 @@ class TestSanSiGetBrightnessRealPacket:
     async def test_get_brightness_uses_correct_what(self):
         """验证 get_brightness 使用 GET_BRIGHTNESS_AND_MODE 指令码。"""
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_HEX)])
-        device = SanSiDevice(transport)
+        device = SanSiCms(transport)
 
         await device.get_brightness()
 

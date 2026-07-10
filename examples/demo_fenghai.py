@@ -11,7 +11,7 @@
 
 import asyncio
 
-from highway_sdk import FengHaiDevice
+from highway_sdk import FengHaiCms
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
     ConnectionTimeoutError,
@@ -32,7 +32,7 @@ async def main():  # noqa: C901
     port = 9001
 
     try:
-        async with await FengHaiDevice.connect(host, port, timeout=3.0) as device:
+        async with await FengHaiCms.connect(host, port, timeout=3.0) as device:
             print(f"\n[已连接] {device.__class__.__name__} @ {host}:{port}")
 
             # ----------------------------------------------------------

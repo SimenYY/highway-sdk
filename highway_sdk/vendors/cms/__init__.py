@@ -2,36 +2,36 @@
 
 # 电明厂商实现
 from .dianming.codec import DianMingCodec
-from .dianming.device import DianMingDevice
+from .dianming.device import DianMingCms
 
 # 丰海厂商实现
 from .fenghai.codec import FengHaiCodec
-from .fenghai.device import FengHaiDevice
+from .fenghai.device import FengHaiCms
 from .layout import TextLayout, TextLayoutResult
 
 # 诺瓦厂商实现
 from .nova.codec import NovaCodec
-from .nova.device import NovaDevice
+from .nova.device import NovaCms
 
 # 三思厂商实现
 from .sansi.codec import SanSiCodec
-from .sansi.device import SanSiDevice
+from .sansi.device import SanSiCms
 
 # 显科厂商实现
 from .xianke.codec import XianKeCodec
-from .xianke.device import XianKeDevice
+from .xianke.device import XianKeCms
 
 __all__ = [
+    "DianMingCms",
     "DianMingCodec",
-    "DianMingDevice",
+    "FengHaiCms",
     "FengHaiCodec",
-    "FengHaiDevice",
+    "NovaCms",
     "NovaCodec",
-    "NovaDevice",
+    "SanSiCms",
     "SanSiCodec",
-    "SanSiDevice",
     "TextLayout",
     "TextLayoutResult",
+    "XianKeCms",
     "XianKeCodec",
-    "XianKeDevice",
 ]

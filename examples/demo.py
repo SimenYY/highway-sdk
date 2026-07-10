@@ -8,12 +8,12 @@ import asyncio
 from typing import cast
 
 from highway_sdk import (
-    DianMingDevice,
-    FengHaiDevice,
-    NovaDevice,
-    SanSiDevice,
+    DianMingCms,
+    FengHaiCms,
+    NovaCms,
+    SanSiCms,
     Transport,
-    XianKeDevice,
+    XianKeCms,
     connect_device,
     create_device,
     get_vendor,
@@ -33,7 +33,7 @@ async def example_basic_usage():
     print("=" * 60)
 
     # 使用上下文管理器自动管理连接
-    async with await DianMingDevice.connect("127.0.0.1", 9000) as device:
+    async with await DianMingCms.connect("127.0.0.1", 9000) as device:
         # 获取亮度信息
         brightness = await device.get_brightness()
         print(f"亮度信息: {brightness}")
@@ -64,7 +64,7 @@ async def example_custom_transport():
     )
 
     await transport.connect()
-    device = FengHaiDevice(transport)
+    device = FengHaiCms(transport)
 
     try:
         # 执行操作
@@ -100,11 +100,11 @@ async def example_multiple_vendors():
 
     # 厂商设备类映射
     vendor_map = {
-        "dianming": DianMingDevice,
-        "fenghai": FengHaiDevice,
-        "nova": NovaDevice,
-        "sansi": SanSiDevice,
-        "xianke": XianKeDevice,
+        "dianming": DianMingCms,
+        "fenghai": FengHaiCms,
+        "nova": NovaCms,
+        "sansi": SanSiCms,
+        "xianke": XianKeCms,
     }
 
     # 连接所有设备
@@ -141,7 +141,7 @@ async def example_error_handling():
     print("=" * 60)
 
     try:
-        async with await DianMingDevice.connect(
+        async with await DianMingCms.connect(
             "127.0.0.1",
             9000,
             timeout=2.0,
@@ -175,7 +175,7 @@ async def example_custom_transport_factory():
             **kwargs,
         )
 
-    device = await NovaDevice.connect(
+    device = await NovaCms.connect(
         "127.0.0.3",
         9000,
         transport_factory=custom_transport_factory,
@@ -194,7 +194,7 @@ async def example_concurrent_operations():
     print("示例 6: 并发操作")
     print("=" * 60)
 
-    async with await DianMingDevice.connect("127.0.0.1", 9000) as device:
+    async with await DianMingCms.connect("127.0.0.1", 9000) as device:
         # 并发执行多个操作
         results = await asyncio.gather(
             device.get_brightness(),
@@ -239,7 +239,7 @@ async def example_vendor_registry():
     print("\n使用注册表连接设备:")
     try:
         # 工厂函数返回 BaseDevice，需 cast 为厂商类型以获取厂商特有方法的类型安全
-        device = cast(FengHaiDevice, await connect_device("fenghai", "127.0.0.1", 9001))
+        device = cast(FengHaiCms, await connect_device("fenghai", "127.0.0.1", 9001))
         print(f"  连接成功: {device.__class__.__name__}")
 
         # 执行操作

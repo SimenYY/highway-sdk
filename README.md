@@ -43,11 +43,11 @@ poetry install
 
 ```python
 import asyncio
-from highway_sdk import DianMingDevice
+from highway_sdk import DianMingCms
 
 async def main():
     # 连接设备并获取信息
-    async with await DianMingDevice.connect("192.168.1.100", 9000) as device:
+    async with await DianMingCms.connect("192.168.1.100", 9000) as device:
         # 获取亮度
         brightness = await device.get_brightness()
         print(f"亮度: {brightness}")
@@ -62,7 +62,7 @@ asyncio.run(main())
 ### 自定义传输层
 
 ```python
-from highway_sdk import Transport, FengHaiDevice
+from highway_sdk import Transport, FengHaiCms
 
 async def main():
     # 创建带自动重连的传输层
@@ -75,7 +75,7 @@ async def main():
     )
 
     await transport.connect()
-    device = FengHaiDevice(transport)
+    device = FengHaiCms(transport)
 
     try:
         brightness = await device.get_brightness()
@@ -88,16 +88,16 @@ async def main():
 
 ```python
 from highway_sdk import (
-    DianMingDevice, FengHaiDevice, NovaDevice,
-    SanSiDevice, XianKeDevice
+    DianMingCms, FengHaiCms, NovaCms,
+    SanSiCms, XianKeCms
 )
 
 async def main():
     # 设备配置
     devices_config = [
-        (DianMingDevice, "192.168.1.100", 9000),
-        (FengHaiDevice, "192.168.1.101", 9000),
-        (NovaDevice, "192.168.1.102", 9000),
+        (DianMingCms, "192.168.1.100", 9000),
+        (FengHaiCms, "192.168.1.101", 9000),
+        (NovaCms, "192.168.1.102", 9000),
     ]
 
     # 批量连接
@@ -135,7 +135,7 @@ brightness = await device.get_brightness()
 ```
 ┌─────────────────────────────────────────┐
 │           Device (设备层)                │
-│  DianMingDevice, FengHaiDevice, ...     │
+│  DianMingCms, FengHaiCms, ...     │
 ├─────────────────────────────────────────┤
 │           Codec (编解码层)               │
 │  DianMingCodec, FengHaiCodec, ...       │
@@ -228,7 +228,7 @@ class MyDevice(BaseDevice):
             brightness_mode="auto" if data["mode"] == 0 else "manual",
             timestamp=datetime.now(),
         )
-        return cms_tags.model_dump()
+        return cms_tags.model_dump(exclude_none=True)
 ```
 
 ## 日志使用
@@ -264,7 +264,7 @@ from highway_sdk.core.exceptions import (
 )
 
 try:
-    async with await DianMingDevice.connect("192.168.1.100", 9000) as device:
+    async with await DianMingCms.connect("192.168.1.100", 9000) as device:
         # 数据采集返回 dict，失败抛 DeviceOperationError
         data = await device.get_brightness()
         print(f"亮度: {data['brightness']}%")

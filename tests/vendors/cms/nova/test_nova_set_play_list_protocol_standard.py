@@ -26,7 +26,7 @@ import pytest
 
 from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.core.transport import Transport
-from highway_sdk.vendors.cms.nova.device import NovaDevice
+from highway_sdk.vendors.cms.nova.device import NovaCms
 from highway_sdk.vendors.cms.nova.spec import ENCODING, Frame, What
 from highway_sdk.vendors.cms.tags import CmsPlayItem
 
@@ -85,7 +85,7 @@ ITEMS = [
     ),
 ]
 
-# 预期协议内容（由 NovaDevice._items_to_content(ITEMS) 生成）
+# 预期协议内容（由 NovaCms._items_to_content(ITEMS) 生成）
 # 格式：[PLAYLIST]\r\nITEM_NO={count:03d}\r\nITEM{index:03d}={duration},0,0,0,0,{media_str}\r\n
 # Nova duration 单位为秒（无需转换），font_size 格式为重复输出（如 32→"3232"）
 # 文本媒体串格式：\C000000\F{font_code}{font_size_code}\T{color}\W{text}
@@ -106,7 +106,7 @@ SELECT_PLAY_LIST_HEX = "aaffff1b01ccbf28"
 def _build_send_file_content_frame(content: str, block_num: int = 1) -> bytes:
     """通过 Frame 类构造 send_file_content 请求帧字节。
 
-    与 NovaDevice.send_file_content 数据构造逻辑一致：
+    与 NovaCms.send_file_content 数据构造逻辑一致：
         data = struct.pack("<H", block_num) + content.encode("utf-8")
     """
     data = struct.pack("<H", block_num) + content.encode(ENCODING)
@@ -114,7 +114,7 @@ def _build_send_file_content_frame(content: str, block_num: int = 1) -> bytes:
 
 
 class TestNovaSetPlayListProtocolStandard:
-    """测试 NovaDevice.set_play_list 与协议标准报文的一致性。"""
+    """测试 NovaCms.set_play_list 与协议标准报文的一致性。"""
 
     @pytest.mark.asyncio
     async def test_set_play_list_sends_three_frames_in_correct_order(self):
@@ -125,7 +125,7 @@ class TestNovaSetPlayListProtocolStandard:
             _build_response(What.SELECT_PLAY_LIST_RESP, success=True),
         ]
         transport = FakeTransport(responses=responses)
-        device = NovaDevice(transport)
+        device = NovaCms(transport)
 
         await device.set_play_list(ITEMS, file_name="play001.lst")
 
@@ -161,7 +161,7 @@ class TestNovaSetPlayListProtocolStandard:
 
     def test_items_to_content_matches_expected(self):
         """验证 _items_to_content 输出与硬编码预期一致。"""
-        content = NovaDevice._items_to_content(ITEMS)
+        content = NovaCms._items_to_content(ITEMS)
         assert content == EXPECTED_CONTENT
 
     @pytest.mark.asyncio
@@ -173,7 +173,7 @@ class TestNovaSetPlayListProtocolStandard:
             _build_response(What.SELECT_PLAY_LIST_RESP, success=True),
         ]
         transport = FakeTransport(responses=responses)
-        device = NovaDevice(transport)
+        device = NovaCms(transport)
 
         result = await device.set_play_list(ITEMS, file_name="play001.lst")
 
@@ -187,7 +187,7 @@ class TestNovaSetPlayListProtocolStandard:
             # 故意不提供后续响应，若被调用会抛 RuntimeError
         ]
         transport = FakeTransport(responses=responses)
-        device = NovaDevice(transport)
+        device = NovaCms(transport)
 
         # 验证：抛 DeviceOperationError
         with pytest.raises(DeviceOperationError):
@@ -206,7 +206,7 @@ class TestNovaSetPlayListProtocolStandard:
             # 故意不提供 select_play_list 响应，若被调用会抛 RuntimeError
         ]
         transport = FakeTransport(responses=responses)
-        device = NovaDevice(transport)
+        device = NovaCms(transport)
 
         # 验证：抛 DeviceOperationError
         with pytest.raises(DeviceOperationError):
@@ -224,7 +224,7 @@ class TestNovaSetPlayListProtocolStandard:
             _build_response(What.SELECT_PLAY_LIST_RESP, success=True),
         ]
         transport = FakeTransport(responses=responses)
-        device = NovaDevice(transport)
+        device = NovaCms(transport)
 
         # 不传 file_name，使用默认值
         await device.set_play_list(ITEMS)
@@ -241,7 +241,7 @@ class TestNovaSetPlayListProtocolStandard:
             _build_response(What.SELECT_PLAY_LIST_RESP, success=True),
         ]
         transport = FakeTransport(responses=responses)
-        device = NovaDevice(transport)
+        device = NovaCms(transport)
 
         with pytest.raises(ValueError, match="播放列表不能为空"):
             await device.set_play_list([], file_name="play001.lst")

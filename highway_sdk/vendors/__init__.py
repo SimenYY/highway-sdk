@@ -4,16 +4,16 @@
 """
 
 from .cms import (
+    DianMingCms,
     DianMingCodec,
-    DianMingDevice,
+    FengHaiCms,
     FengHaiCodec,
-    FengHaiDevice,
+    NovaCms,
     NovaCodec,
-    NovaDevice,
+    SanSiCms,
     SanSiCodec,
-    SanSiDevice,
+    XianKeCms,
     XianKeCodec,
-    XianKeDevice,
 )
 
 # 自动注册所有厂商到全局注册表
@@ -40,18 +40,18 @@ registry.register(sansi_metadata)
 registry.register(xianke_metadata)
 
 __all__ = [
+    "DianMingCms",
     "DianMingCodec",
-    "DianMingDevice",
+    "FengHaiCms",
     "FengHaiCodec",
-    "FengHaiDevice",
+    "NovaCms",
     "NovaCodec",
-    "NovaDevice",
+    "SanSiCms",
     "SanSiCodec",
-    "SanSiDevice",
     "VendorMetadata",
     "VendorRegistry",
+    "XianKeCms",
     "XianKeCodec",
-    "XianKeDevice",
     "connect_device",
     "create_device",
     "get_vendor",

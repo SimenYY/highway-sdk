@@ -11,7 +11,7 @@
 
 import asyncio
 
-from highway_sdk import NovaDevice
+from highway_sdk import NovaCms
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
     ConnectionTimeoutError,
@@ -32,7 +32,7 @@ async def main():
     port = 9002
 
     try:
-        async with await NovaDevice.connect(host, port, timeout=3.0) as device:
+        async with await NovaCms.connect(host, port, timeout=3.0) as device:
             print(f"\n[已连接] {device.__class__.__name__} @ {host}:{port}")
 
             # ----------------------------------------------------------

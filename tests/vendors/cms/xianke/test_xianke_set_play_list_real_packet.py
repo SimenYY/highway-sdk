@@ -25,7 +25,7 @@ import pytest
 from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.core.transport import Transport
 from highway_sdk.vendors.cms.tags import CmsPlayItem
-from highway_sdk.vendors.cms.xianke.device import XianKeDevice
+from highway_sdk.vendors.cms.xianke.device import XianKeCms
 from highway_sdk.vendors.cms.xianke.spec import (
     ENCODING,
     Color,
@@ -72,7 +72,7 @@ ITEMS = [
     CmsPlayItem(text="深圳显科科技有限公司", font="宋体", font_size=32, font_color="#00FF00", duration=2),
 ]
 
-# 预期协议内容（由 XianKeDevice._items_to_content(ITEMS) 生成，等价于 Play 模型序列化）
+# 预期协议内容（由 XianKeCms._items_to_content(ITEMS) 生成，等价于 Play 模型序列化）
 # 格式：[LIST]\r\nItemCount=N(3位)\r\nItem{ii}={duration},{screen_in},{play_effect},{screen_out},{play_speed},{media}\r\n
 # XianKe Item.duration 单位为秒（无需转换），font_size 格式为 2 位数字（如 32→"32"）
 EXPECTED_CONTENT = (
@@ -165,7 +165,7 @@ def _calc_xianke_crc(payload: bytes) -> bytes:
 
 
 class TestXianKeSetPlayListRealPacket:
-    """测试 XianKeDevice.set_play_list 与真实报文的一致性。"""
+    """测试 XianKeCms.set_play_list 与真实报文的一致性。"""
 
     @pytest.mark.asyncio
     async def test_set_play_list_sends_two_frames_in_correct_order(self):
@@ -182,7 +182,7 @@ class TestXianKeSetPlayListRealPacket:
                 bytes.fromhex(SELECT_RECV_SUCCESS_HEX),
             ]
         )
-        device = XianKeDevice(transport)
+        device = XianKeCms(transport)
 
         await device.set_play_list(ITEMS, file_name=UPLOAD_FILE_NAME)
 
@@ -219,7 +219,7 @@ class TestXianKeSetPlayListRealPacket:
 
     def test_items_to_content_matches_play_model(self):
         """验证 _items_to_content 输出与独立构造的 Play 模型字符串一致。"""
-        content = XianKeDevice._items_to_content(ITEMS)
+        content = XianKeCms._items_to_content(ITEMS)
         assert content == _build_expected_play()
         assert content == EXPECTED_CONTENT
 
@@ -232,7 +232,7 @@ class TestXianKeSetPlayListRealPacket:
                 bytes.fromhex(SELECT_RECV_SUCCESS_HEX),
             ]
         )
-        device = XianKeDevice(transport)
+        device = XianKeCms(transport)
 
         result = await device.set_play_list(ITEMS, file_name=UPLOAD_FILE_NAME)
 
@@ -251,7 +251,7 @@ class TestXianKeSetPlayListRealPacket:
         upload_failure = b"\x02" + payload + crc + b"\x03"
 
         transport = FakeTransport(responses=[upload_failure])
-        device = XianKeDevice(transport)
+        device = XianKeCms(transport)
 
         # 验证：抛 DeviceOperationError
         with pytest.raises(DeviceOperationError):
@@ -274,7 +274,7 @@ class TestXianKeSetPlayListRealPacket:
                 bytes.fromhex(SELECT_RECV_SUCCESS_HEX),
             ]
         )
-        device = XianKeDevice(transport)
+        device = XianKeCms(transport)
 
         await device.set_play_list(ITEMS, file_name=UPLOAD_FILE_NAME)
 
@@ -293,7 +293,7 @@ class TestXianKeSetPlayListRealPacket:
                 bytes.fromhex(SELECT_RECV_SUCCESS_HEX),
             ]
         )
-        device = XianKeDevice(transport)
+        device = XianKeCms(transport)
 
         with pytest.raises(ValueError, match="播放列表不能为空"):
             await device.set_play_list([], file_name=UPLOAD_FILE_NAME)

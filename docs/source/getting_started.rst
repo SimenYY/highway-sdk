@@ -20,13 +20,13 @@
 .. code-block:: python
 
     import asyncio
-    from highway_sdk import FengHaiDevice
+    from highway_sdk import FengHaiCms
     from highway_sdk.core.exceptions import DeviceOperationError
 
     async def main():
-        async with await FengHaiDevice.connect("192.168.1.100", 8888) as device:
+        async with await FengHaiCms.connect("192.168.1.100", 8888) as device:
             try:
-                # 数据采集方法成功返回 dict（CmsTags.model_dump()）
+                # 数据采集方法成功返回 dict（CmsTags.model_dump(exclude_none=True)）
                 data = await device.get_play_item()
                 print(f"播放项: {data['play_item']}")
             except DeviceOperationError as e:
@@ -96,7 +96,7 @@ Highway SDK 采用 **Pythonic 异常模式**：成功返回业务数据（``dict
     )
 
     try:
-        async with await FengHaiDevice.connect("192.168.1.100", 8888) as device:
+        async with await FengHaiCms.connect("192.168.1.100", 8888) as device:
             # 数据采集返回 dict，失败抛 DeviceOperationError
             data = await device.get_brightness()
             print(f"亮度: {data['brightness']}%")

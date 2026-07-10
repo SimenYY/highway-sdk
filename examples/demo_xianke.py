@@ -11,7 +11,7 @@
 
 import asyncio
 
-from highway_sdk import XianKeDevice
+from highway_sdk import XianKeCms
 from highway_sdk.core.exceptions import (
     ConnectionLostError,
     ConnectionTimeoutError,
@@ -32,7 +32,7 @@ async def main():
     port = 9004
 
     try:
-        async with await XianKeDevice.connect(host, port, timeout=3.0) as device:
+        async with await XianKeCms.connect(host, port, timeout=3.0) as device:
             print(f"\n[已连接] {device.__class__.__name__} @ {host}:{port}")
 
             # ----------------------------------------------------------

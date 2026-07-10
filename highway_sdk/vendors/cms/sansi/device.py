@@ -26,7 +26,7 @@ _FONT_SIZE_MAP = {
 }
 
 
-class SanSiDevice(BaseDevice[SanSiCodec]):
+class SanSiCms(BaseDevice[SanSiCodec]):
     """三思CMS设备客户端。
 
     所有方法成功返回业务数据（dict）或 None，失败抛 ``DeviceOperationError`` 等
@@ -41,14 +41,14 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
         return Frame.from_bytes(response)
 
     # ------------------------------------------------------------------
-    # 数据采集 API（返回 CmsTags.model_dump()，失败抛异常）
+    # 数据采集 API（返回 CmsTags.model_dump(exclude_none=True)，失败抛异常）
     # ------------------------------------------------------------------
 
     async def get_brightness(self) -> dict:
         """获取亮度百分比和亮度控制模式。
 
         Returns:
-            dict: ``CmsTags.model_dump()``，仅填充 brightness、brightness_mode、timestamp。
+            dict: ``CmsTags.model_dump(exclude_none=True)``，仅填充 brightness、brightness_mode、timestamp。
 
         Raises:
             DeviceOperationError: 设备返回错误响应。
@@ -63,13 +63,13 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
             brightness_mode="auto" if data["mode"] == 0 else "manual",
             timestamp=datetime.now(),
         )
-        return cms_tags.model_dump()
+        return cms_tags.model_dump(exclude_none=True)
 
     async def get_play_item(self) -> dict:
         """获取当前播放项（结构化 + 原始格式）。
 
         Returns:
-            dict: ``CmsTags.model_dump()``，填充 play_item（含 index）、orig_play_item、timestamp。
+            dict: ``CmsTags.model_dump(exclude_none=True)``，填充 play_item（含 index）、orig_play_item、timestamp。
 
         Raises:
             DeviceOperationError: 设备返回错误响应。
@@ -88,7 +88,7 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
             play_item=play_item,
             timestamp=datetime.now(),
         )
-        return cms_tags.model_dump()
+        return cms_tags.model_dump(exclude_none=True)
 
     async def get_play_list(self, file_name: str = "play.lst") -> dict:
         """获取当前播放列表（结构化 + 原始格式）。
@@ -105,7 +105,7 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
             file_name: 文件名，默认为 "play.lst"。
 
         Returns:
-            dict: ``CmsTags.model_dump()``，填充 play_list、orig_play_list、timestamp。
+            dict: ``CmsTags.model_dump(exclude_none=True)``，填充 play_list、orig_play_list、timestamp。
 
         Raises:
             DeviceOperationError: 设备返回错误响应。
@@ -129,7 +129,7 @@ class SanSiDevice(BaseDevice[SanSiCodec]):
             play_list=play_list,
             timestamp=datetime.now(),
         )
-        return cms_tags.model_dump()
+        return cms_tags.model_dump(exclude_none=True)
 
     # ------------------------------------------------------------------
     # 控制类 API（成功返回 None，失败抛异常）

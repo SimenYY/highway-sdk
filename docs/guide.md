@@ -11,7 +11,7 @@ Highway SDK 是一个用于高速公路机电设备通信的 Python 异步库，
 ```
 ┌─────────────────────────────────────────┐
 │           Device (设备层)                │
-│  DianMingDevice, FengHaiDevice, ...     │
+│  DianMingCms, FengHaiCms, ...     │
 ├─────────────────────────────────────────┤
 │           Codec (编解码层)               │
 │  DianMingCodec, FengHaiCodec, ...       │
@@ -40,11 +40,11 @@ Highway SDK 是一个用于高速公路机电设备通信的 Python 异步库，
 
 ```python
 import asyncio
-from highway_sdk import DianMingDevice
+from highway_sdk import DianMingCms
 
 async def main():
     # 连接设备
-    async with await DianMingDevice.connect("192.168.1.100", 9000) as device:
+    async with await DianMingCms.connect("192.168.1.100", 9000) as device:
         # 获取亮度
         brightness = await device.get_brightness()
         print(f"亮度: {brightness}")
@@ -59,7 +59,7 @@ asyncio.run(main())
 ### 自定义传输层
 
 ```python
-from highway_sdk import Transport, DianMingDevice
+from highway_sdk import Transport, DianMingCms
 
 async def main():
     # 创建带自动重连的传输层
@@ -72,7 +72,7 @@ async def main():
     )
 
     await transport.connect()
-    device = DianMingDevice(transport)
+    device = DianMingCms(transport)
 
     try:
         brightness = await device.get_brightness()
@@ -148,7 +148,7 @@ class MyDevice(BaseDevice):
         """获取亮度信息。
 
         Returns:
-            dict: ``CmsTags.model_dump()``。
+            dict: ``CmsTags.model_dump(exclude_none=True)``。
 
         Raises:
             DeviceOperationError: 设备返回错误响应。
@@ -163,7 +163,7 @@ class MyDevice(BaseDevice):
             brightness_mode="auto" if data["mode"] == 0 else "manual",
             timestamp=datetime.now(),
         )
-        return cms_tags.model_dump()
+        return cms_tags.model_dump(exclude_none=True)
 ```
 
 ## API 参考
@@ -274,11 +274,11 @@ register_vendor(metadata)
 
 | 厂商 | 标识符     | 设备类           | 编解码器        |
 | ---- | ---------- | ---------------- | --------------- |
-| 电明 | `dianming` | `DianMingDevice` | `DianMingCodec` |
-| 丰海 | `fenghai`  | `FengHaiDevice`  | `FengHaiCodec`  |
-| 诺瓦 | `nova`     | `NovaDevice`     | `NovaCodec`     |
-| 三思 | `sansi`    | `SanSiDevice`    | `SanSiCodec`    |
-| 显科 | `xianke`   | `XianKeDevice`   | `XianKeCodec`   |
+| 电明 | `dianming` | `DianMingCms` | `DianMingCodec` |
+| 丰海 | `fenghai`  | `FengHaiCms`  | `FengHaiCodec`  |
+| 诺瓦 | `nova`     | `NovaCms`     | `NovaCodec`     |
+| 三思 | `sansi`    | `SanSiCms`    | `SanSiCodec`    |
+| 显科 | `xianke`   | `XianKeCms`   | `XianKeCodec`   |
 
 ## 日志使用
 
@@ -326,8 +326,8 @@ from highway_sdk.core.exceptions import (
 
 async def safe_call():
     try:
-        async with await DianMingDevice.connect("192.168.1.100", 9000) as device:
-            # 数据采集方法成功返回 dict（CmsTags.model_dump()）
+        async with await DianMingCms.connect("192.168.1.100", 9000) as device:
+            # 数据采集方法成功返回 dict（CmsTags.model_dump(exclude_none=True)）
             data = await device.get_brightness()
             print(f"亮度: {data['brightness']}%")
 

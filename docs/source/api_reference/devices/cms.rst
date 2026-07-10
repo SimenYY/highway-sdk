@@ -13,7 +13,7 @@ Highway SDK支持多种CMS设备厂商，包括电明、丰海、Nova、三思�
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.cms.dianming.device.DianMingDevice
+.. autoclass:: highway_sdk.vendors.cms.dianming.device.DianMingCms
    :members:
    :undoc-members:
    :show-inheritance:
@@ -33,7 +33,7 @@ Highway SDK支持多种CMS设备厂商，包括电明、丰海、Nova、三思�
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.cms.fenghai.device.FengHaiDevice
+.. autoclass:: highway_sdk.vendors.cms.fenghai.device.FengHaiCms
    :members:
    :undoc-members:
    :show-inheritance:
@@ -53,7 +53,7 @@ Nova 厂商实现
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.cms.nova.device.NovaDevice
+.. autoclass:: highway_sdk.vendors.cms.nova.device.NovaCms
    :members:
    :undoc-members:
    :show-inheritance:
@@ -73,7 +73,7 @@ Nova 厂商实现
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.cms.sansi.device.SanSiDevice
+.. autoclass:: highway_sdk.vendors.cms.sansi.device.SanSiCms
    :members:
    :undoc-members:
    :show-inheritance:
@@ -93,7 +93,7 @@ Nova 厂商实现
 
 **主要类**：
 
-.. autoclass:: highway_sdk.vendors.cms.xianke.device.XianKeDevice
+.. autoclass:: highway_sdk.vendors.cms.xianke.device.XianKeCms
    :members:
    :undoc-members:
    :show-inheritance:

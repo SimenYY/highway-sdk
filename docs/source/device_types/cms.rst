@@ -43,11 +43,11 @@ CMS设备API使用
 .. code-block:: python
 
     import asyncio
-    from highway_sdk.vendors.cms.fenghai.device import FengHaiDevice
+    from highway_sdk.vendors.cms.fenghai.device import FengHaiCms
 
     async def main():
         # 连接设备
-        async with await FengHaiDevice.connect("192.168.1.100", 8888) as device:
+        async with await FengHaiCms.connect("192.168.1.100", 8888) as device:
             # 获取当前播放项
             result = await device.get_play_item()
             print(f"播放项: {result}")
@@ -84,12 +84,12 @@ CMS 显示屏尺寸有限，文字内容需要根据显示区域自动选择合�
 .. code-block:: python
 
     import asyncio
-    from highway_sdk import FengHaiDevice
+    from highway_sdk import FengHaiCms
     from highway_sdk.vendors.cms import TextLayout
     from highway_sdk.vendors.cms.tags import CmsPlayItem
 
     async def main():
-        async with await FengHaiDevice.connect("192.168.1.100", 8888) as device:
+        async with await FengHaiCms.connect("192.168.1.100", 8888) as device:
             # 假设显示屏分辨率 96x32 像素
             # 丰海 FontSize 枚举固定为 16/24/32/48/64，必须传入 size_range
             layout = TextLayout(

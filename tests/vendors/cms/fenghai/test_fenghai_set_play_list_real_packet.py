@@ -24,7 +24,7 @@ import pytest
 
 from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.core.transport import Transport
-from highway_sdk.vendors.cms.fenghai.device import FengHaiDevice
+from highway_sdk.vendors.cms.fenghai.device import FengHaiCms
 from highway_sdk.vendors.cms.fenghai.spec import (
     ENCODING,
     Bmp,
@@ -74,7 +74,7 @@ ITEMS = [
     CmsPlayItem(text="高速公路 严禁逆行", font="宋体", font_size=32, font_color="#FFFF00", duration=5),
 ]
 
-# 预期协议内容（由 FengHaiDevice._items_to_content(ITEMS) 生成，等价于 Play 模型序列化）
+# 预期协议内容（由 FengHaiCms._items_to_content(ITEMS) 生成，等价于 Play 模型序列化）
 # 格式：[playlist]\r\nitem_no=N\r\nitem{i}={duration(百分之一秒)},{screen_in_mode},{play_speed},{media}\r\n
 EXPECTED_CONTENT = (
     "[playlist]\r\n"
@@ -90,7 +90,7 @@ EXPECTED_CONTENT = (
 def _build_upload_file_frame(file_name: str, content: str) -> bytes:
     """使用 Frame 类构造 FengHai upload_file 发送帧字节。
 
-    与 FengHaiDevice.upload_file 数据构造逻辑一致：
+    与 FengHaiCms.upload_file 数据构造逻辑一致：
         data = file_name.encode(ENCODING) + b"+" + b"\\x00\\x00\\x00\\x00" + content.encode(ENCODING)
     """
     data = file_name.encode(ENCODING) + b"+" + b"\x00\x00\x00\x00" + content.encode(ENCODING)
@@ -147,7 +147,7 @@ def _build_expected_play() -> str:
 
 
 class TestFengHaiSetPlayListRealPacket:
-    """测试 FengHaiDevice.set_play_list 与基于 SanSi 报文格式的预期帧一致性。"""
+    """测试 FengHaiCms.set_play_list 与基于 SanSi 报文格式的预期帧一致性。"""
 
     @pytest.mark.asyncio
     async def test_set_play_list_send_frame_matches_expected(self):
@@ -158,7 +158,7 @@ class TestFengHaiSetPlayListRealPacket:
         """
         # 准备：模拟传输层，注入成功响应
         transport = FakeTransport(responses=[_build_response_frame(success=True)])
-        device = FengHaiDevice(transport)
+        device = FengHaiCms(transport)
 
         # 执行：成功时返回 None
         result = await device.set_play_list(ITEMS, file_name="play.lst")
@@ -174,7 +174,7 @@ class TestFengHaiSetPlayListRealPacket:
 
     def test_items_to_content_matches_play_model(self):
         """验证 _items_to_content 输出与独立构造的 Play 模型字符串一致。"""
-        content = FengHaiDevice._items_to_content(ITEMS)
+        content = FengHaiCms._items_to_content(ITEMS)
         assert content == _build_expected_play()
         assert content == EXPECTED_CONTENT
 
@@ -182,7 +182,7 @@ class TestFengHaiSetPlayListRealPacket:
     async def test_set_play_list_returns_none_on_success_response(self):
         """验证设备返回成功响应时，set_play_list 正常返回 None。"""
         transport = FakeTransport(responses=[_build_response_frame(success=True)])
-        device = FengHaiDevice(transport)
+        device = FengHaiCms(transport)
 
         result = await device.set_play_list(ITEMS, file_name="play.lst")
 
@@ -195,7 +195,7 @@ class TestFengHaiSetPlayListRealPacket:
         失败响应数据域 = b"1" (ResultCode.FAILED)。
         """
         transport = FakeTransport(responses=[_build_response_frame(success=False)])
-        device = FengHaiDevice(transport)
+        device = FengHaiCms(transport)
 
         with pytest.raises(DeviceOperationError):
             await device.set_play_list(ITEMS, file_name="play.lst")
@@ -204,7 +204,7 @@ class TestFengHaiSetPlayListRealPacket:
     async def test_set_play_list_uses_upload_file_what(self):
         """验证 set_play_list 使用 UPLOAD_FILE 指令码（FengHai 上传即播放）。"""
         transport = FakeTransport(responses=[_build_response_frame(success=True)])
-        device = FengHaiDevice(transport)
+        device = FengHaiCms(transport)
 
         await device.set_play_list(ITEMS, file_name="play.lst")
 
@@ -237,7 +237,7 @@ class TestFengHaiSetPlayListRealPacket:
     async def test_set_play_list_empty_items_raises(self):
         """验证空 items 列表抛 ValueError。"""
         transport = FakeTransport(responses=[_build_response_frame(success=True)])
-        device = FengHaiDevice(transport)
+        device = FengHaiCms(transport)
 
         with pytest.raises(ValueError, match="播放列表不能为空"):
             await device.set_play_list([], file_name="play.lst")

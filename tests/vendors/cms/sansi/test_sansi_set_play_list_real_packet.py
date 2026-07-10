@@ -15,7 +15,7 @@ import pytest
 
 from highway_sdk.core.exceptions import DeviceOperationError
 from highway_sdk.core.transport import Transport
-from highway_sdk.vendors.cms.sansi.device import SanSiDevice
+from highway_sdk.vendors.cms.sansi.device import SanSiCms
 from highway_sdk.vendors.cms.sansi.spec import ENCODING, Bmp, Color, Font, FontSize, Frame, Item, Play, Text, What
 from highway_sdk.vendors.cms.tags import CmsPlayItem
 
@@ -54,7 +54,7 @@ ITEMS = [
     CmsPlayItem(text="高速公路 严禁逆行", font="宋体", font_size=32, font_color="#FFFF00", duration=5),
 ]
 
-# 预期协议内容（由 SanSiDevice._items_to_content(ITEMS) 生成，等价于 Play 模型序列化）
+# 预期协议内容（由 SanSiCms._items_to_content(ITEMS) 生成，等价于 Play 模型序列化）
 # 格式：[playlist]\r\nitem_no=N\r\nitem{i}={duration(百分之一秒)},{screen_in},{play_speed},{media}\r\n
 EXPECTED_CONTENT = (
     "[playlist]\r\n"
@@ -122,14 +122,14 @@ def _calc_sansi_crc(payload: bytes) -> bytes:
 
 
 class TestSanSiSetPlayListRealPacket:
-    """测试 SanSiDevice.set_play_list 与预期报文的一致性。"""
+    """测试 SanSiCms.set_play_list 与预期报文的一致性。"""
 
     @pytest.mark.asyncio
     async def test_set_play_list_send_frame_matches_expected(self):
         """验证 set_play_list 将 items 转换为协议内容后构造的发送帧与预期一致。"""
         # 准备：模拟传输层，注入成功响应
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_SUCCESS_HEX)])
-        device = SanSiDevice(transport)
+        device = SanSiCms(transport)
 
         # 执行：成功时返回 None
         result = await device.set_play_list(ITEMS, file_name="play.lst")
@@ -145,7 +145,7 @@ class TestSanSiSetPlayListRealPacket:
 
     def test_items_to_content_matches_play_model(self):
         """验证 _items_to_content 输出与独立构造的 Play 模型字符串一致。"""
-        content = SanSiDevice._items_to_content(ITEMS)
+        content = SanSiCms._items_to_content(ITEMS)
         assert content == _build_expected_play()
         assert content == EXPECTED_CONTENT
 
@@ -153,7 +153,7 @@ class TestSanSiSetPlayListRealPacket:
     async def test_set_play_list_returns_none_on_success_response(self):
         """验证设备返回真实成功响应时，set_play_list 正常返回 None。"""
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_SUCCESS_HEX)])
-        device = SanSiDevice(transport)
+        device = SanSiCms(transport)
 
         result = await device.set_play_list(ITEMS, file_name="play.lst")
 
@@ -171,7 +171,7 @@ class TestSanSiSetPlayListRealPacket:
         failure_frame = b"\x02" + b"01" + b"1" + crc + b"\x03"
 
         transport = FakeTransport(responses=[failure_frame])
-        device = SanSiDevice(transport)
+        device = SanSiCms(transport)
 
         with pytest.raises(DeviceOperationError):
             await device.set_play_list(ITEMS, file_name="play.lst")
@@ -180,7 +180,7 @@ class TestSanSiSetPlayListRealPacket:
     async def test_set_play_list_uses_upload_file_what(self):
         """验证 set_play_list 使用 UPLOAD_FILE 指令码（SanSi 上传即播放）。"""
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_SUCCESS_HEX)])
-        device = SanSiDevice(transport)
+        device = SanSiCms(transport)
 
         await device.set_play_list(ITEMS, file_name="play.lst")
 
@@ -194,7 +194,7 @@ class TestSanSiSetPlayListRealPacket:
     async def test_set_play_list_empty_items_raises(self):
         """验证空 items 列表抛 ValueError。"""
         transport = FakeTransport(responses=[bytes.fromhex(REAL_RECV_SUCCESS_HEX)])
-        device = SanSiDevice(transport)
+        device = SanSiCms(transport)
 
         with pytest.raises(ValueError, match="播放列表不能为空"):
             await device.set_play_list([], file_name="play.lst")
