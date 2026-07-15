@@ -1,0 +1,41 @@
+name: Release
+
+# 触发：推送 v* 格式的 tag（如 v6.1.0）时自动发布；也支持在 Actions 页面手动触发
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+# 授予 GITHUB_TOKEN 创建 Release 的权限（默认对当前仓库无 write，需显式声明）
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 需要完整历史，poetry-dynamic-versioning 才能从 git tag 解析出版本号
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装 Poetry 及动态版本插件
+        # poetry-dynamic-versioning（vcs=git）会让构建版本跟随 git tag，须在 CI 中一并安装
+        run: pipx install poetry && pipx inject poetry poetry-dynamic-versioning
+
+      - name: 构建分发包
+        run: poetry build
+
+      - name: 创建 GitHub Release 并上传产物
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*                                  # 上传 wheel 与 sdist
+          generate_release_notes: true                   # 由 GitHub 根据提交自动生成 Release 说明
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
